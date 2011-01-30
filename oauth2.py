@@ -23,7 +23,16 @@ class Client:
 	return "%s?client_id=%s&response_type=code&redirect_url=%s" % (
 		self.auth_url, self.client_id, self.callback_url )
 
+    def setAccessToken(self, access_token):
+	self.access_token = access_token
+
+    def getAccessToken(self):
+	return access_token
+
     def requestSession(self, auth_code):
+	"""
+	Swap an authentication code for an access token.
+	"""
 	url = "%s?client_id=%s&client_secret=%s&grant_type=authorization_code&redirect_url=%s&code=%s" % (
 		self.access_url, self.client_id, self.client_secret,
 		self.callback_url, auth_code )
@@ -33,11 +42,14 @@ class Client:
 
 	jsn = simplejson.loads(resp.read())
 
-	self.access_token = jsn['access_token']
+	self.setAccessToken(jsn['access_token'])
 	return jsn
 
     def makeRequest(self, method, path, params):
-	params['oauth_token'] = self.access_token
+	"""
+	Perform an API call with the access token.
+	"""
+	params['oauth_token'] = self.getAccessToken()
 	data = urllib.urlencode(params)
 	if method == self.POST:
 	    req = urllib2.Request(url, data)
