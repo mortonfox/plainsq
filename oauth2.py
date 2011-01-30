@@ -20,23 +20,28 @@ class Client:
 	Return authentication URL to which users must be redirected to
 	do an OAuth login.
 	"""
-	return "%s?client_id=%s&response_type=code&redirect_url=%s" % (
-		self.auth_url, self.client_id, self.callback_url )
+	return "%s?%s" % (self.auth_url, urllib.urlencode({
+	    'client_id' : self.client_id,
+	    'response_type' : 'code',
+	    'redirect_uri' : self.callback_url }))
 
     def setAccessToken(self, access_token):
 	self.access_token = access_token
 
     def getAccessToken(self):
-	return access_token
+	return self.access_token
 
     def requestSession(self, auth_code):
 	"""
 	Swap an authentication code for an access token.
 	"""
-	url = "%s?client_id=%s&client_secret=%s&grant_type=authorization_code&redirect_url=%s&code=%s" % (
-		self.access_url, self.client_id, self.client_secret,
-		self.callback_url, auth_code )
-
+	url = "%s?%s" % (self.access_url, urllib.urlencode({
+	    'client_id' : self.client_id,
+	    'client_secret' : self.client_secret,
+	    'redirect_uri' : self.callback_url,
+	    'grant_type' : 'authorization_code',
+	    'code' : auth_code}))
+	
 	req = urllib2.Request(url)
 	resp = urllib2.urlopen(req)
 
