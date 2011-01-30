@@ -54,6 +54,8 @@ class Client:
 	"""
 	Perform an API call with the access token.
 	"""
+	if params is None:
+	    params = {}
 	params['oauth_token'] = self.getAccessToken()
 	data = urllib.urlencode(params)
 	if method == self.POST:

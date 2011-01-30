@@ -30,6 +30,11 @@ AUTH_URL = 'https://foursquare.com/oauth2/authenticate'
 ACCESS_URL = 'https://foursquare.com/oauth2/access_token'
 API_URL = 'https://api.foursquare.com/v2'
 
+DEFAULT_LAT = '39.7'
+DEFAULT_LON = '-75.6'
+COORDS_COOKIE = 'plainsq_coords'
+DEBUG_COOKIE = 'plainsq_debug'
+
 USER_AGENT = 'plainsq:0.0.1 20110129'
 
 # In development environment, use local callback.
@@ -68,7 +73,27 @@ def debug_json(self, jsn):
     """
     Pretty-print a JSON response.
     """
+    # if get_debug(self):
     self.response.out.write('<pre>%s</pre>' % escape(pprint_to_str(jsn)))
+
+def set_debug(self, debug):
+    """
+    Set the debug option cookie.
+    """
+    self.response.headers.add_header(
+	    'Set-Cookie',
+	    '%s=%s; expires=Fri, 31-Dec-2020 23:59:59 GMT'
+	    % (DEBUG_COOKIE, debug))
+
+def get_debug(self):
+    """
+    Get the debug setting from cookie. If cookie is not found,
+    assume we are not in debug mode.
+    """
+    debug = self.request.cookies.get(DEBUG_COOKIE)
+    if debug is None:
+	return 0
+    return int(debug)
 
 def no_cache(self):
     """
@@ -77,6 +102,50 @@ def no_cache(self):
     """
     self.response.headers.add_header('Cache-Control', 'no-cache') 
     self.response.headers.add_header('User-Agent', USER_AGENT) 
+
+def query_coords(self):
+    """
+    Run a GQL query to get the coordinates, if available.
+    """
+    uuid = self.request.cookies.get(TOKEN_COOKIE)
+    if uuid is not None:
+	return CoordsTable.gql('WHERE uuid=:1 LIMIT 1', uuid).get()
+
+def set_coords(self, lat, lon):
+    """
+    Store the coordinates in our table.
+    """
+    result = query_coords(self)
+    if result is None:
+	uuid = self.request.cookies.get(TOKEN_COOKIE)
+	if uuid is not None:
+	    CoordsTable(uuid = uuid, coords = "%s,%s" % (lat, lon)).put()
+    else:
+	# Update existing record.
+	result.coords = "%s,%s" % (lat, lon)
+	db.put(result)
+
+def coords(self):
+    """
+    Get user's coordinates from coords table. If not found in table,
+    use default coordinates.
+    """
+    lat = None
+    lon = None
+
+    result = query_coords(self)
+    if result is not None:
+	try:
+	    (lat, lon) = result.coords.split(',')
+	except ValueError:
+	    pass
+
+    if lat is None or lon is None:
+	lat = DEFAULT_LAT
+	lon = DEFAULT_LON
+	set_coords(self, lat, lon)
+
+    return (lat, lon)
 
 def newclient():
     """
@@ -143,6 +212,102 @@ def htmlend(self, noabout=False, nologout=False):
     '' if noabout else ' | <a href="/about">About</a>',
     '' if nologout else ' | <a href="/logout">Log out</a>'))
 
+def conv_a_coord(coord, nsew):
+    coord = float(coord)
+
+    d = nsew[0]
+    if coord < 0:
+	d = nsew[1]
+	coord = -coord
+
+    return '%s%02d %06.3f' % (d, int(coord), 60 * (coord - int(coord)))
+
+def convcoords(lat, lon):
+    """
+    Convert coordinates from decimal degrees to dd mm.mmm.
+    Returns the result as a string.
+    """
+    return conv_a_coord(lat, 'NS') + ' ' + conv_a_coord(lon, 'EW')
+
+def call4sq(self, client, method, path, params = None):
+    """
+    Call the Foursquare API. Handle errors.
+    Returns None if there was an error. Otherwise, returns the parsed JSON.
+    """
+    try:
+	if method == 'post':
+	    result = client.post(path, params)
+	else:
+	    result = client.get(path, params)
+
+	jsn = simplejson.loads(result)
+
+	meta = jsn.get('meta')
+	if meta is not None:
+	    errorType = meta.get('errorType', '')
+	    errorDetail = meta.get('errorDetail', '')
+
+	    if errorType != '' or errorDetail != '':
+		errorpage(self, '%s : %s' % (errorType, errorDetail))
+		return
+
+	return jsn
+
+    except DownloadError:
+	errorpage(self,
+		"Can't connect to Foursquare. #SadMayor Refresh to retry.")
+	return
+
+def errorpage(self, msg):
+    """
+    Used for DownloadError exceptions. Generates an error page.
+    """
+    self.error(503)
+
+    htmlbegin(self, "Error")
+    self.response.out.write('<p><span class="error">Error: %s</span>' % msg)
+    htmlend(self)
+
+def userheader(self, client, lat, lon, badges=0, mayor=0):
+    """ 
+    Display the logged-in user's icon, name, and position.
+    """
+    jsn = call4sq(self, client, 'get', '/users/self')
+    if jsn is None:
+	return
+
+    response = jsn.get('response')
+    if response is None:
+	logging.error('Bad response from /users/self:')
+	logging.error(jsn)
+	return jsn
+
+    user = response.get('user')
+    if user is None:
+	logging.error('Bad response from /users/self:')
+	logging.error(jsn)
+	return jsn
+
+    firstname = user.get('firstName', '')
+    photo = user.get('photo', '')
+
+    venueName = ''
+    checkins = user.get('checkins')
+    if checkins is not None:
+	items = checkins.get('items')
+	if items is not None and len(items) > 0:
+	    venue = items[0].get('venue')
+	    if venue is not None:
+		venueName = venue.get('name', '')
+
+    self.response.out.write(
+	    '<p><img src="%s" style="float:left"> %s @ %s<br>Loc: %s'
+	    '<br style="clear:both">' 
+	    % (photo, escape(firstname), escape(venueName),
+		convcoords(lat, lon)))
+
+    return jsn
+
 class LoginHandler(webapp.RequestHandler):
     """
     Page that we show if the user is not logged in.
@@ -170,12 +335,17 @@ class LoginHandler2(webapp.RequestHandler):
 class MainHandler(webapp.RequestHandler):
     def get(self):
 	no_cache(self)
+	(lat, lon) = coords(self)
 
 	client = getclient(self)
 	if client is None:
 	    return
 
 	htmlbegin(self, "Main")
+
+	jsn = userheader(self, client, lat, lon)
+	if jsn is None:
+	    return
 
         self.response.out.write('<p>Hello world!')
 
@@ -224,6 +394,8 @@ class LogoutHandler(webapp.RequestHandler):
     def get(self):
 	# This page should be cached. So omit the no_cache() call.
 	self.del_cookie(TOKEN_COOKIE)
+	self.del_cookie(COORDS_COOKIE)
+	self.del_cookie(DEBUG_COOKIE)
 
 	htmlbegin(self, "Logout")
 	self.response.out.write('<p>You have been logged out')
