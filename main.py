@@ -278,13 +278,13 @@ def userheader(self, client, lat, lon, badges=0, mayor=0):
 
     response = jsn.get('response')
     if response is None:
-	logging.error('Bad response from /users/self:')
+	logging.error('Missing response from /users/self:')
 	logging.error(jsn)
 	return jsn
 
     user = response.get('user')
     if user is None:
-	logging.error('Bad response from /users/self:')
+	logging.error('Missing user from /users/self:')
 	logging.error(jsn)
 	return jsn
 
@@ -401,6 +401,302 @@ class LogoutHandler(webapp.RequestHandler):
 	self.response.out.write('<p>You have been logged out')
 	htmlend(self, nologout=True)
 
+def venue_cmds(venue, checkin_long=False):
+    """
+    Show checkin/moveto links in venue header.
+    """
+    s = '<a href="/checkin?vid=%s">[checkin]</a>' % venue['id']
+    if checkin_long:
+	s += ' <a href="/checkin_long?%s">[checkin with options]</a>' % \
+		escape(urllib.urlencode( { 
+		    'vid' : venue['id'], 
+		    'vname' : venue['name'] 
+		    } ))
+
+    location = venue.get('location')
+    if location is not None:
+	s += ' <a href="/coords?%s">[move to]</a>' % \
+		escape(urllib.urlencode( {
+		    'geolat' : location['lat'],
+		    'geolong' : location['lng'],
+		    } ))
+
+    # Link to venue page on Foursquare regular website.
+    s += ' <a href="http://foursquare.com/venue/%s">[web]</a>' % venue['id']
+    return s
+
+def addr_fmt(venue):
+    """
+    Format the address block of a venue.
+    """
+    s = ''
+
+    location = venue.get('location', {})
+
+    addr = location.get('address', '')
+    if addr != '':
+	s += escape(addr) + '<br>'
+
+    cross = location.get('crossStreet', '')
+    if cross != '':
+	s += '(%s)<br>' % escape(cross)
+
+    city = location.get('city', '')
+    state = location.get('state', '')
+    zip = location.get('postalCode', '')
+    country = location.get('country', '')
+    if city != '' or state != '' or zip != '' or country != '':
+	s += '%s, %s %s %s<br>' % (
+		escape(city), escape(state), escape(zip), escape(country))
+
+    contact = venue.get('contact', {})
+
+    phone = contact.get('phone', '')
+    if len(phone) > 6:
+	s += '(%s)%s-%s<br>' % (phone[0:3], phone[3:6], phone[6:])
+
+    twitter = contact.get('twitter', '')
+    if len(twitter) > 0:
+	s += '<a href="http://mobile.twitter.com/%s">@%s</a><br>' % (
+		urllib.quote(twitter), escape(twitter))
+    return s
+
+def category_fmt(cat):
+    path = ' / '.join(cat['parents'] + [ cat['name'] ])
+    return """
+<p><img src="%s" style="float:left">%s
+<br style="clear:both">
+""" % (cat['icon'], path)
+
+def google_map(lat, lon):
+    """
+    Static Google Map.
+    """
+    return """
+<p><img width="150" height="150" alt="[Google Map]"
+src="http://maps.google.com/maps/api/staticmap?%s">
+""" % escape(urllib.urlencode( {
+    'size' : '150x150', 
+    'format' : 'gif',
+    'sensor' : 'false',
+    'zoom' : '14',
+    'markers' : 'size:mid|color:blue|%s,%s' % (lat, lon),
+    } ))
+
+def fuzzy_delta(delta):
+    """
+    Returns a user-friendly version of timedelta.
+    """
+    if delta.days < 0:
+	return 'in the future?'
+    elif delta.days > 1:
+	return '%d days ago' % delta.days
+    elif delta.days == 1:
+	return '1 day ago'
+    else:
+	hours = int(delta.seconds / 60 / 60)
+	if hours > 1:
+	    return '%d hours ago' % hours
+	elif hours == 1:
+	    return '1 hour ago'
+	else:
+	    minutes = int(delta.seconds / 60)
+	    if minutes > 1:
+		return '%d minutes ago' % minutes
+	    elif minutes == 1:
+		return '1 minute ago'
+	    else:
+		if delta.seconds > 1:
+		    return '%d seconds ago' % delta.seconds
+		elif delta.seconds == 1:
+		    return '1 second ago'
+		else:
+		    return 'now'
+
+def venue_checkin_fmt(checkin, dnow):
+    """
+    Format the info about a user checked in at this venue.
+    """
+    s = ''
+    s += '<p><img src="%s" style="float:left">%s %s from %s' % (
+	    checkin['user']['photo'],
+	    escape(checkin['user'].get('firstName', '')),
+	    escape(checkin['user'].get('lastName', '')),
+	    escape(checkin['user'].get('homeCity', '')))
+
+    shout = checkin.get('shout')
+    if shout is not None:
+	s += '<br>"%s"' % escape(shout)
+
+    d1 = datetime.fromtimestamp(checkin['createdAt'])
+    s += '<br>%s' % fuzzy_delta(dnow - d1)
+
+    s += '<br style="clear:both">'
+    return s
+
+def vinfo_fmt(venue):
+    """
+    Format info on a venue.
+    """
+    s = ''
+
+    s += '<p>%s %s<br>%s' % (
+	    escape(venue['name']),
+	    venue_cmds(venue, checkin_long=True),
+	    addr_fmt(venue))
+
+    location = venue.get('location', {})
+    # Add static Google Map to the page.
+    s += google_map(location['lat'], location['lng'])
+
+    cats = venue.get('categories', [])
+    s += ''.join([category_fmt(c) for c in cats])
+
+    tags = venue.get('tags', [])
+    if len(tags) > 0:
+	s += '<p>Tags: %s' % escape(', '.join(tags))
+
+    stats = venue.get('stats')
+    if stats is not None:
+	s += """
+<p>Checkins: %s <br>Users: %s
+""" % (stats['checkinsCount'], stats['usersCount'])
+
+    beenhere = venue.get('beenHere')
+    if beenhere is not None:
+	s += """
+<br>Your checkins: %s
+""" % beenhere['count']
+
+    herenow = venue.get('hereNow')
+    if herenow is not None:
+	s += """
+<br>Here now: %s
+""" % herenow['count']
+
+    mayor = venue.get('mayor')
+    s += '<p>No mayor' if mayor is None else """
+<p><img src="%s" style="float:left">%s %s (%sx) 
+from %s is the mayor<br style="clear:both"> 
+""" % (mayor['user']['photo'], 
+	escape(mayor['user'].get('firstName', '')), 
+	escape(mayor['user'].get('lastName', '')), 
+	mayor['count'], 
+	escape(mayor['user'].get('homeCity', '')))
+
+    if herenow is not None:
+	if herenow['count'] > 0:
+	    s += '<p><b>Checked in here:</b>'
+	hngroups = herenow.get('groups', [])
+	dnow = datetime.utcnow()
+	for g in hngroups:
+	    items = g.get('items', [])
+	    s += ''.join(
+		    [venue_checkin_fmt(c, dnow) for c in items])
+
+    s += tips_fmt(venue.get('tips', []))
+    s += specials_fmt(venue.get('specials', []))
+    s += specials_fmt(venue.get('specialsNearby', []), nearby=True)
+    return s
+
+def get_prim_category(cats):
+    if cats is not None:
+	for c in cats:
+	    if c.get('primary', False):
+		return c
+    return None
+
+def special_fmt(special):
+    """
+    Format a venue special.
+    """
+    s = ''
+    venue = special.get('venue', {})
+
+    pcat = get_prim_category(venue['categories'])
+    if pcat is not None:
+	s += category_fmt(pcat)
+
+    s += '<p>%s (%s): %s / %s' % (
+	    escape(venue.get('name', '')), special['type'],
+	    escape(special.get('message', '')),
+	    escape(special.get('description', '')),
+	    )
+    return s
+
+
+def specials_fmt(specials, nearby=False):
+    """
+    Format venue specials.
+    """
+    return '' if len(specials) == 0 else '<p><b>Specials%s:</b>' % (
+	    ' nearby' if nearby else ''
+	    ) + ''.join(
+		    [special_fmt(x) for x in specials])
+
+def tip_fmt(tip):
+    """
+    Format a tip on the venue page.
+    """
+    return """
+<p><img src="%s" style="float:left">%s %s from %s says: 
+%s (Posted: %s)<br style="clear:both">
+""" % (tip['user']['photo'],
+	escape(tip['user'].get('firstName', '')),
+	escape(tip['user'].get('lastName', '')),
+	escape(tip['user'].get('homeCity', '')),
+	escape(tip['text']),
+	datetime.fromtimestamp(tip['createdAt']).ctime())
+
+def tips_fmt(tips):
+    """
+    Format a list of tips on the venue page.
+    """
+    s = ''
+    if tips['count'] > 0:
+	s += '<p><b>Tips:</b>'
+    for grp in tips['groups']:
+	s += ''.join([tip_fmt(t) for t in grp['items']])
+    return s
+
+class VInfoHandler(webapp.RequestHandler):
+    """
+    This handler displays info on one venue.
+    """
+    def get(self):
+	no_cache(self)
+
+	(lat, lon) = coords(self)
+	client = getclient(self)
+	if client is None:
+	    return
+
+	vid = self.request.get('vid')
+
+	jsn = call4sq(self, client, 'get', path='/venues/%s' % vid)
+	if jsn is None:
+	    return
+
+	htmlbegin(self, "Venue info")
+	userheader(self, client, lat, lon)
+
+	resp = jsn.get('response')
+	if resp is None:
+	    logging.error('Missing response from /venues:')
+	    logging.error(jsn)
+	    return jsn
+
+	venue = resp.get('venue')
+	if venue is None:
+	    logging.error('Missing venue from /venues:')
+	    logging.error(jsn)
+	    return jsn
+
+	self.response.out.write(vinfo_fmt(venue))
+
+	debug_json(self, jsn)
+	htmlend(self)
+
 def main():
     logging.getLogger().setLevel(logging.DEBUG)
     application = webapp.WSGIApplication([
@@ -409,9 +705,12 @@ def main():
 	('/login2', LoginHandler2),
 	('/oauth', OAuthHandler),
 	('/logout', LogoutHandler),
+	('/venue', VInfoHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
 
 if __name__ == '__main__':
     main()
+
+# vim:set tw=0:
