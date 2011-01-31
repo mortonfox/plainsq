@@ -73,8 +73,8 @@ def debug_json(self, jsn):
     """
     Pretty-print a JSON response.
     """
-    # if get_debug(self):
-    self.response.out.write('<pre>%s</pre>' % escape(pprint_to_str(jsn)))
+    if get_debug(self):
+	self.response.out.write('<pre>%s</pre>' % escape(pprint_to_str(jsn)))
 
 def set_debug(self, debug):
     """
@@ -306,7 +306,7 @@ def userheader(self, client, lat, lon, badges=0, mayor=0):
 	    % (photo, escape(firstname), escape(venueName),
 		convcoords(lat, lon)))
 
-    return jsn
+    return user
 
 class LoginHandler(webapp.RequestHandler):
     """
@@ -343,11 +343,18 @@ class MainHandler(webapp.RequestHandler):
 
 	htmlbegin(self, "Main")
 
-	jsn = userheader(self, client, lat, lon)
-	if jsn is None:
+	user = userheader(self, client, lat, lon)
+	if user is None:
 	    return
+	leaderboard = 'http://foursquare.com/iphone/me?uid=%s' \
+		% user['id']
 
-        self.response.out.write('<p>Hello world!')
+        self.response.out.write("""
+<p>
+4. <a href="/history" accesskey="4">History</a><br>
+7. <a href="%s" accesskey="7">Leaderboard</a><br>
+10. <a href="/debug" accesskey="0">Turn debugging %s</a><br>
+""" % (leaderboard, "off" if get_debug(self) else "on"))
 
 	htmlend(self)
 
@@ -697,6 +704,84 @@ class VInfoHandler(webapp.RequestHandler):
 	debug_json(self, jsn)
 	htmlend(self)
 
+def history_checkin_fmt(checkin, dnow):
+    """
+    Format an item from the check-in history.
+    """
+    s = ''
+
+    venue = checkin.get('venue')
+    if venue is not None:
+	id = venue.get('id')
+	# Orphaned venues will be missing the id field.
+	if id is None:
+	    s += '<p>%s<br>' % escape(venue['name'])
+	else:
+	    s += '<p><a href="/venue?vid=%s">%s</a> %s<br>%s' % (
+		    id, escape(venue['name']), venue_cmds(venue),
+		    addr_fmt(venue)
+		    )
+
+    shout = checkin.get('shout')
+    if shout is not None:
+	s += '"%s"<br>' % escape(shout)
+
+    d1 = datetime.fromtimestamp(checkin['createdAt'])
+    s += fuzzy_delta(dnow - d1)
+
+    return s
+
+class HistoryHandler(webapp.RequestHandler):
+    """
+    Handler for history command.
+    """
+    def get(self):
+	no_cache(self)
+
+	(lat, lon) = coords(self)
+	client = getclient(self)
+	if client is None:
+	    return
+
+	jsn = call4sq(self, client, 'get', path='/users/self/checkins',
+		params = { 'limit' : '50' })
+	if jsn is None:
+	    return
+
+	htmlbegin(self, "History")
+	userheader(self, client, lat, lon)
+
+	resp = jsn.get('response')
+	if resp is None:
+	    logging.error('Missing response from /users/checkins:')
+	    logging.error(jsn)
+	    return jsn
+
+	checkins = resp.get('checkins')
+	if checkins is None:
+	    logging.error('Missing checkins from /users/checkins:')
+	    logging.error(jsn)
+	    return jsn
+
+	if checkins['count'] == 0:
+	    self.response.out.write('<p>No check-ins?')
+	else:
+	    dnow = datetime.utcnow()
+	    self.response.out.write(''.join(
+		[history_checkin_fmt(c, dnow) for c in checkins['items']]))
+
+	debug_json(self, jsn)
+	htmlend(self)
+
+class DebugHandler(webapp.RequestHandler):
+    """
+    Handler for Debug command. Toggle debug mode.
+    """
+    def get(self):
+	debug = get_debug(self)
+	set_debug(self, (0 if debug else 1))
+	self.redirect('/')
+
 def main():
     logging.getLogger().setLevel(logging.DEBUG)
     application = webapp.WSGIApplication([
@@ -706,6 +791,8 @@ def main():
 	('/oauth', OAuthHandler),
 	('/logout', LogoutHandler),
 	('/venue', VInfoHandler),
+	('/history', HistoryHandler),
+	('/debug', DebugHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
