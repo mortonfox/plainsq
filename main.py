@@ -195,6 +195,7 @@ def htmlbegin(self, title):
 <title>PlainSq - %s</title>
 <style type="text/css">
 .error { color: red; background-color: white; }
+.grayed { color: #7f7f7f; background-color: white; }
 </style>
 </head>
 
@@ -353,6 +354,7 @@ class MainHandler(webapp.RequestHandler):
 <p>
 4. <a href="/history" accesskey="4">History</a><br>
 7. <a href="%s" accesskey="7">Leaderboard</a><br>
+8. <a href="/badges" accesskey="8">Badges</a><br>
 10. <a href="/debug" accesskey="0">Turn debugging %s</a><br>
 """ % (leaderboard, "off" if get_debug(self) else "on"))
 
@@ -417,7 +419,7 @@ def venue_cmds(venue, checkin_long=False):
 	s += ' <a href="/checkin_long?%s">[checkin with options]</a>' % \
 		escape(urllib.urlencode( { 
 		    'vid' : venue['id'], 
-		    'vname' : venue['name'] 
+		    'vname' : venue['name'].encode('utf-8') 
 		    } ))
 
     location = venue.get('location')
@@ -782,8 +784,84 @@ class DebugHandler(webapp.RequestHandler):
 	set_debug(self, (0 if debug else 1))
 	self.redirect('/')
 
+def badge_fmt(badge):
+    img = badge['image']
+    iconurl = img['prefix'] + str(img['sizes'][0]) + img['name']
+
+    unlockstr = ''
+    unlocks = badge['unlocks']
+    if len(unlocks) > 0:
+	checkins = unlocks[0]['checkins']
+	if len(checkins) > 0:
+	    venue = checkins[0].get('venue')
+	    if venue is not None:
+		location = venue['location']
+		city = location.get('city', '')
+		state = location.get('state', '')
+		locstr = ''
+		if city != '' or state != '':
+		    locstr = ' in %s %s' % (city, state)
+		unlockstr = """
+Unlocked at <a href="/venue?vid=%s">%s</a>%s on %s.
+""" % (
+	venue['id'], venue['name'], locstr, 
+	datetime.fromtimestamp(checkins[0]['createdAt']).ctime())
+
+    desc = badge.get('description')
+    if desc is None:
+	desc = badge.get('hint', '')
+
+    if unlockstr == '':
+	text = '<span class="grayed">%s<br>%s</span>' % (badge['name'], desc)
+    else:
+	text = '%s<br>%s<br>%s' % (badge['name'], desc, unlockstr)
+
+    return """
+<p><img src="%s" style="float:left"> %s<br style="clear:both">
+""" % (iconurl, text)
+
+class BadgesHandler(webapp.RequestHandler):
+    """
+    Handler for badges command.
+    """
+    def get(self):
+	no_cache(self)
+
+	(lat, lon) = coords(self)
+	client = getclient(self)
+	if client is None:
+	    return
+
+	jsn = call4sq(self, client, 'get', path='/users/self/badges')
+	if jsn is None:
+	    return
+
+	htmlbegin(self, "Badges")
+	userheader(self, client, lat, lon, badges=1)
+
+	resp = jsn.get('response')
+	if resp is None:
+	    logging.error('Missing response from /users/badges:')
+	    logging.error(jsn)
+	    return jsn
+
+	badges = resp.get('badges')
+	if badges is None:
+	    logging.error('Missing badges from /users/badges:')
+	    logging.error(jsn)
+	    return jsn
+
+	if len(badges) == 0:
+	    self.response.out.write('<p>No badges yet.')
+	else:
+	    self.response.out.write(''.join([
+		badge_fmt(b) for b in badges.values()]))
+
+	debug_json(self, jsn)
+	htmlend(self)
+
 def main():
-    logging.getLogger().setLevel(logging.DEBUG)
+    # logging.getLogger().setLevel(logging.DEBUG)
     application = webapp.WSGIApplication([
 	('/', MainHandler),
 	('/login', LoginHandler),
@@ -793,6 +871,7 @@ def main():
 	('/venue', VInfoHandler),
 	('/history', HistoryHandler),
 	('/debug', DebugHandler),
+	('/badges', BadgesHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
