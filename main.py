@@ -35,6 +35,8 @@ DEFAULT_LON = '-75.6'
 COORDS_COOKIE = 'plainsq_coords'
 DEBUG_COOKIE = 'plainsq_debug'
 
+METERS_PER_MILE = 1609.344
+
 USER_AGENT = 'plainsq:0.0.1 20110129'
 
 # In development environment, use local callback.
@@ -353,6 +355,7 @@ class MainHandler(webapp.RequestHandler):
         self.response.out.write("""
 <p>
 4. <a href="/history" accesskey="4">History</a><br>
+5. <a href="/friends" accesskey="5">Find friends</a><br>
 7. <a href="%s" accesskey="7">Leaderboard</a><br>
 8. <a href="/badges" accesskey="8">Badges</a><br>
 9. <a href="/mayor" accesskey="9">Mayorships</a><br>
@@ -896,6 +899,121 @@ class MayorHandler(webapp.RequestHandler):
 	debug_json(self, user)
 	htmlend(self)
 
+def bearing(lat, lon, vlat, vlon):
+    """
+    Compute compass direction from (lat, lon) to (vlat, vlon)
+    """
+    dlon = radians(float(vlon) - float(lon))
+    lat1 = radians(float(lat))
+    lat2 = radians(float(vlat))
+
+    y = sin(dlon) * cos(lat2)
+    x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dlon)
+    brng = degrees(atan2(y, x))
+
+    compass = [ 'S', 'SW', 'W', 'NW', 'N', 'NE', 'E', 'SE', 'S' ]
+    return compass[int((brng + 180 + 22.5) / 45)]
+
+def friend_checkin_fmt(checkin, lat, lon, dnow):
+    """
+    Format checkin record from one friend.
+    """
+    s = '<p>'
+
+    venue = checkin.get('venue')
+    user = checkin.get('user')
+
+    if venue is not None:
+	s += '<a href="/venue?vid=%s">%s %s @ %s</a><br>' % (
+		venue.get('id'),
+		user.get('firstName', ''),
+		user.get('lastName', ''),
+		venue.get('name', ''))
+
+    shout = checkin.get('shout')
+    if shout is not None:
+	if venue is None:
+	    s += '%s %s: ' % (
+		user.get('firstName', ''),
+		user.get('lastName', ''))
+	s += '"%s"<br>' % escape(shout)
+
+    dist = checkin.get('distance')
+    if dist is not None:
+	dist = float(dist) / METERS_PER_MILE
+
+    if venue is not None:
+	s += addr_fmt(venue)
+
+	location = venue.get('location')
+	if location is not None:
+	    geolat = location.get('lat')
+	    geolong = location.get('lng')
+	
+	if geolat is None or geolong is None:
+	    compass = ''
+	else:
+	    compass = bearing(lat, lon, geolat, geolong)
+
+	if dist is not None:
+	    s += '(%.1f mi %s)<br>' % (dist, compass)
+    else:
+	if dist is not None:
+	    s += '(%.1f mi)<br>' % dist
+
+    d1 = datetime.fromtimestamp(checkin['createdAt'])
+    s += fuzzy_delta(dnow - d1)
+
+    return s
+
+class FriendsHandler(webapp.RequestHandler):
+    """
+    Handler for Find Friends command.
+    """
+    def get(self):
+	no_cache(self)
+
+	(lat, lon) = coords(self)
+	client = getclient(self)
+	if client is None:
+	    return
+
+	jsn = call4sq(self, client, 'get', path='/checkins/recent',
+		params = { 'll':'%s,%s' % (lat,lon), 'limit':100 })
+	if jsn is None:
+	    return
+
+	htmlbegin(self, "Find Friends")
+	userheader(self, client, lat, lon)
+
+	response = jsn.get('response')
+	if response is None:
+	    logging.error('Missing response from /checkins/recent:')
+	    logging.error(jsn)
+	    return jsn
+
+	recent = response.get('recent')
+	if recent is None:
+	    logging.error('Missing recent from /checkins/recent:')
+	    logging.error(jsn)
+	    return jsn
+
+	dnow = datetime.utcnow()
+
+	# Sort checkins by distance. If distance is missing,
+	# use a very large value.
+	recent.sort(key = lambda v: v.get('distance', '1000000'))
+
+	if len(recent) == 0:
+	    self.response.out.write('<p>No friends?')
+	else:
+	    self.response.out.write(
+		''.join(
+		    [friend_checkin_fmt(c, lat, lon, dnow) for c in recent]))
+
+	debug_json(self, jsn)
+	htmlend(self)
+
 def main():
     # logging.getLogger().setLevel(logging.DEBUG)
     application = webapp.WSGIApplication([
@@ -909,6 +1027,7 @@ def main():
 	('/debug', DebugHandler),
 	('/badges', BadgesHandler),
 	('/mayor', MayorHandler),
+	('/friends', FriendsHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
