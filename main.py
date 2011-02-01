@@ -355,6 +355,7 @@ class MainHandler(webapp.RequestHandler):
 4. <a href="/history" accesskey="4">History</a><br>
 7. <a href="%s" accesskey="7">Leaderboard</a><br>
 8. <a href="/badges" accesskey="8">Badges</a><br>
+9. <a href="/mayor" accesskey="9">Mayorships</a><br>
 10. <a href="/debug" accesskey="0">Turn debugging %s</a><br>
 """ % (leaderboard, "off" if get_debug(self) else "on"))
 
@@ -860,6 +861,41 @@ class BadgesHandler(webapp.RequestHandler):
 	debug_json(self, jsn)
 	htmlend(self)
 
+def mayor_venue_fmt(venue):
+    return '<li><a href="/venue?vid=%s">%s</a> %s<br>%s' % (
+	    venue['id'], escape(venue['name']), venue_cmds(venue),
+	    addr_fmt(venue))
+
+class MayorHandler(webapp.RequestHandler):
+    """
+    Handler for mayor command.
+    """
+    def get(self):
+	no_cache(self)
+
+	(lat, lon) = coords(self)
+	client = getclient(self)
+	if client is None:
+	    return
+
+	htmlbegin(self, "Mayorships")
+
+	user = userheader(self, client, lat, lon, mayor=1)
+	if user is None:
+	    return
+
+	mayorships = user.get('mayorships', {})
+	count = mayorships.get('count', 0)
+	if count == 0:
+	    self.response.out.write('<p>No mayorships yet.')
+	else:
+	    self.response.out.write(
+		'<ol style="padding: 0 0 0 1.5em">%s</ol>' % 
+		''.join([mayor_venue_fmt(v) for v in mayorships['items']]))
+
+	debug_json(self, user)
+	htmlend(self)
+
 def main():
     # logging.getLogger().setLevel(logging.DEBUG)
     application = webapp.WSGIApplication([
@@ -872,6 +908,7 @@ def main():
 	('/history', HistoryHandler),
 	('/debug', DebugHandler),
 	('/badges', BadgesHandler),
+	('/mayor', MayorHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
