@@ -588,14 +588,20 @@ def vinfo_fmt(venue):
 """ % herenow['count']
 
     mayor = venue.get('mayor')
-    s += '<p>No mayor' if mayor is None else """
+    if mayor is not None:
+	user = mayor.get('user')
+
+    if user is None:
+	s += '<p>No mayor'
+    else:
+	s += """
 <p><img src="%s" style="float:left">%s %s (%sx) 
 from %s is the mayor<br style="clear:both"> 
-""" % (mayor['user']['photo'], 
-	escape(mayor['user'].get('firstName', '')), 
-	escape(mayor['user'].get('lastName', '')), 
+""" % (user['photo'], 
+	escape(user.get('firstName', '')), 
+	escape(user.get('lastName', '')), 
 	mayor['count'], 
-	escape(mayor['user'].get('homeCity', '')))
+	escape(user.get('homeCity', '')))
 
     if herenow is not None:
 	if herenow['count'] > 0:
