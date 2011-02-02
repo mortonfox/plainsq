@@ -1505,6 +1505,34 @@ else {
 
 	htmlend(self)
 
+class PurgeHandler(webapp.RequestHandler):
+    """
+    Purge old database entries from CoordsTable and AuthToken.
+    """
+    def get(self):
+	no_cache(self)
+
+	cutoffdate = (date.today() - timedelta(days=30)).isoformat()
+	creatclause = "WHERE created < DATE('%s')" % cutoffdate
+
+	htmlbegin(self, 'Purge old database entries')
+
+	query = AccessToken.gql(creatclause)
+	count = 0
+	for result in query:
+	    result.delete()
+	    count += 1
+	self.response.out.write('<p>Deleted %d old entries from AccessToken table' % count)
+
+	query = CoordsTable.gql(creatclause)
+	count = 0
+	for result in query:
+	    result.delete()
+	    count += 1
+	self.response.out.write('<p>Deleted %d old entries from CoordsTable table' % count)
+
+	htmlend(self)
+
 def main():
     # logging.getLogger().setLevel(logging.DEBUG)
     application = webapp.WSGIApplication([
@@ -1526,6 +1554,7 @@ def main():
 	('/addvenue', AddVenueHandler),
 	('/about', AboutHandler),
 	('/geoloc', GeoLocHandler),
+	('/purge', PurgeHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
