@@ -57,9 +57,17 @@ class Client:
 	if params is None:
 	    params = {}
 	params['oauth_token'] = self.getAccessToken()
+
+	# UTF-8 encode all parameters.
+	_params = {}
+	for k, v in params.iteritems():
+	    _params[str(k).encode('utf-8')] =  str(v).encode('utf-8')
+	params = _params
+
 	data = urllib.urlencode(params)
+
 	if method == self.POST:
-	    req = urllib2.Request(url, data)
+	    req = urllib2.Request('%s/%s' % (self.api_url, path), data)
 	else:
 	    req = urllib2.Request("%s/%s?%s" % (self.api_url, path, data))
 	resp = urllib2.urlopen(req)

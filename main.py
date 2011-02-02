@@ -354,11 +354,27 @@ class MainHandler(webapp.RequestHandler):
 
         self.response.out.write("""
 <p>
+
+2. <a href="/venues" accesskey="2">Nearest Venues</a><br>
+
+<form style="margin:0; padding:0" action="/venues" method="get">
+3. Search Venues: <input type="text" name="query" size="8"
+accesskey="3"><input type="submit" value="Search"></form>
+
 4. <a href="/history" accesskey="4">History</a><br>
+
 5. <a href="/friends" accesskey="5">Find friends</a><br>
+
+<form style="margin:0; padding:0" action="/shout" method="get">
+6. Shout: <input type="text" name="message" size="8" accesskey="6">
+<input type="submit" value="Shout"></form>
+
 7. <a href="%s" accesskey="7">Leaderboard</a><br>
+
 8. <a href="/badges" accesskey="8">Badges</a><br>
+
 9. <a href="/mayor" accesskey="9">Mayorships</a><br>
+
 10. <a href="/debug" accesskey="0">Turn debugging %s</a><br>
 """ % (leaderboard, "off" if get_debug(self) else "on"))
 
@@ -423,7 +439,7 @@ def venue_cmds(venue, checkin_long=False):
 	s += ' <a href="/checkin_long?%s">[checkin with options]</a>' % \
 		escape(urllib.urlencode( { 
 		    'vid' : venue['id'], 
-		    'vname' : venue['name'].encode('utf-8') 
+		    'vname' : venue['name']
 		    } ))
 
     location = venue.get('location')
@@ -1020,6 +1036,147 @@ class FriendsHandler(webapp.RequestHandler):
 	debug_json(self, jsn)
 	htmlend(self)
 
+class ShoutHandler(webapp.RequestHandler):
+    """
+    This handles user shouts.
+    """
+    def put(self):
+	self.get()
+
+    def get(self):
+	no_cache(self)
+	(lat, lon) = coords(self)
+
+	client = getclient(self)
+	if client is None:
+	    return
+
+	message = self.request.get('message')
+
+	jsn = call4sq(self, client, 'post', path='/checkins/add',
+		params = {
+		    "shout" : message,
+		    "ll" : '%s,%s' % (lat, lon),
+		    "broadcast" : "public",
+		    })
+	if jsn is None:
+	    return
+
+	htmlbegin(self, "Shout")
+	userheader(self, client, lat, lon)
+
+	notif = jsn.get('notifications')
+	if notif is None:
+	    logging.error('Missing notifications from /checkins/add:')
+	    logging.error(jsn)
+	    return jsn
+
+	self.response.out.write('<p>%s' % escape(notif[0]['item']['message']))
+
+	debug_json(self, jsn)
+	htmlend(self)
+
+def venue_fmt(venue, lat, lon):
+    """
+    Format a venue in the venue search page.
+    """
+    s = ''
+
+    s += '<p><a href="/venue?vid=%s">%s</a> %s<br>%s' % (
+	    venue['id'], escape(venue['name']), 
+	    venue_cmds(venue), addr_fmt(venue))
+
+    # Show distance and bearing from current coordinates.
+    dist = venue.get('distance')
+    if dist is not None:
+	dist = float(dist) / METERS_PER_MILE
+	compass = bearing(lat, lon, 
+		venue['location']['lat'], venue['location']['lng'])
+	s += '(%.1f mi %s)<br>' % (dist, compass)
+
+    return s
+
+def venues_fmt(jsn, lat, lon):
+    """
+    Format a list of venues in the venue search page.
+    """
+
+    groups = jsn.get('groups')
+    if groups is None:
+	return 'No matching venues found.'
+
+    # Venues may be split across groups so collect them all in one list.
+    venues = []
+    for group in groups:
+	venues.extend(group['items'])
+
+    venues = remove_dup_vids(venues)
+
+    # Sort venues ascending by distance. If distance field is missing,
+    # use a very large value.
+    venues.sort(key = lambda v: v['location'].get('distance', '1000000'))
+
+    return ''.join([venue_fmt(v, lat, lon) for v in venues])
+
+def remove_dup_vids(venues):
+    """
+    Return a new list of venues with all duplicate entries removed.
+    """
+    vids = []
+    newvenues = []
+    for v in venues:
+	id = v['id']
+	if id not in vids:
+	    vids.append(id)
+	    newvenues.append(v)
+    return newvenues
+
+class VenuesHandler(webapp.RequestHandler):
+    """
+    Handler for venue search.
+    """
+    def post(self):
+	self.get()
+
+    def get(self):
+	no_cache(self)
+
+	(lat, lon) = coords(self)
+	client = getclient(self)
+	if client is None:
+	    return
+
+	# query is an optional keyword search parameter. If it is not present,
+	# then just do a nearest venues search.
+	query = self.request.get('query')
+
+	parms = { "ll" : '%s,%s' % (lat, lon), "limit" : 50 }
+	if query != '':
+	    parms['query'] = query
+
+	jsn = call4sq(self, client, 'get', path='/venues/search',
+		params = parms)
+	if jsn is None:
+	    return
+
+	htmlbegin(self, "Venue search")
+	userheader(self, client, lat, lon)
+
+	response = jsn.get('response')
+	if response is None:
+	    logging.error('Missing response from /venues/search:')
+	    logging.error(jsn)
+	    return jsn
+
+	self.response.out.write("""
+<form style="margin:0; padding:0" action="/addvenue" method="get"><p>
+Add venue here and check in: <input type="text" name="vname" size="15"><input type="submit" value="Add Venue"></p></form>
+
+<p>""" + venues_fmt(response, lat, lon))
+
+	debug_json(self, jsn)
+	htmlend(self)
+
 def main():
     # logging.getLogger().setLevel(logging.DEBUG)
     application = webapp.WSGIApplication([
@@ -1034,6 +1191,8 @@ def main():
 	('/badges', BadgesHandler),
 	('/mayor', MayorHandler),
 	('/friends', FriendsHandler),
+	('/shout', ShoutHandler),
+	('/venues', VenuesHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
