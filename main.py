@@ -57,10 +57,15 @@ METERS_PER_MILE = 1609.344
 
 USER_AGENT = 'plainsq:0.0.1 20110129'
 
-# In development environment, use local callback.
 CALLBACK_URL = 'https://plainsq.appspot.com/oauth'
+
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
+    # In development environment, use local callback.
+    # Also need to use a different consumer because Foursquare
+    # checks the callback URL.
     CALLBACK_URL = 'http://localhost:8081/oauth'
+    CLIENT_ID = '313XKCMSSWSWHW2PRZX231LBRIGB4OFCESREW5T1E2Z5MBPR'
+    CLIENT_SECRET = 'P4AFGZNDXIU5MCBWMOUTZLHCHYWDC5RFOEYP3I2EZAP3SNIO'
 
 def escape(s):
     return cgi.escape(s, quote = True)
