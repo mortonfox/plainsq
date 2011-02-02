@@ -782,7 +782,7 @@ def history_checkin_fmt(checkin, dnow):
     else:
 	location = checkin.get('location')
 	if location is not None:
-	    s += '<p>%s (venueless)<br>' % location['name']
+	    s += '<p>%s (venueless)<br>' % location.get('name', '')
 
     shout = checkin.get('shout')
     if shout is not None:
@@ -1533,6 +1533,146 @@ class PurgeHandler(webapp.RequestHandler):
 
 	htmlend(self)
 
+class CheckinLong2Handler(webapp.RequestHandler):
+    """
+    Continuation of CheckinLongHandler after the user submits the
+    checkin form with options.
+    """
+    def put(self):
+	self.get()
+
+    def get(self):
+	no_cache(self)
+
+	(lat, lon) = coords(self)
+	client = getclient(self)
+	if client is None:
+	    return
+
+	vid = self.request.get('vid')
+	shout = self.request.get('shout')
+	private = int(self.request.get('private'))
+	twitter = int(self.request.get('twitter'))
+	facebook = int(self.request.get('facebook'))
+
+	broadstrs = []
+	if not private:
+	    broadstrs += 'public'
+	if twitter:
+	    broadstrs += 'twitter'
+	if facebook:
+	    broadstrs += 'facebook'
+
+	jsn = call4sq(self, client, 'post', path='/checkins/add',
+		params = {
+		    'venueId' : vid,
+		    'shout' : shout,
+		    'broadcast' : ','.join(broadstrs),
+		    })
+	if jsn is None:
+	    return
+
+	htmlbegin(self, "Check in")
+	userheader(self, client, lat, lon)
+
+	response = jsn.get('response')
+	if response is None:
+	    logging.error('Missing response from /checkins/add:')
+	    logging.error(jsn)
+	    return jsn
+
+	checkin = response.get('checkin')
+	if checkin is None:
+	    logging.error('Missing checkin from /checkins/add:')
+	    logging.error(jsn)
+	    return jsn
+
+	notif = jsn.get('notifications')
+	if notif is None:
+	    logging.error('Missing notifications from /checkins/add:')
+	    logging.error(jsn)
+	    return jsn
+
+	self.response.out.write(checkin_fmt(checkin, notif))
+
+	debug_json(self, jsn)
+	htmlend(self)
+
+class CheckinLongHandler(webapp.RequestHandler):
+    """
+    This handles user checkin with options.
+    """
+    def get(self):
+	no_cache(self)
+
+	(lat, lon) = coords(self)
+	client = getclient(self)
+	if client is None:
+	    return
+
+	vid = self.request.get('vid')
+	vname = self.request.get('vname')
+
+	jsn = call4sq(self, client, 'get', '/settings/all')
+	if jsn is None:
+	    return
+
+	htmlbegin(self, "Check in")
+	userheader(self, client, lat, lon)
+
+	response = jsn.get('response')
+	if response is None:
+	    logging.error('Missing response from /settings/all:')
+	    logging.error(jsn)
+	    return jsn
+
+	settings = response.get('settings')
+	if settings is None:
+	    logging.error('Missing settings from /settings/all:')
+	    logging.error(jsn)
+	    return jsn
+
+	private = 1
+	twitter = 0
+	facebook = 0
+
+	if settings['receivePings']:
+	    private = 0
+	if settings['sendToTwitter']:
+	    twitter = 1
+	if settings['sendToFacebook']:
+	    facebook = 1
+
+	self.response.out.write('<p>Check in @ %s' % escape(vname))
+
+	sel = 'selected="selected"'
+
+	self.response.out.write("""
+<form action="/checkin_long2" method="get">
+Shout (optional): <input type="text" name="shout" size="15"><br>
+<input type="hidden" value="%s" name="vid">
+<input type="submit" value="check-in"><br>
+<select name="private">
+<option value="1" %s>Don't show your friends</option>
+<option value="0" %s>Show your friends</option>
+</select><br>
+<select name="twitter">
+<option value="0" %s>Don't send to Twitter</option>
+<option value="1" %s>Send to Twitter</option>
+</select><br>
+<select name="facebook">
+<option value="0" %s>Don't send to Facebook</option>
+<option value="1" %s>Send to Facebook</option>
+</select><br>
+</form>
+"""
+	    % ( escape(vid), private and sel, private or sel,
+		twitter or sel, twitter and sel,
+		facebook or sel, facebook and sel ))
+
+	debug_json(self, jsn)
+	htmlend(self)
+
 def main():
     # logging.getLogger().setLevel(logging.DEBUG)
     application = webapp.WSGIApplication([
@@ -1555,6 +1695,8 @@ def main():
 	('/about', AboutHandler),
 	('/geoloc', GeoLocHandler),
 	('/purge', PurgeHandler),
+	('/checkin_long', CheckinLongHandler),
+	('/checkin_long2', CheckinLong2Handler),
 	], debug=True)
     util.run_wsgi_app(application)
 
