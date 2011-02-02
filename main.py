@@ -759,6 +759,10 @@ def history_checkin_fmt(checkin, dnow):
 		    id, escape(venue['name']), venue_cmds(venue),
 		    addr_fmt(venue)
 		    )
+    else:
+	location = checkin.get('location')
+	if location is not None:
+	    s += '<p>%s (venueless)<br>' % location['name']
 
     shout = checkin.get('shout')
     if shout is not None:
@@ -1373,6 +1377,43 @@ class CheckinHandler(webapp.RequestHandler):
 
 	do_checkin(self, client, vid)
 
+class AddVenueHandler(webapp.RequestHandler):
+    """
+    Add a venue at the current coordinates with no address information.
+    """
+    # This is technically not idempotent but allow both methods anyway.
+    def get(self):
+	self.post()
+
+    def post(self):
+	no_cache(self)
+
+	(lat, lon) = coords(self)
+	client = getclient(self)
+	if client is None:
+	    return
+
+	vname = self.request.get('vname')
+
+	jsn = call4sq(self, client, 'post', path='/venues/add',
+		params = {"name" : vname, "ll" : '%s,%s' % (lat, lon)})
+	if jsn is None:
+	    return
+
+	response = jsn.get('response')
+	if response is None:
+	    logging.error('Missing response from /venues/add:')
+	    logging.error(jsn)
+	    return jsn
+
+	venue = response.get('venue')
+	if venue is None:
+	    logging.error('Missing venue from /venues/add:')
+	    logging.error(jsn)
+	    return jsn
+
+	do_checkin(self, client, venue['id'])
+
 def main():
     # logging.getLogger().setLevel(logging.DEBUG)
     application = webapp.WSGIApplication([
@@ -1391,6 +1432,7 @@ def main():
 	('/venues', VenuesHandler),
 	('/coords', CoordsHandler),
 	('/checkin', CheckinHandler),
+	('/addvenue', AddVenueHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
