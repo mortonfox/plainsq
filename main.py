@@ -1260,6 +1260,119 @@ class CoordsHandler(webapp.RequestHandler):
 
 	htmlend(self)
 
+def checkin_badge_fmt(badge):
+    img = badge['image']
+    iconurl = img['prefix'] + str(img['sizes'][0]) + img['name']
+
+    return """
+<p><img src="%s" style="float:left">
+You've unlocked the %s badge: 
+%s<br style="clear:both">
+""" % (iconurl, badge['name'], badge['description'])
+
+def checkin_score_fmt(score):
+    return """
+<p><img src="http://foursquare.com%s" style="float:left">
+%s points: %s<br style="clear:both">
+""" % (score['icon'], score['points'], score['message'])
+
+def find_notifs(notif, ntype):
+    return [n['item'] for n in notif if n['type'] == ntype]
+
+def checkin_fmt(checkin, notif):
+    """
+    Format checkin messages.
+    """
+    msgs = find_notifs(notif, 'message')
+    if len(msgs) > 0:
+	s = '<p>%s' % escape(msgs[0]['message'])
+
+    venue = checkin.get('venue')
+    if venue is not None:
+	s += '<p><a href="/venue?vid=%s">%s</a><br>%s' % ( 
+		venue['id'], escape(venue['name']), addr_fmt(venue))
+
+	# Add static Google Map to the page.
+	s += google_map(venue['location']['lat'], venue['location']['lng'])
+
+	pcat = get_prim_category(venue['categories'])
+	if pcat is not None:
+	    s += category_fmt(pcat)
+
+    mayor = None
+    mayors = find_notifs(notif, 'mayorship')
+    if len(mayors) > 0:
+	mayor = mayors[0]
+
+    if mayor is not None:
+	user = mayor.get('user')
+	msg = escape(mayor['message'])
+	s += '<p>%s' % msg if user is None else """
+<p><img src="%s" style="float:left">%s<br style="clear:both">
+""" % (user['photo'], msg)
+    
+    badges = find_notifs(notif, 'badge')
+    s += ''.join([checkin_badge_fmt(b) for b in badges])
+
+    scores = find_notifs(notif, 'score')
+    if len(scores) > 0:
+	s += ''.join([checkin_score_fmt(score) 
+	    for score in scores[0]['scores']])
+    
+    return s
+
+def do_checkin(self, client, vid):
+    (lat, lon) = coords(self)
+
+    jsn = call4sq(self, client, 'post', path='/checkins/add',
+	    params = {
+		"venueId" : vid,
+		"broadcast" : "public",
+		})
+    if jsn is None:
+	return
+
+    htmlbegin(self, "Check in")
+    userheader(self, client, lat, lon)
+
+    response = jsn.get('response')
+    if response is None:
+	logging.error('Missing response from /checkins/add:')
+	logging.error(jsn)
+	return jsn
+
+    checkin = response.get('checkin')
+    if checkin is None:
+	logging.error('Missing checkin from /checkins/add:')
+	logging.error(jsn)
+	return jsn
+
+    notif = jsn.get('notifications')
+    if notif is None:
+	logging.error('Missing notifications from /checkins/add:')
+	logging.error(jsn)
+	return jsn
+
+    self.response.out.write(checkin_fmt(checkin, notif))
+
+    debug_json(self, jsn)
+    htmlend(self)
+
+class CheckinHandler(webapp.RequestHandler):
+    """
+    This handles user checkins by venue ID.
+    """
+    def get(self):
+	no_cache(self)
+
+	client = getclient(self)
+	if client is None:
+	    return
+
+	vid = self.request.get('vid')
+
+	do_checkin(self, client, vid)
+
 def main():
     # logging.getLogger().setLevel(logging.DEBUG)
     application = webapp.WSGIApplication([
@@ -1277,6 +1390,7 @@ def main():
 	('/shout', ShoutHandler),
 	('/venues', VenuesHandler),
 	('/coords', CoordsHandler),
+	('/checkin', CheckinHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
