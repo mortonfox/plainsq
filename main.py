@@ -13,7 +13,7 @@ check-ins by phones that do not have GPS.
 Version: 0.0.1
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
-Created: January 31, 2011
+Created: January 28, 2011
 Last updated: February 2, 2011
 </pre>
 """
@@ -21,7 +21,6 @@ Last updated: February 2, 2011
 
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import util
-from google.appengine.api import memcache
 from google.appengine.ext import db
 from google.appengine.api.urlfetch import DownloadError 
 from django.utils import simplejson
