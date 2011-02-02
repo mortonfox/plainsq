@@ -764,6 +764,22 @@ class VInfoHandler(webapp.RequestHandler):
 	debug_json(self, jsn)
 	htmlend(self)
 
+def comments_cmd(checkin):
+    comments = checkin.get('comments')
+    if comments is None:
+	count = 0
+    else:
+	count = comments.get('count', 0)
+
+    if count == 0:
+	cstr = 'No comments'
+    elif count == 1:
+	cstr = '1 comment'
+    else:
+	cstr = '%s comments' % count
+
+    return '<a href="/comments?chkid=%s">[%s]</a>' % (checkin['id'], cstr)
+
 def history_checkin_fmt(checkin, dnow):
     """
     Format an item from the check-in history.
@@ -789,6 +805,8 @@ def history_checkin_fmt(checkin, dnow):
     shout = checkin.get('shout')
     if shout is not None:
 	s += '"%s"<br>' % escape(shout)
+
+    s += '%s<br>' % comments_cmd(checkin)
 
     d1 = datetime.fromtimestamp(checkin['createdAt'])
     s += fuzzy_delta(dnow - d1)
@@ -986,7 +1004,8 @@ def friend_checkin_fmt(checkin, lat, lon, dnow):
 		venue.get('id'),
 		user.get('firstName', ''),
 		user.get('lastName', ''),
-		venue.get('name', ''))
+		venue.get('name', ''),
+		)
 
     shout = checkin.get('shout')
     if shout is not None:
@@ -995,6 +1014,8 @@ def friend_checkin_fmt(checkin, lat, lon, dnow):
 		user.get('firstName', ''),
 		user.get('lastName', ''))
 	s += '"%s"<br>' % escape(shout)
+
+    s += '%s<br>' % comments_cmd(checkin)
 
     dist = checkin.get('distance')
     if dist is not None:
@@ -1695,7 +1716,7 @@ class SpecialsHandler(webapp.RequestHandler):
 	if jsn is None:
 	    return
 
-	htmlbegin(self, "Check in")
+	htmlbegin(self, "Specials")
 	userheader(self, client, lat, lon)
 
 	response = jsn.get('response')
@@ -1717,6 +1738,62 @@ class SpecialsHandler(webapp.RequestHandler):
 
 	debug_json(self, jsn)
 	htmlend(self)
+
+class CommentsHandler(webapp.RequestHandler):
+    """
+    View comments on a check-in.
+    """
+    def get(self):
+	no_cache(self)
+
+	(lat, lon) = coords(self)
+	client = getclient(self)
+	if client is None:
+	    return
+
+	checkin_id = self.request.get('chkid')
+
+	jsn = call4sq(self, client, 'get', '/checkins/%s' % escape(checkin_id))
+	if jsn is None:
+	    return
+
+	htmlbegin(self, "Checkin Comments")
+	userheader(self, client, lat, lon)
+
+	response = jsn.get('response')
+	if response is None:
+	    logging.error('Missing response from /checkins:')
+	    logging.error(jsn)
+	    return jsn
+
+	checkin = response.get('checkin')
+	if checkin is None:
+	    logging.error('Missing checkin from /checkins:')
+	    logging.error(jsn)
+	    return jsn
+
+	self.response.out.write(checkin_comments_fmt(checkin))
+
+	debug_json(self, jsn)
+	htmlend(self)
+
+def comment_fmt(comment, dnow):
+    return '<p><img src="%s" style="float:left"> %s %s: %s (%s)<br style="clear:both">' % (
+	    comment['user'].get('photo', ''),
+	    comment['user']['firstName'],
+	    comment['user']['lastName'],
+	    comment['text'],
+	    fuzzy_delta(dnow - datetime.fromtimestamp(comment['createdAt'])))
+
+def checkin_comments_fmt(checkin):
+    s = ''
+    dnow = datetime.utcnow()
+    s += history_checkin_fmt(checkin, dnow)
+    if checkin['comments']['count'] == 0:
+	s += '<p>No comments.'
+    else:
+	s += ''.join([comment_fmt(c, dnow) for c in checkin['comments']['items']])
+    return s
 
 def main():
     # logging.getLogger().setLevel(logging.DEBUG)
@@ -1743,6 +1820,7 @@ def main():
 	('/checkin_long', CheckinLongHandler),
 	('/checkin_long2', CheckinLong2Handler),
 	('/specials', SpecialsHandler),
+	('/comments', CommentsHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
