@@ -399,7 +399,9 @@ accesskey="3"><input type="submit" value="Search"></form>
 
 10. <a href="/debug" accesskey="0">Turn debugging %s</a><br>
 
-11. <a href="/geoloc">Detect location</a><br>
+11. <a href="/specials">Specials</a><br>
+
+12. <a href="/geoloc">Detect location</a><br>
 
 <p>Enter coordinates as a series of digits, e.g.:
 <br>
@@ -1673,6 +1675,49 @@ Shout (optional): <input type="text" name="shout" size="15"><br>
 	debug_json(self, jsn)
 	htmlend(self)
 
+class SpecialsHandler(webapp.RequestHandler):
+    """
+    Retrieves a list of nearby specials.
+    """
+    def get(self):
+	no_cache(self)
+
+	(lat, lon) = coords(self)
+	client = getclient(self)
+	if client is None:
+	    return
+
+	jsn = call4sq(self, client, 'get', '/specials/search',
+		params = { 
+		    'll' : '%s,%s' % (lat, lon),
+		    'limit' : 50
+		    })
+	if jsn is None:
+	    return
+
+	htmlbegin(self, "Check in")
+	userheader(self, client, lat, lon)
+
+	response = jsn.get('response')
+	if response is None:
+	    logging.error('Missing response from /specials/search:')
+	    logging.error(jsn)
+	    return jsn
+
+	specials = response.get('specials')
+	if specials is None:
+	    logging.error('Missing specials from /specials/search:')
+	    logging.error(jsn)
+	    return jsn
+
+	if specials['count'] == 0:
+	    self.response.out.write('<p>No specials nearby')
+	else:
+	    self.response.out.write(specials_fmt(specials['items']))
+
+	debug_json(self, jsn)
+	htmlend(self)
+
 def main():
     # logging.getLogger().setLevel(logging.DEBUG)
     application = webapp.WSGIApplication([
@@ -1697,6 +1742,7 @@ def main():
 	('/purge', PurgeHandler),
 	('/checkin_long', CheckinLongHandler),
 	('/checkin_long2', CheckinLong2Handler),
+	('/specials', SpecialsHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
