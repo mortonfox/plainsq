@@ -1739,6 +1739,33 @@ class SpecialsHandler(webapp.RequestHandler):
 	debug_json(self, jsn)
 	htmlend(self)
 
+class AddCommentHandler(webapp.RequestHandler):
+    """
+    Add a comment to a check-in.
+    """
+    def get(self):
+	self.post()
+
+    def post(self):
+	no_cache(self)
+
+	(lat, lon) = coords(self)
+	client = getclient(self)
+	if client is None:
+	    return
+
+	checkin_id = self.request.get('chkid')
+	text = self.request.get('text')
+
+	jsn = call4sq(self, client, 'post', 
+		'/checkins/%s/addcomment' % escape(checkin_id),
+		params = { 'text' : text }
+		)
+	if jsn is None:
+	    return
+
+	self.redirect('/comments?chkid=%s' % escape(checkin_id))
+
 class CommentsHandler(webapp.RequestHandler):
     """
     View comments on a check-in.
@@ -1773,6 +1800,15 @@ class CommentsHandler(webapp.RequestHandler):
 	    return jsn
 
 	self.response.out.write(checkin_comments_fmt(checkin))
+
+	self.response.out.write("""
+<p>
+<form style="margin:0 padding:0" action="/addcomment" method="get">
+<input type="text" name="text" size="15"><br>
+<input type="hidden" value="%s" name="chkid">
+<input type="submit" value="Add comment"><br>
+</form>
+""" % escape(checkin_id))
 
 	debug_json(self, jsn)
 	htmlend(self)
@@ -1821,6 +1857,7 @@ def main():
 	('/checkin_long2', CheckinLong2Handler),
 	('/specials', SpecialsHandler),
 	('/comments', CommentsHandler),
+	('/addcomment', AddCommentHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
