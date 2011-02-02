@@ -355,6 +355,10 @@ class MainHandler(webapp.RequestHandler):
         self.response.out.write("""
 <p>
 
+<form style="margin:0; padding:0" action="/coords" method="get">
+1. Enter coordinates: <input type="text" name="coords" size="8"
+accesskey="1"><input type="submit" value="Go"></form>
+
 2. <a href="/venues" accesskey="2">Nearest Venues</a><br>
 
 <form style="margin:0; padding:0" action="/venues" method="get">
@@ -376,6 +380,12 @@ accesskey="3"><input type="submit" value="Search"></form>
 9. <a href="/mayor" accesskey="9">Mayorships</a><br>
 
 10. <a href="/debug" accesskey="0">Turn debugging %s</a><br>
+
+<p>Enter coordinates as a series of digits, e.g.:
+<br>
+<br>39123457512345 means N 39&deg; 12.345' W 75&deg; 12.345'
+<br>391234751234 means N 39&deg; 12.340' W 75&deg; 12.340'
+<br>3912375123 means N 39&deg; 12.300' W 75&deg; 12.300'
 """ % (leaderboard, "off" if get_debug(self) else "on"))
 
 	htmlend(self)
@@ -1087,7 +1097,7 @@ def venue_fmt(venue, lat, lon):
 	    venue_cmds(venue), addr_fmt(venue))
 
     # Show distance and bearing from current coordinates.
-    dist = venue.get('distance')
+    dist = venue['location'].get('distance')
     if dist is not None:
 	dist = float(dist) / METERS_PER_MILE
 	compass = bearing(lat, lon, 
@@ -1177,6 +1187,79 @@ Add venue here and check in: <input type="text" name="vname" size="15"><input ty
 	debug_json(self, jsn)
 	htmlend(self)
 
+def deg_min(st):
+    deg = st[:2]
+    min = st[2:]
+    if min == '':
+	min = '0'
+    if len(min) > 2:
+	min = min[:2] + '.' + min[2:]
+    return (deg, min)
+
+def parse_coord(coordstr):
+    """
+    Parse user-entered coordinates.
+    These coordinates are entered as digits only. The string is split into
+    two halves. The first half fills in dd mm.mmm in the latitude and 
+    the second half fills in dd mm.mmm in the longitude.
+    """
+    mid = int((len(coordstr) + 1) / 2)
+    latstr = coordstr[:mid]
+    lonstr = coordstr[mid:]
+
+    (d, m) = deg_min(latstr)
+    lat = "%.6f" % (int(d) + float(m) / 60)
+
+    (d, m) = deg_min(lonstr)
+    lon = "%.6f" % -(int(d) + float(m) / 60)
+
+    return (lat, lon)
+
+def isFloat(s):
+    try:
+	float(s)
+	return True
+    except ValueError:
+	return False
+
+class CoordsHandler(webapp.RequestHandler):
+    """
+    This handles user-input coordinates. Sets the location to 
+    those coordinates and brings up the venue search page.
+    """
+    def get(self):
+	self.post()
+
+    def post(self):
+	no_cache(self)
+
+	htmlbegin(self, "Change location")
+
+	geolat = self.request.get('geolat')
+	geolong = self.request.get('geolong')
+
+	# geolat/geolong are float parameters. Move to those coordinates.
+	if isFloat(geolat) and isFloat(geolong):
+	    set_coords(self, geolat, geolong)
+	    self.redirect('/venues')
+	    return
+
+	coordinput = self.request.get('coords')
+
+	# Extract digits. Ignore all other characters.
+	instr = re.sub(r'[^0-9]', '', coordinput)
+
+	if len(instr) >= 4:
+	    (lat, lon) = parse_coord(instr)
+	    set_coords(self, lat, lon)
+	    self.redirect('/venues')
+	else:
+	    self.response.out.write(
+		    '<p><span class="error">Bad input coords: %s</span>'
+		    % escape(coordinput))
+
+	htmlend(self)
+
 def main():
     # logging.getLogger().setLevel(logging.DEBUG)
     application = webapp.WSGIApplication([
@@ -1193,6 +1276,7 @@ def main():
 	('/friends', FriendsHandler),
 	('/shout', ShoutHandler),
 	('/venues', VenuesHandler),
+	('/coords', CoordsHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
