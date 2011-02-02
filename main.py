@@ -1,5 +1,24 @@
 #!/usr/bin/env python
 
+"""
+<p>PlainSquare - This webapp is similar to Foursquare's mobile website but
+allows manual input of coordinates. That will allow nearest venue searches and
+check-ins by phones that do not have GPS.
+
+<p>Input is optimized for handsets without a full keyboard by allowing coordinate entry using only digits. PlainSquare streamlines the check-in process, making the default no-frills action single-click.
+
+<p>PlainSquare uses Foursquare OAuth to log in, so it does not store user passwords. It is written in Python and is meant to be hosted on Google App Engine.
+
+<pre>
+Version: 0.0.1
+Author: Po Shan Cheah (morton@mortonfox.com)
+Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
+Created: January 31, 2011
+Last updated: February 2, 2011
+</pre>
+"""
+
+
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import util
 from google.appengine.api import memcache
@@ -380,6 +399,8 @@ accesskey="3"><input type="submit" value="Search"></form>
 9. <a href="/mayor" accesskey="9">Mayorships</a><br>
 
 10. <a href="/debug" accesskey="0">Turn debugging %s</a><br>
+
+11. <a href="/geoloc">Detect location</a><br>
 
 <p>Enter coordinates as a series of digits, e.g.:
 <br>
@@ -1414,6 +1435,77 @@ class AddVenueHandler(webapp.RequestHandler):
 
 	do_checkin(self, client, venue['id'])
 
+class AboutHandler(webapp.RequestHandler):
+    """
+    Handler for About command.
+    """
+    def get(self):
+	# This page should be cached. So omit the no_cache() call.
+	htmlbegin(self, "About")
+	self.response.out.write(__doc__)
+	htmlend(self, noabout=True, nologout=True)
+
+class GeoLocHandler(webapp.RequestHandler):
+    """
+    Geolocation Handler. Will attempt to detect location using HTML5
+    Geolocation API and set our coordinates accordingly.
+    """
+    def get(self):
+	# This page should be cached. So omit the no_cache() call.
+	htmlbegin(self, "Detect Location")
+	self.response.out.write("""
+<noscript>
+<p><span class="error">No Javascript support or Javascript disabled.</span> Can't detect location.
+</noscript>
+<p><span id="output">&nbsp;</span>
+<script type="text/javascript">
+function show(msg) {
+    var out = document.getElementById('output');
+    out.innerHTML = msg;
+}
+
+function error(msg) {
+    show('<span class="error">' + msg + '</span>');
+}
+
+function error_callback(err) {
+    switch (err.code) {
+    case err.PERMISSION_DENIED:
+	error('No permission to get location: ' + err.message);
+	break;
+    case err.POSITION_UNAVAILABLE:
+	error('Could not get location: ' + err.message);
+	break;
+    case err.TIMEOUT:
+	error('Network timeout: ' + err.message);
+	break;
+    default:
+	error('Unknown error: ' + err.message);
+	break;
+    }
+}
+
+function success_callback(pos) {
+    show('Detected coordinates: ' + 
+	pos.coords.latitude + ',' + pos.coords.longitude);
+    // Redirect to our coordinates handler once we have the info.
+    window.location = '/coords?geolat=' + pos.coords.latitude + 
+	'&geolong=' + pos.coords.longitude
+}
+
+if (navigator.geolocation) {
+    show('Detecting location...');
+    navigator.geolocation.getCurrentPosition(
+	success_callback, error_callback, { timeout: 30000 });
+}
+else {
+    error('Geolocation API not supported in this browser.')
+}
+</script>
+""")
+
+	htmlend(self)
+
 def main():
     # logging.getLogger().setLevel(logging.DEBUG)
     application = webapp.WSGIApplication([
@@ -1433,6 +1525,8 @@ def main():
 	('/coords', CoordsHandler),
 	('/checkin', CheckinHandler),
 	('/addvenue', AddVenueHandler),
+	('/about', AboutHandler),
+	('/geoloc', GeoLocHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
