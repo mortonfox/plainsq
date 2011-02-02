@@ -1739,6 +1739,33 @@ class SpecialsHandler(webapp.RequestHandler):
 	debug_json(self, jsn)
 	htmlend(self)
 
+class DelCommentHandler(webapp.RequestHandler):
+    """
+    Delete a comment from a check-in.
+    """
+    def get(self):
+	self.post()
+
+    def post(self):
+	no_cache(self)
+
+	(lat, lon) = coords(self)
+	client = getclient(self)
+	if client is None:
+	    return
+
+	checkin_id = self.request.get('chkid')
+	comment_id = self.request.get('commid')
+
+	jsn = call4sq(self, client, 'post', 
+		'/checkins/%s/deletecomment' % escape(checkin_id),
+		params = { 'commentId' : comment_id }
+		)
+	if jsn is None:
+	    return
+
+	self.redirect('/comments?chkid=%s' % escape(checkin_id))
+
 class AddCommentHandler(webapp.RequestHandler):
     """
     Add a comment to a check-in.
@@ -1813,13 +1840,19 @@ class CommentsHandler(webapp.RequestHandler):
 	debug_json(self, jsn)
 	htmlend(self)
 
-def comment_fmt(comment, dnow):
-    return '<p><img src="%s" style="float:left"> %s %s: %s (%s)<br style="clear:both">' % (
+def comment_fmt(comment, checkin, dnow):
+    return '<p><img src="%s" style="float:left"> %s %s: %s (%s)<br>%s<br style="clear:both">' % (
 	    comment['user'].get('photo', ''),
 	    comment['user']['firstName'],
 	    comment['user']['lastName'],
 	    comment['text'],
-	    fuzzy_delta(dnow - datetime.fromtimestamp(comment['createdAt'])))
+	    fuzzy_delta(dnow - datetime.fromtimestamp(comment['createdAt'])),
+	    del_comment_cmd(checkin, comment),
+	    )
+
+def del_comment_cmd(checkin, comment):
+    return '<a href="/delcomment?chkid=%s&commid=%s">[delete]</a>' % (
+	    checkin['id'], comment['id'])
 
 def checkin_comments_fmt(checkin):
     s = ''
@@ -1828,7 +1861,7 @@ def checkin_comments_fmt(checkin):
     if checkin['comments']['count'] == 0:
 	s += '<p>No comments.'
     else:
-	s += ''.join([comment_fmt(c, dnow) for c in checkin['comments']['items']])
+	s += ''.join([comment_fmt(c, checkin, dnow) for c in checkin['comments']['items']])
     return s
 
 def main():
@@ -1858,6 +1891,7 @@ def main():
 	('/specials', SpecialsHandler),
 	('/comments', CommentsHandler),
 	('/addcomment', AddCommentHandler),
+	('/delcomment', DelCommentHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
