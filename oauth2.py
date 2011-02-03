@@ -1,6 +1,9 @@
 import urllib
 import urllib2
 from django.utils import simplejson
+from poster.encode import multipart_encode, MultipartParam
+from poster.streaminghttp import register_openers
+import sys
 
 class Client:
     POST = "POST"
@@ -50,6 +53,41 @@ class Client:
 	self.setAccessToken(jsn['access_token'])
 	return jsn
 
+    def encodeParams(self, params):
+	"""
+	UTF-8 encode all parameters.
+	"""
+	_params = {}
+	for k, v in params.iteritems():
+	    if type(v) == unicode:
+		v2 = v.encode('utf-8')
+	    else:
+		v2 = str(v)
+	    _params[str(k)] = v2
+	return _params
+
+    def uploadFile(self, path, params):
+	"""
+	Do a file upload with the access token.
+	The photo must have a key named "photo".
+	"""
+	if params is None:
+	    params = {}
+	params['oauth_token'] = self.getAccessToken()
+
+	mparams = []
+	for k, v in params.iteritems():
+	    if k == 'photo':
+		mparam = MultipartParam(name=k, value=v, filename='photo.jpg', filetype='image/jpeg')
+	    else:
+		mparam = MultipartParam(name=k, value=v)
+	    mparams.append(mparam)
+
+	datagen, headers = multipart_encode(mparams)
+	req = urllib2.Request('%s/%s' % (self.api_url, path), ''.join(datagen), headers)
+	resp = urllib2.urlopen(req)
+	return resp.read()
+
     def makeRequest(self, method, path, params):
 	"""
 	Perform an API call with the access token.
@@ -58,11 +96,7 @@ class Client:
 	    params = {}
 	params['oauth_token'] = self.getAccessToken()
 
-	# UTF-8 encode all parameters.
-	_params = {}
-	for k, v in params.iteritems():
-	    _params[str(k).encode('utf-8')] =  str(v).encode('utf-8')
-	params = _params
+	params = self.encodeParams(params)
 
 	data = urllib.urlencode(params)
 
@@ -78,5 +112,6 @@ class Client:
 
     def get(self, path, params):
 	return self.makeRequest(self.GET, path, params)
+
 
 # vim:set tw=0:

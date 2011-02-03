@@ -263,6 +263,8 @@ def call4sq(self, client, method, path, params = None):
     try:
 	if method == 'post':
 	    result = client.post(path, params)
+	elif method == 'upload':
+	    result = client.uploadFile(path, params)
 	else:
 	    result = client.get(path, params)
 
@@ -1798,6 +1800,37 @@ class AddCommentHandler(webapp.RequestHandler):
 
 	self.redirect('/comments?chkid=%s' % escape(checkin_id))
 
+class AddPhotoHandler(webapp.RequestHandler):
+    """
+    Add a photo to a check-in.
+    """
+    def get(self):
+	self.post()
+
+    def post(self):
+	no_cache(self)
+
+	(lat, lon) = coords(self)
+	client = getclient(self)
+	if client is None:
+	    return
+
+	checkin_id = self.request.get('chkid')
+	photo = self.request.get('photo')
+
+	jsn = call4sq(self, client, 'upload', '/photos/add',
+		{ 'checkinId' : checkin_id, 'photo' : photo })
+	if jsn is None:
+	    return
+
+	htmlbegin(self, "Add Photo")
+	userheader(self, client, lat, lon)
+
+	self.response.out.write("<p>Photo size = %d" % len(photo))
+
+	debug_json(self, jsn)
+	htmlend(self)
+
 class CommentsHandler(webapp.RequestHandler):
     """
     View comments on a check-in.
@@ -1839,6 +1872,15 @@ class CommentsHandler(webapp.RequestHandler):
 <input type="text" name="text" size="15"><br>
 <input type="hidden" value="%s" name="chkid">
 <input type="submit" value="Add comment"><br>
+</form>
+""" % escape(checkin_id))
+
+	self.response.out.write("""
+<p>
+<form style="margin:0 padding:0" enctype="multipart/form-data" action="/addphoto" method="post">
+<input type="file" name="photo"><br>
+<input type="hidden" value="%s" name="chkid">
+<input type="submit" value="Add photo"><br>
 </form>
 """ % escape(checkin_id))
 
@@ -1897,6 +1939,7 @@ def main():
 	('/comments', CommentsHandler),
 	('/addcomment', AddCommentHandler),
 	('/delcomment', DelCommentHandler),
+	('/addphoto', AddPhotoHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
