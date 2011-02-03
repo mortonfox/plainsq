@@ -671,6 +671,29 @@ from %s is the mayor<br style="clear:both">
     s += tips_fmt(venue.get('tips', []))
     s += specials_fmt(venue.get('specials', []))
     s += specials_fmt(venue.get('specialsNearby', []), nearby=True)
+
+    photos = venue.get('photos')
+    if photos is None:
+	count = 0
+    else:
+	count = photos.get('count', 0)
+
+    if count == 0:
+	s += '<p>-- No photos --'
+    else:
+	for group in photos['groups']:
+	    s += '<p>-- %s: %d --' % (group['name'], group['count'])
+	    s += ''.join([photo_fmt(p, dnow) for p in group['items']])
+
+    s += """
+<p>
+<form style="margin:0 padding:0" enctype="multipart/form-data" action="/addphoto" method="post">
+<input type="file" name="photo"><br>
+<input type="hidden" value="%s" name="venid">
+<input type="submit" value="Add JPEG photo"><br>
+</form>
+""" % venue['id']
+
     return s
 
 def get_prim_category(cats):
@@ -1830,14 +1853,23 @@ class AddPhotoHandler(webapp.RequestHandler):
 	    return
 
 	checkin_id = self.request.get('chkid')
+	venue_id = self.request.get('venid')
 	photo = self.request.get('photo')
 
-	jsn = call4sq(self, client, 'upload', '/photos/add',
-		{ 'checkinId' : checkin_id, 'photo' : photo })
+	params = { 'photo' : photo }
+	if venue_id:
+	    params['venueId'] = venue_id
+	else:
+	    params['checkinId'] = checkin_id
+
+	jsn = call4sq(self, client, 'upload', '/photos/add', params)
 	if jsn is None:
 	    return
 
-	self.redirect('/comments?chkid=%s' % escape(checkin_id))
+	if venue_id:
+	    self.redirect('/venue?vid=%s' % escape(venue_id))
+	else:
+	    self.redirect('/comments?chkid=%s' % escape(checkin_id))
 
 class CommentsHandler(webapp.RequestHandler):
     """
