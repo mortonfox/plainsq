@@ -14,7 +14,7 @@ Version: 0.0.1
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: February 2, 2011
+Last updated: February 3, 2011
 </pre>
 """
 
@@ -263,8 +263,6 @@ def call4sq(self, client, method, path, params = None):
     try:
 	if method == 'post':
 	    result = client.post(path, params)
-	elif method == 'upload':
-	    result = client.uploadFile(path, params)
 	else:
 	    result = client.get(path, params)
 
@@ -1862,7 +1860,7 @@ class AddPhotoHandler(webapp.RequestHandler):
 	else:
 	    params['checkinId'] = checkin_id
 
-	jsn = call4sq(self, client, 'upload', '/photos/add', params)
+	jsn = call4sq(self, client, 'post', '/photos/add', params)
 	if jsn is None:
 	    return
 

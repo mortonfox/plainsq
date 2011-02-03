@@ -1,9 +1,8 @@
 import urllib
 import urllib2
 from django.utils import simplejson
-from poster.encode import multipart_encode, MultipartParam
-from poster.streaminghttp import register_openers
 import sys
+import uuid
 
 class Client:
     POST = "POST"
@@ -53,57 +52,59 @@ class Client:
 	self.setAccessToken(jsn['access_token'])
 	return jsn
 
+    def to_str(self, s):
+	return s.encode('utf-8') if type(s) == unicode else str(s)
+
+    def multipart_encode(self, params):
+	"""
+	Generate multipart/form-data headers and data for uploading photos.
+	The photo must have the key 'photo' to be recognized as such.
+	"""
+        boundary = uuid.uuid4().hex
+	headers = { 'Content-Type' : "multipart/form-data; boundary=%s" % boundary }
+	data = ''
+	for k, v in params.iteritems():
+	    data += '--%s\r\n' % boundary
+	    if k == 'photo':
+		data += 'Content-Disposition: form-data; name="%s"; filename="%s.jpg"\r\n' % (k, k)
+		data += 'Content-Type: image/jpeg\r\n'
+	    else:
+		data += 'Content-Disposition: form-data; name="%s"\r\n' % k
+	    data += '\r\n%s\r\n' % self.to_str(v)
+        data += '--%s--\r\n\r\n' % boundary
+
+	return data, headers
+
     def encodeParams(self, params):
 	"""
 	UTF-8 encode all parameters.
 	"""
 	_params = {}
 	for k, v in params.iteritems():
-	    if type(v) == unicode:
-		v2 = v.encode('utf-8')
-	    else:
-		v2 = str(v)
-	    _params[str(k)] = v2
+	    _params[str(k)] = self.to_str(v)
 	return _params
-
-    def uploadFile(self, path, params):
-	"""
-	Do a file upload with the access token.
-	The photo must have a key named "photo".
-	"""
-	if params is None:
-	    params = {}
-	params['oauth_token'] = self.getAccessToken()
-
-	mparams = []
-	for k, v in params.iteritems():
-	    if k == 'photo':
-		mparam = MultipartParam(name=k, value=v, filename='photo.jpg', filetype='image/jpeg')
-	    else:
-		mparam = MultipartParam(name=k, value=v)
-	    mparams.append(mparam)
-
-	datagen, headers = multipart_encode(mparams)
-	req = urllib2.Request('%s/%s' % (self.api_url, path), ''.join(datagen), headers)
-	resp = urllib2.urlopen(req)
-	return resp.read()
 
     def makeRequest(self, method, path, params):
 	"""
 	Perform an API call with the access token.
+	If params has a 'photo' key, do a multipart form-data upload.
 	"""
 	if params is None:
 	    params = {}
 	params['oauth_token'] = self.getAccessToken()
 
-	params = self.encodeParams(params)
-
-	data = urllib.urlencode(params)
-
-	if method == self.POST:
-	    req = urllib2.Request('%s/%s' % (self.api_url, path), data)
+	if 'photo' in params:
+	    data, headers = self.multipart_encode(params)
+	    req = urllib2.Request('%s/%s' % (self.api_url, path), data, headers)
 	else:
-	    req = urllib2.Request("%s/%s?%s" % (self.api_url, path, data))
+	    params = self.encodeParams(params)
+	    data = urllib.urlencode(params)
+
+	    if method == self.POST:
+		req = urllib2.Request('%s/%s' % (self.api_url, path), data)
+	    else:
+		req = urllib2.Request("%s/%s?%s" % (self.api_url, path, data))
+
 	resp = urllib2.urlopen(req)
 	return resp.read()
 
