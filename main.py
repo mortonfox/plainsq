@@ -1927,8 +1927,8 @@ class CommentsHandler(webapp.RequestHandler):
 
 def comment_fmt(comment, checkin, dnow):
     return '<p>%s %s: %s (%s)<br>%s<br>' % (
-	    comment['user']['firstName'],
-	    comment['user']['lastName'],
+	    comment['user'].get('firstName', ''),
+	    comment['user'].get('lastName', ''),
 	    comment['text'],
 	    fuzzy_delta(dnow - datetime.fromtimestamp(comment['createdAt'])),
 	    del_comment_cmd(checkin, comment),
@@ -1946,13 +1946,9 @@ def photo_fmt(photo, dnow):
 	else:
 	    url = min(photo['sizes']['items'], key = lambda p:p['width'])['url']
 
-    return """
-<p>%s %s:<br>
-<img src="%s"><br>
-(%s)<br>
-""" % (
-	photo['user']['firstName'],
-	photo['user']['lastName'],
+    return '<p>%s %s:<br><img src="%s"><br>(%s)<br>' % (
+	photo['user'].get('firstName', ''),
+	photo['user'].get('lastName', ''),
 	url,
 	fuzzy_delta(dnow - datetime.fromtimestamp(photo['createdAt'])),
 	)
