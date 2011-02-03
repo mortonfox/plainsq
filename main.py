@@ -771,6 +771,15 @@ class VInfoHandler(webapp.RequestHandler):
 	debug_json(self, jsn)
 	htmlend(self)
 
+def pluralize(count, what):
+    if count == 0:
+	s = 'no %ss' % what
+    elif count == 1:
+	s = '1 %s' % what
+    else:
+	s = '%d %ss' % (count, what)
+    return s
+
 def comments_cmd(checkin):
     comments = checkin.get('comments')
     if comments is None:
@@ -778,14 +787,18 @@ def comments_cmd(checkin):
     else:
 	count = comments.get('count', 0)
 
-    if count == 0:
-	cstr = 'No comments'
-    elif count == 1:
-	cstr = '1 comment'
-    else:
-	cstr = '%s comments' % count
+    cstr = pluralize(count, 'comment')
 
-    return '<a href="/comments?chkid=%s">[%s]</a>' % (checkin['id'], cstr)
+    photos = checkin.get('photos')
+    if photos is None:
+	count = 0
+    else:
+	count = photos.get('count', 0)
+
+    pstr = pluralize(count, 'photo')
+
+    return '<a href="/comments?chkid=%s">[%s, %s]</a>' % (
+	    checkin['id'], cstr, pstr)
 
 def history_checkin_fmt(checkin, dnow):
     """
@@ -1791,12 +1804,13 @@ class AddCommentHandler(webapp.RequestHandler):
 	checkin_id = self.request.get('chkid')
 	text = self.request.get('text')
 
-	jsn = call4sq(self, client, 'post', 
-		'/checkins/%s/addcomment' % escape(checkin_id),
-		params = { 'text' : text }
-		)
-	if jsn is None:
-	    return
+	if text:
+	    jsn = call4sq(self, client, 'post', 
+		    '/checkins/%s/addcomment' % escape(checkin_id),
+		    params = { 'text' : text }
+		    )
+	    if jsn is None:
+		return
 
 	self.redirect('/comments?chkid=%s' % escape(checkin_id))
 
@@ -1823,13 +1837,7 @@ class AddPhotoHandler(webapp.RequestHandler):
 	if jsn is None:
 	    return
 
-	htmlbegin(self, "Add Photo")
-	userheader(self, client, lat, lon)
-
-	self.response.out.write("<p>Photo size = %d" % len(photo))
-
-	debug_json(self, jsn)
-	htmlend(self)
+	self.redirect('/comments?chkid=%s' % escape(checkin_id))
 
 class CommentsHandler(webapp.RequestHandler):
     """
@@ -1880,7 +1888,7 @@ class CommentsHandler(webapp.RequestHandler):
 <form style="margin:0 padding:0" enctype="multipart/form-data" action="/addphoto" method="post">
 <input type="file" name="photo"><br>
 <input type="hidden" value="%s" name="chkid">
-<input type="submit" value="Add photo"><br>
+<input type="submit" value="Add JPEG photo"><br>
 </form>
 """ % escape(checkin_id))
 
@@ -1888,14 +1896,36 @@ class CommentsHandler(webapp.RequestHandler):
 	htmlend(self)
 
 def comment_fmt(comment, checkin, dnow):
-    return '<p><img src="%s" style="float:left"> %s %s: %s (%s)<br>%s<br style="clear:both">' % (
-	    comment['user'].get('photo', ''),
+    return '<p>%s %s: %s (%s)<br>%s<br>' % (
 	    comment['user']['firstName'],
 	    comment['user']['lastName'],
 	    comment['text'],
 	    fuzzy_delta(dnow - datetime.fromtimestamp(comment['createdAt'])),
 	    del_comment_cmd(checkin, comment),
 	    )
+
+def photo_fmt(photo, dnow):
+    url = photo['url']
+
+    # If multiple sizes are available, then pick the largest photo that is not
+    # greater than 150 pixels in width. If none fit, pick the smallest photo.
+    if photo['sizes']['count'] > 0:
+	_photos = filter(lambda p:p['width'] <= 150, photo['sizes']['items'])
+	if _photos:
+	    url = max(_photos, key = lambda p:p['width'])['url']
+	else:
+	    url = min(photo['sizes']['items'], key = lambda p:p['width'])['url']
+
+    return """
+<p>%s %s:<br>
+<img src="%s"><br>
+(%s)<br>
+""" % (
+	photo['user']['firstName'],
+	photo['user']['lastName'],
+	url,
+	fuzzy_delta(dnow - datetime.fromtimestamp(photo['createdAt'])),
+	)
 
 def del_comment_cmd(checkin, comment):
     return '<a href="/delcomment?chkid=%s&commid=%s">[delete]</a>' % (
@@ -1905,10 +1935,15 @@ def checkin_comments_fmt(checkin):
     s = ''
     dnow = datetime.utcnow()
     s += history_checkin_fmt(checkin, dnow)
-    if checkin['comments']['count'] == 0:
-	s += '<p>No comments.'
-    else:
+    
+    s += '<p>-- %s --' % pluralize(checkin['comments']['count'], 'comment')
+    if checkin['comments']['count'] > 0:
 	s += ''.join([comment_fmt(c, checkin, dnow) for c in checkin['comments']['items']])
+
+    s += '<p>-- %s --' % pluralize(checkin['photos']['count'], 'photo')
+    if checkin['photos']['count'] > 0:
+	s += ''.join([photo_fmt(c, dnow) for c in checkin['photos']['items']])
+
     return s
 
 def main():
