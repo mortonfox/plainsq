@@ -1,3 +1,34 @@
+"""
+oauth2.py
+
+This module implements OAuth 2.0, as used by the Foursquare v2 API.
+
+First, create a client:
+
+    c = oauth2.Client(clientID, clientSecret, 
+	callbackURL, authURL, accessURL, apiURL)
+
+Then call requestAuth() to get an OAuth login URL:
+
+    url = c.requestAuth()
+
+Send the user to that url. Once the user has logged in, Foursquare will
+load the callbackURL.
+
+The callback will have a 'code' parameter. Pass that to requestSession()
+to get an access token:
+
+    c.requestSession(code)
+    token = c.getAccessToken()
+
+Once you have an access token, you can make API calls:
+
+    c.setAccessToken(token)
+    result = c.post(path, params)
+    result = c.get(path, params)
+"""
+
+
 import urllib
 import urllib2
 from django.utils import simplejson
