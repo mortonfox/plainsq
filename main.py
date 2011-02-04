@@ -907,8 +907,10 @@ class DebugHandler(webapp.RequestHandler):
 	self.redirect('/')
 
 def badge_fmt(badge):
-    img = badge['image']
-    iconurl = img['prefix'] + str(img['sizes'][0]) + img['name']
+    iconurl = ""
+    img = badge.get('image')
+    if img is not None:
+	iconurl = img['prefix'] + str(img['sizes'][0]) + img['name']
 
     unlockstr = ''
     unlocks = badge['unlocks']
@@ -936,7 +938,7 @@ Unlocked at <a href="/venue?vid=%s">%s</a>%s on %s.
     if unlockstr == '':
 	text = '<span class="grayed">%s<br>%s</span>' % (badge['name'], desc)
     else:
-	text = '%s<br>%s<br>%s' % (badge['name'], desc, unlockstr)
+	text = '%s<br>%s<br>%s' % (badge.get('name', ''), desc, unlockstr)
 
     return """
 <p><img src="%s" style="float:left"> %s<br style="clear:both">
@@ -1351,14 +1353,16 @@ class CoordsHandler(webapp.RequestHandler):
 	htmlend(self)
 
 def checkin_badge_fmt(badge):
-    img = badge['image']
-    iconurl = img['prefix'] + str(img['sizes'][0]) + img['name']
+    iconurl = ""
+    img = badge.get('image')
+    if img is not None:
+	iconurl = img['prefix'] + str(img['sizes'][0]) + img['name']
 
     return """
 <p><img src="%s" style="float:left">
 You've unlocked the %s badge: 
 %s<br style="clear:both">
-""" % (iconurl, badge['name'], badge['description'])
+""" % (iconurl, badge.get('name', ''), badge.get('description', ''))
 
 def checkin_score_fmt(score):
     return """
@@ -1402,7 +1406,8 @@ def checkin_fmt(checkin, notif):
 """ % (user['photo'], msg)
     
     badges = find_notifs(notif, 'badge')
-    s += ''.join([checkin_badge_fmt(b) for b in badges])
+    if len(badges) > 0:
+	s += ''.join([checkin_badge_fmt(b) for b in badges[0].values()])
 
     scores = find_notifs(notif, 'score')
     if len(scores) > 0:
