@@ -23,6 +23,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import util
 from google.appengine.ext import db
 from google.appengine.api.urlfetch import DownloadError 
+from google.appengine.api import images
 from django.utils import simplejson
 
 import oauth2
@@ -37,9 +38,6 @@ import cgi
 from math import (radians, sin, cos, atan2, degrees)
 from datetime import (datetime, date, timedelta)
 import urllib
-
-CLIENT_ID = 'A4JHSA3P1CL1YTMOFSERA3AESLHBCZBT4BAJQOL1NLFZYADH'
-CLIENT_SECRET = 'WI1EHJFHV5L3NJGEN054W0UTA43MXC3DYNXJSNKYKBJTFWAM'
 
 TOKEN_COOKIE = 'plainsq_token'
 TOKEN_PREFIX = 'token_plainsq_'
@@ -57,8 +55,6 @@ METERS_PER_MILE = 1609.344
 
 USER_AGENT = 'plainsq:0.0.1 20110129'
 
-CALLBACK_URL = 'https://plainsq.appspot.com/oauth'
-
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
     # Also need to use a different consumer because Foursquare
@@ -66,6 +62,11 @@ if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     CALLBACK_URL = 'http://localhost:8081/oauth'
     CLIENT_ID = '313XKCMSSWSWHW2PRZX231LBRIGB4OFCESREW5T1E2Z5MBPR'
     CLIENT_SECRET = 'P4AFGZNDXIU5MCBWMOUTZLHCHYWDC5RFOEYP3I2EZAP3SNIO'
+else:
+    # Production environment.
+    CALLBACK_URL = 'https://plainsq.appspot.com/oauth'
+    CLIENT_ID = 'A4JHSA3P1CL1YTMOFSERA3AESLHBCZBT4BAJQOL1NLFZYADH'
+    CLIENT_SECRET = 'WI1EHJFHV5L3NJGEN054W0UTA43MXC3DYNXJSNKYKBJTFWAM'
 
 def escape(s):
     return cgi.escape(s, quote = True)
@@ -1016,6 +1017,8 @@ class MayorHandler(webapp.RequestHandler):
 	debug_json(self, user)
 	htmlend(self)
 
+COMPASS_DIRS = [ 'S', 'SW', 'W', 'NW', 'N', 'NE', 'E', 'SE', 'S' ]
+
 def bearing(lat, lon, vlat, vlon):
     """
     Compute compass direction from (lat, lon) to (vlat, vlon)
@@ -1028,8 +1031,7 @@ def bearing(lat, lon, vlat, vlon):
     x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dlon)
     brng = degrees(atan2(y, x))
 
-    compass = [ 'S', 'SW', 'W', 'NW', 'N', 'NE', 'E', 'SE', 'S' ]
-    return compass[int((brng + 180 + 22.5) / 45)]
+    return COMPASS_DIRS[int((brng + 180 + 22.5) / 45)]
 
 def friend_checkin_fmt(checkin, lat, lon, dnow):
     """
@@ -1853,6 +1855,9 @@ class AddPhotoHandler(webapp.RequestHandler):
 	checkin_id = self.request.get('chkid')
 	venue_id = self.request.get('venid')
 	photo = self.request.get('photo')
+
+	# Resize photo and convert to JPEG.
+	photo = images.resize(photo, 800, 800, images.JPEG)
 
 	params = { 'photo' : photo }
 	if venue_id:
