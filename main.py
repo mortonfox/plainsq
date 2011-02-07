@@ -14,7 +14,7 @@ Version: 0.0.1
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: February 3, 2011
+Last updated: February 7, 2011
 </pre>
 """
 
@@ -709,7 +709,7 @@ def special_fmt(special):
     s = ''
     venue = special.get('venue', {})
 
-    pcat = get_prim_category(venue['categories'])
+    pcat = get_prim_category(venue.get('categories'))
     if pcat is not None:
 	s += category_fmt(pcat)
 
@@ -1389,7 +1389,7 @@ def checkin_fmt(checkin, notif):
 	# Add static Google Map to the page.
 	s += google_map(venue['location']['lat'], venue['location']['lng'])
 
-	pcat = get_prim_category(venue['categories'])
+	pcat = get_prim_category(venue.get('categories'))
 	if pcat is not None:
 	    s += category_fmt(pcat)
 
