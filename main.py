@@ -177,7 +177,7 @@ def get_coord_str(self):
 	result = query_coords(self, uuid)
 	if result is not None:
 	    coord_str = result.coords
-	    memcache_set(coord_key, coord_str)
+	    memcache.set(coord_key, coord_str)
 	    return coord_str
 
     return None
