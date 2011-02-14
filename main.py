@@ -150,7 +150,10 @@ def set_coords(self, lat, lon):
     if result is None:
 	uuid = self.request.cookies.get(TOKEN_COOKIE)
 	if uuid is not None:
-	    CoordsTable(uuid = uuid, coords = "%s,%s" % (lat, lon)).put()
+	    coord_str = "%s,%s" % (lat, lon)
+	    CoordsTable(uuid = uuid, coords = coord_str).put()
+	    # Update memcache.
+	    memcache.set(COORD_PREFIX + result.uuid, coord_str)
     else:
 	# Update existing record.
 	result.coords = "%s,%s" % (lat, lon)
