@@ -21,10 +21,12 @@ Last updated: February 14, 2011
 
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import util
-from google.appengine.ext import db
 from google.appengine.api.urlfetch import DownloadError 
 from google.appengine.api import images
 from django.utils import simplejson
+from google.appengine.ext import db
+from google.appengine.datastore import entity_pb
+from google.appengine.api import memcache
 
 import oauth2
 import uuid
@@ -42,13 +44,14 @@ import urllib
 TOKEN_COOKIE = 'plainsq_token'
 TOKEN_PREFIX = 'token_plainsq_'
 
+COORD_PREFIX = 'coord_plainsq_'
+
 AUTH_URL = 'https://foursquare.com/oauth2/authenticate'
 ACCESS_URL = 'https://foursquare.com/oauth2/access_token'
 API_URL = 'https://api.foursquare.com/v2'
 
 DEFAULT_LAT = '39.7'
 DEFAULT_LON = '-75.6'
-COORDS_COOKIE = 'plainsq_coords'
 DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
@@ -129,11 +132,13 @@ def no_cache(self):
     self.response.headers.add_header('Cache-Control', 'no-cache') 
     self.response.headers.add_header('User-Agent', USER_AGENT) 
 
-def query_coords(self):
+
+def query_coords(self, uuid = None):
     """
     Run a GQL query to get the coordinates, if available.
     """
-    uuid = self.request.cookies.get(TOKEN_COOKIE)
+    if uuid is None:
+	uuid = self.request.cookies.get(TOKEN_COOKIE)
     if uuid is not None:
 	return CoordsTable.gql('WHERE uuid=:1 LIMIT 1', uuid).get()
 
@@ -150,6 +155,32 @@ def set_coords(self, lat, lon):
 	# Update existing record.
 	result.coords = "%s,%s" % (lat, lon)
 	db.put(result)
+	# Update memcache.
+	memcache.set(COORD_PREFIX + result.uuid, result.coords)
+
+def get_coord_str(self):
+    """
+    Given the token cookie, get coordinates either from
+    memcache or datastore.
+    """
+
+    # Try to get coordinates from memcache first.
+    uuid = self.request.cookies.get(TOKEN_COOKIE)
+    if uuid is not None:
+	coord_key = COORD_PREFIX + uuid
+
+	coord_str = memcache.get(coord_key)
+	if coord_str is not None:
+	    return coord_str
+
+	# If not in memcache, try the datastore.
+	result = query_coords(self, uuid)
+	if result is not None:
+	    coord_str = result.coords
+	    memcache_set(coord_key, coord_str)
+	    return coord_str
+
+    return None
 
 def coords(self):
     """
@@ -159,10 +190,11 @@ def coords(self):
     lat = None
     lon = None
 
-    result = query_coords(self)
-    if result is not None:
+    coord_str = get_coord_str(self)
+
+    if coord_str is not None:
 	try:
-	    (lat, lon) = result.coords.split(',')
+	    (lat, lon) = coord_str.split(',')
 	except ValueError:
 	    pass
 
@@ -194,13 +226,20 @@ def getclient(self):
     access_token = None
 
     if uuid is not None:
-	# Retrieve the access token using the login cookie.
-	result = AccessToken.gql("WHERE uuid = :1 LIMIT 1",
-		TOKEN_PREFIX + uuid).get()
-	# If the query fails for whatever reason, the user will just
-	# have to log in again. Not such a big deal.
-	if result is not None:
-	    access_token = result.token
+	uuid_key = TOKEN_PREFIX + uuid
+
+	# Try to get access token from memcache first.
+	access_token = memcache.get(uuid_key)
+	if access_token is None:
+	
+	    # Retrieve the access token using the login cookie.
+	    result = AccessToken.gql("WHERE uuid = :1 LIMIT 1",
+		    uuid_key).get()
+	    # If the query fails for whatever reason, the user will just
+	    # have to log in again. Not such a big deal.
+	    if result is not None:
+		access_token = result.token
+		memcache.set(uuid_key, access_token)
 
     client = newclient()
 
@@ -461,7 +500,6 @@ class LogoutHandler(webapp.RequestHandler):
     def get(self):
 	# This page should be cached. So omit the no_cache() call.
 	self.del_cookie(TOKEN_COOKIE)
-	self.del_cookie(COORDS_COOKIE)
 	self.del_cookie(DEBUG_COOKIE)
 
 	htmlbegin(self, "Logout")
@@ -1602,6 +1640,9 @@ class PurgeHandler(webapp.RequestHandler):
 	    result.delete()
 	    count += 1
 	self.response.out.write('<p>Deleted %d old entries from CoordsTable table' % count)
+
+	memcache.flush_all()
+	self.response.out.write('<p>Flushed memcache')
 
 	htmlend(self)
 
