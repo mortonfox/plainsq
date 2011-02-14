@@ -10,11 +10,11 @@ check-ins by phones that do not have GPS.
 <p>PlainSquare uses Foursquare OAuth to log in, so it does not store user passwords. It is written in Python and is meant to be hosted on Google App Engine.
 
 <pre>
-Version: 0.0.1
+Version: 0.0.2
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: February 7, 2011
+Last updated: February 14, 2011
 </pre>
 """
 
@@ -53,7 +53,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.1 20110129'
+USER_AGENT = 'plainsq:0.0.2 20110214'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -682,7 +682,8 @@ from %s is the mayor<br style="clear:both">
     else:
 	for group in photos['groups']:
 	    s += '<p>-- %s: %d --' % (group['name'], group['count'])
-	    s += ''.join([photo_fmt(p, dnow) for p in group['items']])
+	    s += ''.join([photo_fmt(p, dnow, venue_id = venue['id']) 
+		for p in group['items']])
 
     s += """
 <p>
@@ -1879,6 +1880,56 @@ class AddPhotoHandler(webapp.RequestHandler):
 	else:
 	    self.redirect('/comments?chkid=%s' % escape(checkin_id))
 
+def photo_full_fmt(photo, venue_id = None, checkin_id = None):
+    if venue_id:
+	backurl = '/venue?vid=%s' % escape(venue_id)
+    else:
+	backurl = '/comments?chkid=%s' % escape(checkin_id)
+    return '<p><a href="%s"><img src="%s"></a><br>' % (
+	    backurl, photo['url'])
+	    
+class PhotoHandler(webapp.RequestHandler):
+    """
+    View full-size version of a photo.
+    """
+    def get(self):
+	no_cache(self)
+
+	(lat, lon) = coords(self)
+	client = getclient(self)
+	if client is None:
+	    return
+
+	checkin_id = self.request.get('chkid')
+	venue_id = self.request.get('venid')
+	photo_id = self.request.get('photoid')
+
+	jsn = call4sq(self, client, 'get', '/photos/%s' % escape(photo_id))
+	if jsn is None:
+	    return
+
+	htmlbegin(self, "Photo")
+	userheader(self, client, lat, lon)
+
+	response = jsn.get('response')
+	if response is None:
+	    logging.error('Missing response from /photos:')
+	    logging.error(jsn)
+	    return jsn
+
+	photo = response.get('photo')
+	if photo is None:
+	    logging.error('Missing photo from /photos:')
+	    logging.error(jsn)
+	    return jsn
+
+	self.response.out.write(photo_full_fmt(photo, 
+	    checkin_id = checkin_id, venue_id = venue_id))
+
+	debug_json(self, jsn)
+	htmlend(self)
+
+
 class CommentsHandler(webapp.RequestHandler):
     """
     View comments on a check-in.
@@ -1944,22 +1995,30 @@ def comment_fmt(comment, checkin, dnow):
 	    del_comment_cmd(checkin, comment),
 	    )
 
-def photo_fmt(photo, dnow):
-    url = photo['url']
+def photo_fmt(photo, dnow, venue_id = None, checkin_id = None):
+    imgurl = photo['url']
 
     # If multiple sizes are available, then pick the largest photo that is not
     # greater than 150 pixels in width. If none fit, pick the smallest photo.
     if photo['sizes']['count'] > 0:
 	_photos = filter(lambda p:p['width'] <= 150, photo['sizes']['items'])
 	if _photos:
-	    url = max(_photos, key = lambda p:p['width'])['url']
+	    imgurl = max(_photos, key = lambda p:p['width'])['url']
 	else:
-	    url = min(photo['sizes']['items'], key = lambda p:p['width'])['url']
+	    imgurl = min(photo['sizes']['items'], key = lambda p:p['width'])['url']
 
-    return '<p>%s %s:<br><img src="%s"><br>(%s)<br>' % (
+    photoparms = { 'photoid' : photo['id'] }
+    if venue_id is not None:
+	photoparms['venid'] = venue_id
+    else:
+	photoparms['chkid'] = checkin_id
+    photourl = '/photo?%s' % escape(urllib.urlencode(photoparms))
+
+    return '<p>%s %s:<br><a href="%s"><img src="%s"></a><br>(%s)<br>' % (
 	photo['user'].get('firstName', ''),
 	photo['user'].get('lastName', ''),
-	url,
+	photourl,
+	imgurl,
 	fuzzy_delta(dnow - datetime.fromtimestamp(photo['createdAt'])),
 	)
 
@@ -1978,7 +2037,8 @@ def checkin_comments_fmt(checkin):
 
     s += '<p>-- %s --' % pluralize(checkin['photos']['count'], 'photo')
     if checkin['photos']['count'] > 0:
-	s += ''.join([photo_fmt(c, dnow) for c in checkin['photos']['items']])
+	s += ''.join([photo_fmt(c, dnow, checkin_id = checkin['id']) 
+	    for c in checkin['photos']['items']])
 
     return s
 
@@ -2011,6 +2071,7 @@ def main():
 	('/addcomment', AddCommentHandler),
 	('/delcomment', DelCommentHandler),
 	('/addphoto', AddPhotoHandler),
+	('/photo', PhotoHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
