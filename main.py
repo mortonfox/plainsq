@@ -14,7 +14,7 @@ Version: 0.0.2
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: February 14, 2011
+Last updated: February 19, 2011
 </pre>
 """
 
@@ -56,7 +56,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.2 20110214'
+USER_AGENT = 'plainsq:0.0.2 20110219'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -153,7 +153,7 @@ def set_coords(self, lat, lon):
 	    coord_str = "%s,%s" % (lat, lon)
 	    CoordsTable(uuid = uuid, coords = coord_str).put()
 	    # Update memcache.
-	    memcache.set(COORD_PREFIX + result.uuid, coord_str)
+	    memcache.set(COORD_PREFIX + uuid, coord_str)
     else:
 	# Update existing record.
 	result.coords = "%s,%s" % (lat, lon)
@@ -1672,7 +1672,9 @@ class CheckinLong2Handler(webapp.RequestHandler):
 	facebook = int(self.request.get('facebook'))
 
 	broadstrs = []
-	if not private:
+	if private:
+	    broadstrs += 'private'
+	else:
 	    broadstrs += 'public'
 	if twitter:
 	    broadstrs += 'twitter'
@@ -1748,12 +1750,10 @@ class CheckinLongHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	private = 1
+	private = 0
 	twitter = 0
 	facebook = 0
 
-	if settings['receivePings']:
-	    private = 0
 	if settings['sendToTwitter']:
 	    twitter = 1
 	if settings['sendToFacebook']:
@@ -1906,18 +1906,19 @@ class AddPhotoHandler(webapp.RequestHandler):
 	venue_id = self.request.get('venid')
 	photo = self.request.get('photo')
 
-	# Resize photo and convert to JPEG.
-	photo = images.resize(photo, 800, 800, images.JPEG)
+	if photo:
+	    # Resize photo and convert to JPEG.
+	    photo = images.resize(photo, 800, 800, images.JPEG)
 
-	params = { 'photo' : photo }
-	if venue_id:
-	    params['venueId'] = venue_id
-	else:
-	    params['checkinId'] = checkin_id
+	    params = { 'photo' : photo }
+	    if venue_id:
+		params['venueId'] = venue_id
+	    else:
+		params['checkinId'] = checkin_id
 
-	jsn = call4sq(self, client, 'post', '/photos/add', params)
-	if jsn is None:
-	    return
+	    jsn = call4sq(self, client, 'post', '/photos/add', params)
+	    if jsn is None:
+		return
 
 	if venue_id:
 	    self.redirect('/venue?vid=%s' % escape(venue_id))
