@@ -14,7 +14,7 @@ Version: 0.0.2
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: February 19, 2011
+Last updated: February 22, 2011
 </pre>
 """
 
@@ -56,7 +56,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.2 20110219'
+USER_AGENT = 'plainsq:0.0.2 20110222'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -537,36 +537,43 @@ def addr_fmt(venue):
     """
     Format the address block of a venue.
     """
+    location = venue.get('location', {})
+    contact = venue.get('contact', {})
+    return addr_fmt_2(location, contact)
+
+def addr_fmt_2(location, contact):
+    """
+    Format an address block from location and contact records.
+    """
     s = ''
 
-    location = venue.get('location', {})
+    if location is not None:
+	addr = location.get('address', '')
+	if addr != '':
+	    s += escape(addr) + '<br>'
 
-    addr = location.get('address', '')
-    if addr != '':
-	s += escape(addr) + '<br>'
+	cross = location.get('crossStreet', '')
+	if cross != '':
+	    s += '(%s)<br>' % escape(cross)
 
-    cross = location.get('crossStreet', '')
-    if cross != '':
-	s += '(%s)<br>' % escape(cross)
+	city = location.get('city', '')
+	state = location.get('state', '')
+	zip = location.get('postalCode', '')
+	country = location.get('country', '')
+	if city != '' or state != '' or zip != '' or country != '':
+	    s += '%s, %s %s %s<br>' % (
+		    escape(city), escape(state), escape(zip), escape(country))
 
-    city = location.get('city', '')
-    state = location.get('state', '')
-    zip = location.get('postalCode', '')
-    country = location.get('country', '')
-    if city != '' or state != '' or zip != '' or country != '':
-	s += '%s, %s %s %s<br>' % (
-		escape(city), escape(state), escape(zip), escape(country))
+    if contact is not None:
+	phone = contact.get('phone', '')
+	if len(phone) > 6:
+	    s += '(%s)%s-%s<br>' % (phone[0:3], phone[3:6], phone[6:])
 
-    contact = venue.get('contact', {})
+	twitter = contact.get('twitter', '')
+	if len(twitter) > 0:
+	    s += '<a href="http://mobile.twitter.com/%s">@%s</a><br>' % (
+		    urllib.quote(twitter), escape(twitter))
 
-    phone = contact.get('phone', '')
-    if len(phone) > 6:
-	s += '(%s)%s-%s<br>' % (phone[0:3], phone[3:6], phone[6:])
-
-    twitter = contact.get('twitter', '')
-    if len(twitter) > 0:
-	s += '<a href="http://mobile.twitter.com/%s">@%s</a><br>' % (
-		urllib.quote(twitter), escape(twitter))
     return s
 
 def category_fmt(cat):
@@ -621,15 +628,22 @@ def fuzzy_delta(delta):
 		else:
 		    return 'now'
 
+def name_fmt(user):
+    if user is None:
+	return ''
+    return escape('%s %s' % (
+	    user.get('firstName', ''),
+	    user.get('lastName', ''))
+	    )
+
 def venue_checkin_fmt(checkin, dnow):
     """
     Format the info about a user checked in at this venue.
     """
     s = ''
-    s += '<p><img src="%s" style="float:left">%s %s from %s' % (
+    s += '<p><img src="%s" style="float:left">%s from %s' % (
 	    checkin['user']['photo'],
-	    escape(checkin['user'].get('firstName', '')),
-	    escape(checkin['user'].get('lastName', '')),
+	    name_fmt(checkin['user']),
 	    escape(checkin['user'].get('homeCity', '')))
 
     shout = checkin.get('shout')
@@ -690,11 +704,10 @@ def vinfo_fmt(venue):
 	s += '<p>No mayor'
     else:
 	s += """
-<p><img src="%s" style="float:left">%s %s (%sx) 
+<p><img src="%s" style="float:left">%s (%sx) 
 from %s is the mayor<br style="clear:both"> 
 """ % (user['photo'], 
-	escape(user.get('firstName', '')), 
-	escape(user.get('lastName', '')), 
+	name_fmt(user),
 	mayor['count'], 
 	escape(user.get('homeCity', '')))
 
@@ -777,11 +790,10 @@ def tip_fmt(tip):
     Format a tip on the venue page.
     """
     return """
-<p><img src="%s" style="float:left">%s %s from %s says: 
+<p><img src="%s" style="float:left">%s from %s says: 
 %s (Posted: %s)<br style="clear:both">
 """ % (tip['user']['photo'],
-	escape(tip['user'].get('firstName', '')),
-	escape(tip['user'].get('lastName', '')),
+	name_fmt(tip['user']),
 	escape(tip['user'].get('homeCity', '')),
 	escape(tip['text']),
 	datetime.fromtimestamp(tip['createdAt']).ctime())
@@ -1086,20 +1098,26 @@ def friend_checkin_fmt(checkin, lat, lon, dnow):
     venue = checkin.get('venue')
     user = checkin.get('user')
 
+    user_shown = False
+
     if venue is not None:
-	s += '<a href="/venue?vid=%s">%s %s @ %s</a><br>' % (
+	s += '<a href="/venue?vid=%s">%s @ %s</a><br>' % (
 		venue.get('id'),
-		user.get('firstName', ''),
-		user.get('lastName', ''),
+		name_fmt(user),
 		venue.get('name', ''),
 		)
+	user_shown = True
+    else:
+	location = checkin.get('location', {})
+	name = location.get('name')
+	if name is not None:
+	    s += '%s @ %s<br>' % (name_fmt(user), name)
+	    user_shown = True
 
     shout = checkin.get('shout')
     if shout is not None:
-	if venue is None:
-	    s += '%s %s: ' % (
-		user.get('firstName', ''),
-		user.get('lastName', ''))
+	if not user_shown:
+	    s += name_fmt(user) + ' '
 	s += '"%s"<br>' % escape(shout)
 
     s += '%s<br>' % comments_cmd(checkin)
@@ -1110,22 +1128,20 @@ def friend_checkin_fmt(checkin, lat, lon, dnow):
 
     if venue is not None:
 	s += addr_fmt(venue)
-
-	location = venue.get('location')
-	if location is not None:
-	    geolat = location.get('lat')
-	    geolong = location.get('lng')
-	
-	if geolat is None or geolong is None:
-	    compass = ''
-	else:
-	    compass = bearing(lat, lon, geolat, geolong)
-
-	if dist is not None:
-	    s += '(%.1f mi %s)<br>' % (dist, compass)
+	location = venue.get('location', {})
     else:
-	if dist is not None:
-	    s += '(%.1f mi)<br>' % dist
+	location = checkin.get('location', {})
+
+    geolat = location.get('lat')
+    geolong = location.get('lng')
+	
+    if geolat is None or geolong is None:
+	compass = ''
+    else:
+	compass = ' ' + bearing(lat, lon, geolat, geolong)
+
+    if dist is not None:
+	s += '(%.1f mi%s)<br>' % (dist, compass)
 
     d1 = datetime.fromtimestamp(checkin['createdAt'])
     s += fuzzy_delta(dnow - d1)
@@ -2032,9 +2048,8 @@ class CommentsHandler(webapp.RequestHandler):
 	htmlend(self)
 
 def comment_fmt(comment, checkin, dnow):
-    return '<p>%s %s: %s (%s)<br>%s<br>' % (
-	    comment['user'].get('firstName', ''),
-	    comment['user'].get('lastName', ''),
+    return '<p>%s: %s (%s)<br>%s<br>' % (
+	    name_fmt(comment['user']),
 	    comment['text'],
 	    fuzzy_delta(dnow - datetime.fromtimestamp(comment['createdAt'])),
 	    del_comment_cmd(checkin, comment),
@@ -2059,13 +2074,12 @@ def photo_fmt(photo, dnow, venue_id = None, checkin_id = None):
 	photoparms['chkid'] = checkin_id
     photourl = '/photo?%s' % escape(urllib.urlencode(photoparms))
 
-    return '<p>%s %s:<br><a href="%s"><img src="%s"></a><br>(%s)<br>' % (
-	photo['user'].get('firstName', ''),
-	photo['user'].get('lastName', ''),
-	photourl,
-	imgurl,
-	fuzzy_delta(dnow - datetime.fromtimestamp(photo['createdAt'])),
-	)
+    return '<p>%s:<br><a href="%s"><img src="%s"></a><br>(%s)<br>' % (
+	    name_fmt(photo['user']),
+	    photourl,
+	    imgurl,
+	    fuzzy_delta(dnow - datetime.fromtimestamp(photo['createdAt'])),
+	    )
 
 def del_comment_cmd(checkin, comment):
     return '<a href="/delcomment?chkid=%s&commid=%s">[delete]</a>' % (
