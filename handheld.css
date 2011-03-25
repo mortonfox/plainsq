@@ -1,3 +1,19 @@
+.button {
+    padding: 10px; text-decoration: none; border: 1px solid #000000;
+    font-family: arial, "lucida console", helvetica, sans-serif;
+    display: inline-block;
+}
+.linksep { display: none; }
+
+.vbutton {
+    padding: 10px; text-decoration: none; border: 1px solid #000000;
+    font-family: arial, "lucida console", helvetica, sans-serif;
+    display: inline-block;
+}
+.vbutton:before, .vbutton:after { content: ""; }
+
+.buttonbox { display: block; }
+
 .widebutton { 
     padding: 10px; display: block; text-decoration: none; border: 1px solid #000000; 
     font-family: arial, "lucida console", helvetica, sans-serif;

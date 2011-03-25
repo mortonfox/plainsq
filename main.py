@@ -271,18 +271,18 @@ def htmlbegin(self, title):
 </head>
 
 <body>
-<p><a href="/"><b>PlainSq</b></a> - %s
+<p><a class="button" href="/"><b>PlainSq</b></a> - %s
 """ % (title, title))
 
 def htmlend(self, noabout=False, nologout=False):
     self.response.out.write("""
 <hr>
-<a href="/">Home</a>%s%s
+<a class="button" href="/">Home</a>%s%s
 </body>
 </html>
 """ % (
-    '' if noabout else ' | <a href="/about">About</a>',
-    '' if nologout else ' | <a href="/logout">Log out</a>'))
+    '' if noabout else '<span class="linksep"> | </span><a class="button" href="/about">About</a>',
+    '' if nologout else '<span class="linksep"> | </span><a class="button" href="/logout">Log out</a>'))
 
 def conv_a_coord(coord, nsew):
     coord = float(coord)
@@ -518,9 +518,9 @@ def venue_cmds(venue, checkin_long=False):
     """
     Show checkin/moveto links in venue header.
     """
-    s = '<a href="/checkin?vid=%s">[checkin]</a>' % venue['id']
+    s = '<a class="vbutton" href="/checkin?vid=%s">checkin</a>' % venue['id']
     if checkin_long:
-	s += ' <a href="/checkin_long?%s">[checkin with options]</a>' % \
+	s += ' <a class="vbutton" href="/checkin_long?%s">checkin with options</a>' % \
 		escape(urllib.urlencode( { 
 		    'vid' : venue['id'], 
 		    'vname' : venue['name']
@@ -528,15 +528,15 @@ def venue_cmds(venue, checkin_long=False):
 
     location = venue.get('location')
     if location is not None:
-	s += ' <a href="/coords?%s">[move to]</a>' % \
+	s += ' <a class="vbutton" href="/coords?%s">move to</a>' % \
 		escape(urllib.urlencode( {
 		    'geolat' : location['lat'],
 		    'geolong' : location['lng'],
 		    } ))
 
     # Link to venue page on Foursquare regular website.
-    s += ' <a href="http://foursquare.com/venue/%s">[web]</a>' % venue['id']
-    return s
+    s += ' <a class="vbutton" href="http://foursquare.com/venue/%s">web</a>' % venue['id']
+    return '<span class="buttonbox">%s</span>' % s
 
 def addr_fmt(venue):
     """
@@ -878,7 +878,7 @@ def comments_cmd(checkin):
 
     pstr = pluralize(count, 'photo')
 
-    return '<a href="/comments?chkid=%s">[%s, %s]</a>' % (
+    return '<span class="buttonbox"><a class="vbutton" href="/comments?chkid=%s">%s, %s</a></span>' % (
 	    checkin['id'], cstr, pstr)
 
 def history_checkin_fmt(checkin, dnow):
@@ -894,7 +894,7 @@ def history_checkin_fmt(checkin, dnow):
 	if id is None:
 	    s += '<p>%s<br>' % escape(venue['name'])
 	else:
-	    s += '<p><a href="/venue?vid=%s">%s</a> %s<br>%s' % (
+	    s += '<p><a class="button" href="/venue?vid=%s">%s</a> %s<br>%s' % (
 		    id, escape(venue['name']), venue_cmds(venue),
 		    addr_fmt(venue)
 		    )
@@ -1044,7 +1044,7 @@ class BadgesHandler(webapp.RequestHandler):
 	htmlend(self)
 
 def mayor_venue_fmt(venue):
-    return '<li><a href="/venue?vid=%s">%s</a> %s<br>%s' % (
+    return '<li><a class="button" href="/venue?vid=%s">%s</a> %s<br>%s' % (
 	    venue['id'], escape(venue['name']), venue_cmds(venue),
 	    addr_fmt(venue))
 
@@ -1106,7 +1106,7 @@ def friend_checkin_fmt(checkin, lat, lon, dnow):
     user_shown = False
 
     if venue is not None:
-	s += '<a href="/venue?vid=%s">%s @ %s</a><br>' % (
+	s += '<a class="button" href="/venue?vid=%s">%s @ %s</a><br>' % (
 		venue.get('id'),
 		name_fmt(user),
 		venue.get('name', ''),
@@ -1247,7 +1247,7 @@ def venue_fmt(venue, lat, lon):
     """
     s = ''
 
-    s += '<p><a href="/venue?vid=%s">%s</a> %s<br>%s' % (
+    s += '<p><a class="button" href="/venue?vid=%s">%s</a> %s<br>%s' % (
 	    venue['id'], escape(venue['name']), 
 	    venue_cmds(venue), addr_fmt(venue))
 
@@ -1446,7 +1446,7 @@ def checkin_fmt(checkin, notif):
 
     venue = checkin.get('venue')
     if venue is not None:
-	s += '<p><a href="/venue?vid=%s">%s</a><br>%s' % ( 
+	s += '<p><a class="button" href="/venue?vid=%s">%s</a><br>%s' % ( 
 		venue['id'], escape(venue['name']), addr_fmt(venue))
 
 	# Add static Google Map to the page.
@@ -2087,7 +2087,7 @@ def photo_fmt(photo, dnow, venue_id = None, checkin_id = None):
 	    )
 
 def del_comment_cmd(checkin, comment):
-    return '<a href="/delcomment?chkid=%s&commid=%s">[delete]</a>' % (
+    return '<a class="vbutton" href="/delcomment?chkid=%s&commid=%s">delete</a>' % (
 	    checkin['id'], comment['id'])
 
 def checkin_comments_fmt(checkin):

@@ -1,3 +1,12 @@
+.button { }
+.linksep { }
+
+.vbutton { }
+.vbutton:before { content: "["; }
+.vbutton:after { content: "]"; }
+
+.buttonbox { }
+
 .widebutton { }
 .formbox { display: block; padding: 0; margin: 0; }
 
