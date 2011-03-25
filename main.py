@@ -261,10 +261,13 @@ def htmlbegin(self, title):
 <head>
 <meta charset="utf-8">
 <title>PlainSq - %s</title>
-<style type="text/css">
-.error { color: red; background-color: white; }
-.grayed { color: #7f7f7f; background-color: white; }
-</style>
+
+<meta name="HandheldFriendly" content="true" />
+<meta name="viewport" content="width=device-width, height=device-height, user-scalable=no" />
+
+<link rel="stylesheet" href="/screen.css" media="all" type="text/css">
+<link rel="stylesheet" href="/handheld.css" media="handheld, only screen and (max-device-width:480px)" type="text/css">
+
 </head>
 
 <body>
@@ -419,37 +422,39 @@ class MainHandler(webapp.RequestHandler):
 		% user['id']
 
         self.response.out.write("""
-<p>
+<ol class="menulist">
 
-<form style="margin:0; padding:0" action="/coords" method="get">
-1. Enter coordinates: <input type="text" name="coords" size="8"
-accesskey="1"><input type="submit" value="Go"></form>
+<li><form class="formbox" action="/coords" method="get">
+Enter coordinates: <input class="inputbox" type="text" name="coords" size="8"
+accesskey="1"><input class="submitbutton" type="submit" value="Go"></form>
 
-2. <a href="/venues" accesskey="2">Nearest Venues</a><br>
+<li><a class="widebutton" href="/venues" accesskey="2">Nearest Venues</a>
 
-<form style="margin:0; padding:0" action="/venues" method="get">
-3. Search Venues: <input type="text" name="query" size="8"
-accesskey="3"><input type="submit" value="Search"></form>
+<li><form class="formbox" action="/venues" method="get">
+Search Venues: <input class="inputbox" type="text" name="query" size="8"
+accesskey="3"><input class="submitbutton" type="submit" value="Search"></form>
 
-4. <a href="/history" accesskey="4">History</a><br>
+<li><a class="widebutton" href="/history" accesskey="4">History</a>
 
-5. <a href="/friends" accesskey="5">Find friends</a><br>
+<li><a class="widebutton" href="/friends" accesskey="5">Find friends</a>
 
-<form style="margin:0; padding:0" action="/shout" method="get">
-6. Shout: <input type="text" name="message" size="8" accesskey="6">
-<input type="submit" value="Shout"></form>
+<li><form class="formbox" action="/shout" method="get">
+Shout: <input class="inputbox" type="text" name="message" size="8" accesskey="6">
+<input class="submitbutton" type="submit" value="Shout"></form>
 
-7. <a href="%s" accesskey="7">Leaderboard</a><br>
+<li><a class="widebutton" href="%s" accesskey="7">Leaderboard</a>
 
-8. <a href="/badges" accesskey="8">Badges</a><br>
+<li><a class="widebutton" href="/badges" accesskey="8">Badges</a>
 
-9. <a href="/mayor" accesskey="9">Mayorships</a><br>
+<li><a class="widebutton" href="/mayor" accesskey="9">Mayorships</a>
 
-10. <a href="/debug" accesskey="0">Turn debugging %s</a><br>
+<li><a class="widebutton" href="/debug" accesskey="0">Turn debugging %s</a>
 
-11. <a href="/specials">Specials</a><br>
+<li><a class="widebutton" href="/specials">Specials</a>
 
-12. <a href="/geoloc">Detect location</a><br>
+<li><a class="widebutton" href="/geoloc">Detect location</a>
+
+</ol>
 
 <p>Enter coordinates as a series of digits, e.g.:
 <br>

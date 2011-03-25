@@ -7,6 +7,9 @@ handlers:
 - url: /admin/.*
   script: $PYTHON_LIB/google/appengine/ext/admin
   login: admin
+- url: /(.*\.css)
+  static_files: \1
+  upload: .*\.css
 - url: .*
   script: main.py
 

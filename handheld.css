@@ -1,0 +1,22 @@
+.widebutton { 
+    padding: 10px; display: block; text-decoration: none; border: 1px solid #000000; 
+    font-family: arial, "lucida console", helvetica, sans-serif;
+}
+
+.formbox { 
+    padding: 10px; display: block; border: 1px solid; 
+    font-family: arial, "lucida console", helvetica, sans-serif;
+}
+
+.inputbox { height: 20px; }
+.submitbutton { 
+    font-family: arial, "lucida console", helvetica, sans-serif;
+    font-size: inherit;
+}
+
+.error { color: red; background-color: white; }
+.grayed { color: #7f7f7f; background-color: white; }
+
+.menulist { list-style-type: none; padding: 0; }
+
+/* vim: set tw=0: */

@@ -1,0 +1,12 @@
+.widebutton { }
+.formbox { display: block; padding: 0; margin: 0; }
+
+.inputbox {  }
+.submitbutton {  }
+
+.error { color: red; background-color: white; }
+.grayed { color: #7f7f7f; background-color: white; }
+
+.menulist { padding: 0 0 0 1.5em; }
+
+/* vim: set tw=0: */
