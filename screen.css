@@ -1,3 +1,6 @@
+/* CSS styles for general web browsers. Also used for handheld devices unless
+ * the style is overridden in handheld.css. */
+
 .button { }
 .linksep { }
 
@@ -17,5 +20,29 @@
 .grayed { color: #7f7f7f; background-color: white; }
 
 .menulist { padding: 0 0 0 1.5em; }
+
+.vlist { list-style-type: none; padding: 0; }
+
+.seplist { list-style-type: none; padding: 0; }
+
+.seplist li {
+    padding: 10px 0 10px 0;
+    border-width: 1px;
+    border-top-style: solid;
+    border-right-style: none;
+    border-bottom-style: solid;
+    border-left-style: none;
+}
+
+.numseplist { list-style-type: decimal; padding: 0 0 0 1.5em; }
+
+.numseplist li {
+    padding: 10px 0 10px 0;
+    border-width: 1px;
+    border-top-style: solid;
+    border-right-style: none;
+    border-bottom-style: solid;
+    border-left-style: none;
+}
 
 /* vim: set tw=0: */

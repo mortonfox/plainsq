@@ -14,7 +14,7 @@ Version: 0.0.2
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: February 22, 2011
+Last updated: March 26, 2011
 </pre>
 """
 
@@ -56,7 +56,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.2 20110222'
+USER_AGENT = 'plainsq:0.0.3 20110326'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -426,33 +426,33 @@ class MainHandler(webapp.RequestHandler):
 
 <li><form class="formbox" action="/coords" method="get">
 Enter coordinates: <input class="inputbox" type="text" name="coords" size="8"
-accesskey="1"><input class="submitbutton" type="submit" value="Go"></form>
+accesskey="1"><input class="submitbutton" type="submit" value="Go"></form></li>
 
-<li><a class="widebutton" href="/venues" accesskey="2">Nearest Venues</a>
+<li><a class="widebutton" href="/venues" accesskey="2">Nearest Venues</a></li>
 
 <li><form class="formbox" action="/venues" method="get">
 Search Venues: <input class="inputbox" type="text" name="query" size="8"
-accesskey="3"><input class="submitbutton" type="submit" value="Search"></form>
+accesskey="3"><input class="submitbutton" type="submit" value="Search"></form></li>
 
-<li><a class="widebutton" href="/history" accesskey="4">History</a>
+<li><a class="widebutton" href="/history" accesskey="4">History</a></li>
 
-<li><a class="widebutton" href="/friends" accesskey="5">Find friends</a>
+<li><a class="widebutton" href="/friends" accesskey="5">Find friends</a></li>
 
 <li><form class="formbox" action="/shout" method="get">
 Shout: <input class="inputbox" type="text" name="message" size="8" accesskey="6">
-<input class="submitbutton" type="submit" value="Shout"></form>
+<input class="submitbutton" type="submit" value="Shout"></form></li>
 
-<li><a class="widebutton" href="%s" accesskey="7">Leaderboard</a>
+<li><a class="widebutton" href="%s" accesskey="7">Leaderboard</a></li>
 
-<li><a class="widebutton" href="/badges" accesskey="8">Badges</a>
+<li><a class="widebutton" href="/badges" accesskey="8">Badges</a></li>
 
-<li><a class="widebutton" href="/mayor" accesskey="9">Mayorships</a>
+<li><a class="widebutton" href="/mayor" accesskey="9">Mayorships</a></li>
 
-<li><a class="widebutton" href="/debug" accesskey="0">Turn debugging %s</a>
+<li><a class="widebutton" href="/debug" accesskey="0">Turn debugging %s</a></li>
 
-<li><a class="widebutton" href="/specials">Specials</a>
+<li><a class="widebutton" href="/specials">Specials</a></li>
 
-<li><a class="widebutton" href="/geoloc">Detect location</a>
+<li><a class="widebutton" href="/geoloc">Detect location</a></li>
 
 </ol>
 
@@ -787,8 +787,8 @@ def specials_fmt(specials, nearby=False):
     """
     return '' if len(specials) == 0 else '<p><b>Specials%s:</b>' % (
 	    ' nearby' if nearby else ''
-	    ) + ''.join(
-		    [special_fmt(x) for x in specials])
+	    ) + '<ul class="seplist">%s</ul>' % ''.join(
+		    ['<li>%s</li>' % special_fmt(x) for x in specials])
 
 def tip_fmt(tip):
     """
@@ -950,8 +950,13 @@ class HistoryHandler(webapp.RequestHandler):
 	    self.response.out.write('<p>No check-ins?')
 	else:
 	    dnow = datetime.utcnow()
-	    self.response.out.write(''.join(
-		[history_checkin_fmt(c, dnow) for c in checkins['items']]))
+	    self.response.out.write("""
+<ul class="vlist">
+%s
+</ul>
+""" % ''.join(
+    ['<li>%s</li>' % history_checkin_fmt(c, dnow)
+	for c in checkins['items']]))
 
 	debug_json(self, jsn)
 	htmlend(self)
@@ -1044,7 +1049,7 @@ class BadgesHandler(webapp.RequestHandler):
 	htmlend(self)
 
 def mayor_venue_fmt(venue):
-    return '<li><a class="button" href="/venue?vid=%s">%s</a> %s<br>%s' % (
+    return '<li><a class="button" href="/venue?vid=%s">%s</a> %s<br>%s</li>' % (
 	    venue['id'], escape(venue['name']), venue_cmds(venue),
 	    addr_fmt(venue))
 
@@ -1072,7 +1077,7 @@ class MayorHandler(webapp.RequestHandler):
 	    self.response.out.write('<p>No mayorships yet.')
 	else:
 	    self.response.out.write(
-		'<ol style="padding: 0 0 0 1.5em">%s</ol>' % 
+		'<ol class="numseplist">%s</ol>' % 
 		''.join([mayor_venue_fmt(v) for v in mayorships['items']]))
 
 	debug_json(self, user)
@@ -1194,9 +1199,13 @@ class FriendsHandler(webapp.RequestHandler):
 	if len(recent) == 0:
 	    self.response.out.write('<p>No friends?')
 	else:
-	    self.response.out.write(
-		''.join(
-		    [friend_checkin_fmt(c, lat, lon, dnow) for c in recent]))
+	    self.response.out.write("""
+<ul class="vlist">
+%s
+</ul>
+""" % ''.join(
+    ['<li>%s</li>' % friend_checkin_fmt(c, lat, lon, dnow)
+	for c in recent]))
 
 	debug_json(self, jsn)
 	htmlend(self)
@@ -1281,7 +1290,11 @@ def venues_fmt(jsn, lat, lon):
     # use a very large value.
     venues.sort(key = lambda v: v['location'].get('distance', '1000000'))
 
-    return ''.join([venue_fmt(v, lat, lon) for v in venues])
+    return """
+<ul class="vlist">
+%s
+</ul>
+""" % ''.join(['<li>%s</li>' % venue_fmt(v, lat, lon) for v in venues])
 
 def remove_dup_vids(venues):
     """

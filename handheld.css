@@ -1,3 +1,5 @@
+/* CSS styles for handheld devices. */
+
 .button {
     padding: 10px; text-decoration: none; border: 1px solid #000000;
     font-family: arial, "lucida console", helvetica, sans-serif;
@@ -30,9 +32,20 @@
     font-size: inherit;
 }
 
-.error { color: red; background-color: white; }
-.grayed { color: #7f7f7f; background-color: white; }
-
 .menulist { list-style-type: none; padding: 0; }
+
+.vlist { 
+    list-style-type: none; 
+    padding: 0;
+}
+
+.vlist li {
+    padding: 10px 0 10px 0;
+    border-width: 1px;
+    border-top-style: solid;
+    border-right-style: none;
+    border-bottom-style: solid;
+    border-left-style: none;
+}
 
 /* vim: set tw=0: */
