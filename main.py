@@ -14,7 +14,7 @@ Version: 0.0.2
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: March 26, 2011
+Last updated: March 28, 2011
 </pre>
 """
 
@@ -56,7 +56,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.3 20110326'
+USER_AGENT = 'plainsq:0.0.3 20110328'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -263,7 +263,7 @@ def htmlbegin(self, title):
 <title>PlainSq - %s</title>
 
 <meta name="HandheldFriendly" content="true" />
-<meta name="viewport" content="width=device-width, height=device-height, user-scalable=no" />
+<meta name="viewport" content="width=device-width, height=device-height, user-scalable=yes" />
 
 <link rel="stylesheet" href="/screen.css" media="all" type="text/css">
 <link rel="stylesheet" href="/handheld.css" media="handheld, only screen and (max-device-width:480px)" type="text/css">

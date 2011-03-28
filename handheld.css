@@ -1,23 +1,29 @@
 /* CSS styles for handheld devices. */
 
-.button {
-    padding: 10px; text-decoration: none; border: 1px solid #000000;
+.button, .vbutton {
+    padding: 10px; text-decoration: none; 
     font-family: arial, "lucida console", helvetica, sans-serif;
     display: inline-block;
 }
-.linksep { display: none; }
 
-.vbutton {
-    padding: 10px; text-decoration: none; border: 1px solid #000000;
-    font-family: arial, "lucida console", helvetica, sans-serif;
-    display: inline-block;
-}
 .vbutton:before, .vbutton:after { content: ""; }
+
+.button:link, .button:visited, .vbutton:link, .vbutton:visited {
+    border: 3px outset #000000;
+}
+.button:active, .vbutton:active {
+    border: 3px inset #000000;
+}
+
+.linksep { display: none; }
 
 .buttonbox { display: block; }
 
 .widebutton { 
-    padding: 10px; display: block; text-decoration: none; border: 1px solid #000000; 
+    padding: 10px; 
+    display: block; 
+    text-decoration: none; 
+    border: 1px solid #000000;
     font-family: arial, "lucida console", helvetica, sans-serif;
 }
 
