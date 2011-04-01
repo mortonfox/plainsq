@@ -9,15 +9,25 @@
     -webkit-border-radius: 5px;
     -khtml-border-radius: 5px;
     border-radius: 5px;
+
+    background-color: #dfdfdf;
+    border-width: 3px;
+    border-style: solid;
 }
 
 .vbutton:before, .vbutton:after { content: ""; }
 
 .button:link, .button:visited, .vbutton:link, .vbutton:visited {
-    border: 3px outset #000000;
+    border-bottom-color: #7f7f7f;
+    border-right-color: #7f7f7f;
+    border-top-color: #bfbfbf;
+    border-left-color: #bfbfbf;
 }
 .button:active, .vbutton:active {
-    border: 3px inset #000000;
+    border-top-color: #7f7f7f;
+    border-left-color: #7f7f7f;
+    border-bottom-color: #bfbfbf;
+    border-right-color: #bfbfbf;
 }
 
 .linksep { display: none; }
