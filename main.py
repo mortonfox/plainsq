@@ -390,7 +390,7 @@ class LoginHandler(webapp.RequestHandler):
 
 	self.response.out.write("""
 <p>In order to use PlainSq features, you need to log in with Foursquare.
-<p><a href="/login2">Log in with Foursquare</a>
+<p><a class="button" href="/login2">Log in with Foursquare</a>
 """)
 	htmlend(self, nologout=True)
 
