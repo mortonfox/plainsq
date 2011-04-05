@@ -10,11 +10,11 @@ check-ins by phones that do not have GPS.
 <p>PlainSquare uses Foursquare OAuth to log in, so it does not store user passwords. It is written in Python and is meant to be hosted on Google App Engine.
 
 <pre>
-Version: 0.0.2
+Version: 0.0.3
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: March 28, 2011
+Last updated: April 5, 2011
 </pre>
 """
 
@@ -56,7 +56,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.3 20110328'
+USER_AGENT = 'plainsq:0.0.3 20110405'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -1506,7 +1506,35 @@ def checkin_fmt(checkin, notif):
     if len(scores) > 0:
 	s += ''.join([checkin_score_fmt(score) 
 	    for score in scores[0]['scores']])
+
+    leaderboard = find_notifs(notif, 'leaderboard')
+    if len(leaderboard) > 0:
+	s += checkin_ldr_fmt(leaderboard[0])
     
+    return s
+
+def checkin_ldr_row_fmt(leader):
+    user = leader.get('user', {})
+    scores = leader.get('scores', {})
+    return """
+<p><img src="%s" style="float:left"> #%d: %s %s from %s<br>
+%d points, %d checkins, %d max<br style="clear:both">
+""" % (user.get('photo', ''),
+	leader.get('rank', 0),
+	user.get('firstName', ''),
+	user.get('lastName', ''),
+	user.get('homeCity', ''),
+	scores.get('recent', 0),
+	scores.get('checkinsCount', 0),
+	scores.get('max', 0))
+
+def checkin_ldr_fmt(leaderboard):
+    s = ''
+
+    leaders = leaderboard.get('leaderboard', [])
+    s += ''.join([checkin_ldr_row_fmt(l) for l in leaders])
+
+    s += '<p>%s' % leaderboard.get('message', '')
     return s
 
 def do_checkin(self, client, vid):
