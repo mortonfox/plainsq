@@ -424,35 +424,35 @@ class MainHandler(webapp.RequestHandler):
         self.response.out.write("""
 <ol class="menulist">
 
+<li><a class="widebutton" href="/geoloc" accesskey="1">Detect location</a></li>
+
 <li><form class="formbox" action="/coords" method="get">
 Enter coordinates: <input class="inputbox" type="text" name="coords" size="8"
-accesskey="1"><input class="submitbutton" type="submit" value="Go"></form></li>
+accesskey="2"><input class="submitbutton" type="submit" value="Go"></form></li>
 
-<li><a class="widebutton" href="/venues" accesskey="2">Nearest Venues</a></li>
+<li><a class="widebutton" href="/venues" accesskey="3">Nearest Venues</a></li>
 
 <li><form class="formbox" action="/venues" method="get">
 Search Venues: <input class="inputbox" type="text" name="query" size="8"
-accesskey="3"><input class="submitbutton" type="submit" value="Search"></form></li>
+accesskey="4"><input class="submitbutton" type="submit" value="Search"></form></li>
 
-<li><a class="widebutton" href="/history" accesskey="4">History</a></li>
+<li><a class="widebutton" href="/history" accesskey="5">History</a></li>
 
-<li><a class="widebutton" href="/friends" accesskey="5">Find friends</a></li>
+<li><a class="widebutton" href="/friends" accesskey="6">Find friends</a></li>
 
 <li><form class="formbox" action="/shout" method="get">
-Shout: <input class="inputbox" type="text" name="message" size="8" accesskey="6">
+Shout: <input class="inputbox" type="text" name="message" size="8" accesskey="7">
 <input class="submitbutton" type="submit" value="Shout"></form></li>
 
-<li><a class="widebutton" href="%s" accesskey="7">Leaderboard</a></li>
+<li><a class="widebutton" href="%s" accesskey="8">Leaderboard</a></li>
 
-<li><a class="widebutton" href="/badges" accesskey="8">Badges</a></li>
+<li><a class="widebutton" href="/specials" accesskey="9">Specials</a></li>
 
-<li><a class="widebutton" href="/mayor" accesskey="9">Mayorships</a></li>
+<li><a class="widebutton" href="/badges" accesskey="0">Badges</a></li>
 
-<li><a class="widebutton" href="/debug" accesskey="0">Turn debugging %s</a></li>
+<li><a class="widebutton" href="/mayor">Mayorships</a></li>
 
-<li><a class="widebutton" href="/specials">Specials</a></li>
-
-<li><a class="widebutton" href="/geoloc">Detect location</a></li>
+<li><a class="widebutton" href="/debug">Turn debugging %s</a></li>
 
 </ol>
 
@@ -528,11 +528,14 @@ def venue_cmds(venue, checkin_long=False):
 
     location = venue.get('location')
     if location is not None:
-	s += ' <a class="vbutton" href="/coords?%s">move to</a>' % \
-		escape(urllib.urlencode( {
-		    'geolat' : location['lat'],
-		    'geolong' : location['lng'],
-		    } ))
+	lat = location.get('lat')
+	lng = location.get('lng')
+	if lat is not None and lng is not None:
+	    s += ' <a class="vbutton" href="/coords?%s">move to</a>' % \
+		    escape(urllib.urlencode( {
+			'geolat' : lat,
+			'geolong' : lng,
+			} ))
 
     # Link to venue page on Foursquare regular website.
     s += ' <a class="vbutton" href="http://foursquare.com/venue/%s">web</a>' % venue['id']
@@ -673,8 +676,12 @@ def vinfo_fmt(venue):
 	    addr_fmt(venue))
 
     location = venue.get('location', {})
-    # Add static Google Map to the page.
-    s += google_map(location['lat'], location['lng'])
+    if location is not None:
+	lat = location.get('lat')
+	lng = location.get('lng')
+	if lat is not None and lng is not None:
+	    # Add static Google Map to the page.
+	    s += google_map(lat, lng)
 
     cats = venue.get('categories', [])
     s += ''.join([category_fmt(c) for c in cats])
@@ -1260,13 +1267,18 @@ def venue_fmt(venue, lat, lon):
 	    venue['id'], escape(venue['name']), 
 	    venue_cmds(venue), addr_fmt(venue))
 
-    # Show distance and bearing from current coordinates.
-    dist = venue['location'].get('distance')
-    if dist is not None:
-	dist = float(dist) / METERS_PER_MILE
-	compass = bearing(lat, lon, 
-		venue['location']['lat'], venue['location']['lng'])
-	s += '(%.1f mi %s)<br>' % (dist, compass)
+    location = venue.get('location')
+    if location is not None:
+	# Show distance and bearing from current coordinates.
+	dist = location.get('distance')
+	if dist is not None:
+	    dist = float(dist) / METERS_PER_MILE
+	    vlat = location.get('lat')
+	    vlng = location.get('lng')
+	    compass = ''
+	    if vlat is not None and vlng is not None:
+		compass = bearing(lat, lon, vlat, vlng)
+	    s += '(%.1f mi %s)<br>' % (dist, compass)
 
     return s
 
@@ -1462,8 +1474,13 @@ def checkin_fmt(checkin, notif):
 	s += '<p><a class="button" href="/venue?vid=%s">%s</a><br>%s' % ( 
 		venue['id'], escape(venue['name']), addr_fmt(venue))
 
-	# Add static Google Map to the page.
-	s += google_map(venue['location']['lat'], venue['location']['lng'])
+	location = venue.get('location')
+	if location is not None:
+	    lat = location.get('lat')
+	    lng = location.get('lng')
+	    if lat is not None and lng is not None:
+		# Add static Google Map to the page.
+		s += google_map(lat, lng)
 
 	pcat = get_prim_category(venue.get('categories'))
 	if pcat is not None:
