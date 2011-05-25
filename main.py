@@ -14,7 +14,7 @@ Version: 0.0.3
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: April 5, 2011
+Last updated: May 24, 2011
 </pre>
 """
 
@@ -523,7 +523,7 @@ def venue_cmds(venue, checkin_long=False):
 	s += ' <a class="vbutton" href="/checkin_long?%s">checkin with options</a>' % \
 		escape(urllib.urlencode( { 
 		    'vid' : venue['id'], 
-		    'vname' : venue['name']
+		    'vname' : venue['name'].encode('utf-8')
 		    } ))
 
     location = venue.get('location')
