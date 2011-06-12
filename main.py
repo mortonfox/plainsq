@@ -440,7 +440,7 @@ accesskey="4"><input class="submitbutton" type="submit" value="Search"></form></
 
 <li><a class="widebutton" href="/friends" accesskey="6">Find friends</a></li>
 
-<li><form class="formbox" action="/shout" method="get">
+<li><form class="formbox" action="/shout" method="post">
 Shout: <input class="inputbox" type="text" name="message" size="8" accesskey="7">
 <input class="submitbutton" type="submit" value="Shout"></form></li>
 
@@ -1221,7 +1221,7 @@ class ShoutHandler(webapp.RequestHandler):
     """
     This handles user shouts.
     """
-    def put(self):
+    def post(self):
 	self.get()
 
     def get(self):
@@ -1359,7 +1359,7 @@ class VenuesHandler(webapp.RequestHandler):
 	    return jsn
 
 	self.response.out.write("""
-<form style="margin:0; padding:0" action="/addvenue" method="get"><p>
+<form style="margin:0; padding:0" action="/addvenue" method="post"><p>
 Add venue here and check in: <input type="text" name="vname" size="15"><input type="submit" value="Add Venue"></p></form>
 
 <p>""" + venues_fmt(response, lat, lon))
@@ -1733,7 +1733,7 @@ class CheckinLong2Handler(webapp.RequestHandler):
     Continuation of CheckinLongHandler after the user submits the
     checkin form with options.
     """
-    def put(self):
+    def post(self):
 	self.get()
 
     def get(self):
@@ -1843,7 +1843,7 @@ class CheckinLongHandler(webapp.RequestHandler):
 	sel = 'selected="selected"'
 
 	self.response.out.write("""
-<form action="/checkin_long2" method="get">
+<form action="/checkin_long2" method="post">
 Shout (optional): <input type="text" name="shout" size="15"><br>
 <input type="hidden" value="%s" name="vid">
 <input type="submit" value="check-in"><br>
@@ -2091,7 +2091,7 @@ class CommentsHandler(webapp.RequestHandler):
 
 	self.response.out.write("""
 <p>
-<form style="margin:0 padding:0" action="/addcomment" method="get">
+<form style="margin:0 padding:0" action="/addcomment" method="post">
 <input type="text" name="text" size="15"><br>
 <input type="hidden" value="%s" name="chkid">
 <input type="submit" value="Add comment"><br>
