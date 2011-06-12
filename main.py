@@ -518,6 +518,8 @@ def venue_cmds(venue, checkin_long=False):
     """
     Show checkin/moveto links in venue header.
     """
+    #s = """
+#<form style="margin:0; padding:0;"
     s = '<a class="vbutton" href="/checkin?vid=%s">checkin</a>' % venue['id']
     if checkin_long:
 	s += ' <a class="vbutton" href="/checkin_long?%s">checkin with options</a>' % \
@@ -753,7 +755,7 @@ from %s is the mayor<br style="clear:both">
 
     s += """
 <p>
-<form style="margin:0 padding:0" enctype="multipart/form-data" action="/addphoto" method="post">
+<form style="margin:0; padding:0;" enctype="multipart/form-data" action="/addphoto" method="post">
 <input type="file" name="photo"><br>
 <input type="hidden" value="%s" name="venid">
 <input type="submit" value="Add JPEG photo"><br>
@@ -1359,7 +1361,7 @@ class VenuesHandler(webapp.RequestHandler):
 	    return jsn
 
 	self.response.out.write("""
-<form style="margin:0; padding:0" action="/addvenue" method="post"><p>
+<form style="margin:0; padding:0;" action="/addvenue" method="post"><p>
 Add venue here and check in: <input type="text" name="vname" size="15"><input type="submit" value="Add Venue"></p></form>
 
 <p>""" + venues_fmt(response, lat, lon))
@@ -2091,7 +2093,7 @@ class CommentsHandler(webapp.RequestHandler):
 
 	self.response.out.write("""
 <p>
-<form style="margin:0 padding:0" action="/addcomment" method="post">
+<form style="margin:0; padding:0;" action="/addcomment" method="post">
 <input type="text" name="text" size="15"><br>
 <input type="hidden" value="%s" name="chkid">
 <input type="submit" value="Add comment"><br>
@@ -2100,7 +2102,7 @@ class CommentsHandler(webapp.RequestHandler):
 
 	self.response.out.write("""
 <p>
-<form style="margin:0 padding:0" enctype="multipart/form-data" action="/addphoto" method="post">
+<form style="margin:0; padding:0;" enctype="multipart/form-data" action="/addphoto" method="post">
 <input type="file" name="photo"><br>
 <input type="hidden" value="%s" name="chkid">
 <input type="submit" value="Add JPEG photo"><br>
