@@ -46,6 +46,8 @@ TOKEN_PREFIX = 'token_plainsq_'
 
 COORD_PREFIX = 'coord_plainsq_'
 
+USERID_PREFIX = 'userid_plainsq_'
+
 AUTH_URL = 'https://foursquare.com/oauth2/authenticate'
 ACCESS_URL = 'https://foursquare.com/oauth2/access_token'
 API_URL = 'https://api.foursquare.com/v2'
@@ -131,6 +133,24 @@ def no_cache(self):
     """
     self.response.headers.add_header('Cache-Control', 'no-cache') 
     self.response.headers.add_header('User-Agent', USER_AGENT) 
+
+
+def set_userid(self, userid):
+    """
+    Cache the userid.
+    """
+    uuid = self.request.cookies.get(TOKEN_COOKIE)
+    if uuid is not None:
+	memcache.set(USERID_PREFIX + uuid, userid)
+
+
+def get_userid(self):
+    """
+    Get the cached userid, if available.
+    """
+    uuid = self.request.cookies.get(TOKEN_COOKIE)
+    if uuid is not None:
+	return memcache.get(USERID_PREFIX + uuid)
 
 
 def query_coords(self, uuid = None):
@@ -415,11 +435,19 @@ class MainHandler(webapp.RequestHandler):
 
 	htmlbegin(self, "Main")
 
+	userid = None
 	user = userheader(self, client, lat, lon)
 	if user is None:
-	    return
+	    # If the users/self query failed then check if we have a saved
+	    # userid from memcache. If so, then we can still display the menu.
+	    userid = get_userid(self)
+	    if userid is None:
+		return
+	else:
+	    userid = user['id']
+	    set_userid(self, userid)
 	leaderboard = 'http://foursquare.com/iphone/me?uid=%s' \
-		% user['id']
+		% userid
 
         self.response.out.write("""
 <ol class="menulist">
