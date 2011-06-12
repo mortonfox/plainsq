@@ -1854,9 +1854,9 @@ class CheckinLongHandler(webapp.RequestHandler):
 
 	self.response.out.write("""
 <form action="/checkin_long2" method="post">
-Shout (optional): <input type="text" name="shout" size="15"><br>
+Shout (optional): <input class="inputbox" type="text" name="shout" size="15"><br>
 <input type="hidden" value="%s" name="vid">
-<input type="submit" value="check-in"><br>
+<input class="formbutton" type="submit" value="check-in"><br>
 <select name="private">
 <option value="1" %s>Don't show your friends</option>
 <option value="0" %s>Show your friends</option>
@@ -2102,18 +2102,18 @@ class CommentsHandler(webapp.RequestHandler):
 	self.response.out.write("""
 <p>
 <form style="margin:0; padding:0;" action="/addcomment" method="post">
-<input type="text" name="text" size="15"><br>
+<input class="inputbox" type="text" name="text" size="15"><br>
 <input type="hidden" value="%s" name="chkid">
-<input type="submit" value="Add comment"><br>
+<input class="formbutton" type="submit" value="Add comment"><br>
 </form>
 """ % escape(checkin_id))
 
 	self.response.out.write("""
 <p>
 <form style="margin:0; padding:0;" enctype="multipart/form-data" action="/addphoto" method="post">
-<input type="file" name="photo"><br>
+<input class="inputbox" type="file" name="photo"><br>
 <input type="hidden" value="%s" name="chkid">
-<input type="submit" value="Add JPEG photo"><br>
+<input class="formbutton" type="submit" value="Add JPEG photo"><br>
 </form>
 """ % escape(checkin_id))
 
