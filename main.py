@@ -10,11 +10,11 @@ check-ins by phones that do not have GPS.
 <p>PlainSquare uses Foursquare OAuth to log in, so it does not store user passwords. It is written in Python and is meant to be hosted on Google App Engine.
 
 <pre>
-Version: 0.0.3
+Version: 0.0.4
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: May 24, 2011
+Last updated: June 12, 2011
 </pre>
 """
 
@@ -56,7 +56,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.3 20110405'
+USER_AGENT = 'plainsq:0.0.4 20110612'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -518,9 +518,8 @@ def venue_cmds(venue, checkin_long=False):
     """
     Show checkin/moveto links in venue header.
     """
-    #s = """
-#<form style="margin:0; padding:0;"
-    s = '<a class="vbutton" href="/checkin?vid=%s">checkin</a>' % venue['id']
+    s = ''
+    # s = '<a class="vbutton" href="/checkin?vid=%s">checkin</a>' % venue['id']
     if checkin_long:
 	s += ' <a class="vbutton" href="/checkin_long?%s">checkin with options</a>' % \
 		escape(urllib.urlencode( { 
@@ -541,6 +540,12 @@ def venue_cmds(venue, checkin_long=False):
 
     # Link to venue page on Foursquare regular website.
     s += ' <a class="vbutton" href="http://foursquare.com/venue/%s">web</a>' % venue['id']
+
+    s += """<form style="margin:0; padding:0;" action="/checkin" method="post">
+<input type="hidden" name="vid" value="%s">
+<input class="formbutton" type="submit" value="checkin">
+</form>""" % venue['id']
+
     return '<span class="buttonbox">%s</span>' % s
 
 def addr_fmt(venue):
@@ -1581,6 +1586,9 @@ class CheckinHandler(webapp.RequestHandler):
     This handles user checkins by venue ID.
     """
     def get(self):
+	self.post()
+
+    def post(self):
 	no_cache(self)
 
 	client = getclient(self)

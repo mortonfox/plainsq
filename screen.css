@@ -8,6 +8,8 @@
 .vbutton:before { content: "["; }
 .vbutton:after { content: "]"; }
 
+.formbutton { }
+
 .buttonbox { }
 
 .widebutton { }
