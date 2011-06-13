@@ -14,7 +14,7 @@ Version: 0.0.4
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: June 12, 2011
+Last updated: June 13, 2011
 </pre>
 """
 
@@ -58,7 +58,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.4 20110612'
+USER_AGENT = 'plainsq:0.0.4 20110613'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -937,9 +937,9 @@ def history_checkin_fmt(checkin, dnow):
 	id = venue.get('id')
 	# Orphaned venues will be missing the id field.
 	if id is None:
-	    s += '<p>%s<br>' % escape(venue['name'])
+	    s += '<b>%s</b><br>' % escape(venue['name'])
 	else:
-	    s += '<p><a class="button" href="/venue?vid=%s">%s</a> %s<br>%s' % (
+	    s += '<a class="button" href="/venue?vid=%s"><b>%s</b></a> %s<br>%s' % (
 		    id, escape(venue['name']), venue_cmds(venue),
 		    addr_fmt(venue)
 		    )
@@ -1094,7 +1094,7 @@ class BadgesHandler(webapp.RequestHandler):
 	htmlend(self)
 
 def mayor_venue_fmt(venue):
-    return '<li><a class="button" href="/venue?vid=%s">%s</a> %s<br>%s</li>' % (
+    return '<li><a class="button" href="/venue?vid=%s"><b>%s</b></a> %s<br>%s</li>' % (
 	    venue['id'], escape(venue['name']), venue_cmds(venue),
 	    addr_fmt(venue))
 
@@ -1156,7 +1156,7 @@ def friend_checkin_fmt(checkin, lat, lon, dnow):
     user_shown = False
 
     if venue is not None:
-	s += '<a class="button" href="/venue?vid=%s">%s @ %s</a><br>' % (
+	s += '<a class="button" href="/venue?vid=%s"><b>%s</b> @ %s</a><br>' % (
 		venue.get('id'),
 		name_fmt(user),
 		venue.get('name', ''),
@@ -1166,13 +1166,13 @@ def friend_checkin_fmt(checkin, lat, lon, dnow):
 	location = checkin.get('location', {})
 	name = location.get('name')
 	if name is not None:
-	    s += '%s @ %s<br>' % (name_fmt(user), name)
+	    s += '<b>%s</b> @ %s<br>' % (name_fmt(user), name)
 	    user_shown = True
 
     shout = checkin.get('shout')
     if shout is not None:
 	if not user_shown:
-	    s += name_fmt(user) + ' '
+	    s += '<b>' + name_fmt(user) + '</b> '
 	s += '"%s"<br>' % escape(shout)
 
     s += '%s<br>' % comments_cmd(checkin)
@@ -1304,7 +1304,7 @@ def venue_fmt(venue, lat, lon):
     """
     s = ''
 
-    s += '<p><a class="button" href="/venue?vid=%s">%s</a> %s<br>%s' % (
+    s += '<a class="button" href="/venue?vid=%s"><b>%s</b></a> %s<br>%s' % (
 	    venue['id'], escape(venue['name']), 
 	    venue_cmds(venue), addr_fmt(venue))
 
@@ -2221,7 +2221,7 @@ def del_comment_cmd(checkin, comment):
 def checkin_comments_fmt(checkin):
     s = ''
     dnow = datetime.utcnow()
-    s += history_checkin_fmt(checkin, dnow)
+    s += '<p></p>' + history_checkin_fmt(checkin, dnow)
     
     s += '<p>-- %s --' % pluralize(checkin['comments']['count'], 'comment')
     if checkin['comments']['count'] > 0:
