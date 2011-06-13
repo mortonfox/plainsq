@@ -350,11 +350,12 @@ def call4sq(self, client, method, path, params = None):
 		"Can't connect to Foursquare. #SadMayor Refresh to retry.")
 	return
 
-def errorpage(self, msg):
+def errorpage(self, msg, errcode=503):
     """
-    Used for DownloadError exceptions. Generates an error page.
+    Used for DownloadError exceptions and other errors. Generates an error
+    page.
     """
-    self.error(503)
+    self.error(errcode)
 
     htmlbegin(self, "Error")
     self.response.out.write('<p><span class="error">Error: %s</span>' % msg)
@@ -2234,6 +2235,13 @@ def checkin_comments_fmt(checkin):
 
     return s
 
+class UnknownHandler(webapp.RequestHandler):
+    """
+    Handle bad URLs.
+    """
+    def get(self, unknown_path):
+	errorpage(self, 'Unknown URL: /%s' % escape(unknown_path), 404)
+
 def main():
     # logging.getLogger().setLevel(logging.DEBUG)
     application = webapp.WSGIApplication([
@@ -2264,6 +2272,7 @@ def main():
 	('/delcomment', DelCommentHandler),
 	('/addphoto', AddPhotoHandler),
 	('/photo', PhotoHandler),
+	('/(.*)', UnknownHandler),
 	], debug=True)
     util.run_wsgi_app(application)
 
