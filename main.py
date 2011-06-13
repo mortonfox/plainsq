@@ -869,6 +869,9 @@ class VInfoHandler(webapp.RequestHandler):
 	    return
 
 	vid = self.request.get('vid')
+	if vid == '':
+	    self.redirect('/')
+	    return
 
 	jsn = call4sq(self, client, 'get', path='/venues/%s' % vid)
 	if jsn is None:
@@ -1268,6 +1271,9 @@ class ShoutHandler(webapp.RequestHandler):
 	    return
 
 	message = self.request.get('message')
+	if message == '':
+	    self.redirect('/')
+	    return
 
 	jsn = call4sq(self, client, 'post', path='/checkins/add',
 		params = {
@@ -1624,6 +1630,9 @@ class CheckinHandler(webapp.RequestHandler):
 	    return
 
 	vid = self.request.get('vid')
+	if vid == '':
+	    self.redirect('/')
+	    return
 
 	do_checkin(self, client, vid)
 
@@ -1644,6 +1653,9 @@ class AddVenueHandler(webapp.RequestHandler):
 	    return
 
 	vname = self.request.get('vname')
+	if vname == '':
+	    self.redirect('/')
+	    return
 
 	jsn = call4sq(self, client, 'post', path='/venues/add',
 		params = {"name" : vname, "ll" : '%s,%s' % (lat, lon)})
@@ -1783,6 +1795,10 @@ class CheckinLong2Handler(webapp.RequestHandler):
 	    return
 
 	vid = self.request.get('vid')
+	if vid == '':
+	    self.redirect('/')
+	    return
+
 	shout = self.request.get('shout')
 	private = int(self.request.get('private'))
 	twitter = int(self.request.get('twitter'))
@@ -1966,6 +1982,9 @@ class DelCommentHandler(webapp.RequestHandler):
 
 	checkin_id = self.request.get('chkid')
 	comment_id = self.request.get('commid')
+	if checkin_id == '' or comment_id == '':
+	    self.redirect('/')
+	    return
 
 	jsn = call4sq(self, client, 'post', 
 		'/checkins/%s/deletecomment' % escape(checkin_id),
@@ -1993,6 +2012,9 @@ class AddCommentHandler(webapp.RequestHandler):
 
 	checkin_id = self.request.get('chkid')
 	text = self.request.get('text')
+	if checkin_id == '':
+	    self.redirect('/')
+	    return
 
 	if text:
 	    jsn = call4sq(self, client, 'post', 
@@ -2022,6 +2044,10 @@ class AddPhotoHandler(webapp.RequestHandler):
 	checkin_id = self.request.get('chkid')
 	venue_id = self.request.get('venid')
 	photo = self.request.get('photo')
+
+	if checkin_id == '' and venue_id == '':
+	    self.redirect('/')
+	    return
 
 	if photo:
 	    # Resize photo and convert to JPEG.
@@ -2065,6 +2091,9 @@ class PhotoHandler(webapp.RequestHandler):
 	checkin_id = self.request.get('chkid')
 	venue_id = self.request.get('venid')
 	photo_id = self.request.get('photoid')
+	if photo_id == '':
+	    self.redirect('/')
+	    return
 
 	jsn = call4sq(self, client, 'get', '/photos/%s' % escape(photo_id))
 	if jsn is None:
@@ -2105,6 +2134,9 @@ class CommentsHandler(webapp.RequestHandler):
 	    return
 
 	checkin_id = self.request.get('chkid')
+	if checkin_id == '':
+	    self.redirect('/')
+	    return
 
 	jsn = call4sq(self, client, 'get', '/checkins/%s' % escape(checkin_id))
 	if jsn is None:
