@@ -1331,12 +1331,12 @@ def venues_fmt(jsn, lat, lon):
 
     groups = jsn.get('groups')
     if groups is None:
-	return 'No matching venues found.'
-
-    # Venues may be split across groups so collect them all in one list.
-    venues = []
-    for group in groups:
-	venues.extend(group['items'])
+	venues = jsn.get('venues', [])
+    else:
+	# Venues may be split across groups so collect them all in one list.
+	venues = []
+	for group in groups:
+	    venues.extend(group['items'])
 
     venues = remove_dup_vids(venues)
 
@@ -1382,7 +1382,7 @@ class VenuesHandler(webapp.RequestHandler):
 	# then just do a nearest venues search.
 	query = self.request.get('query')
 
-	parms = { "ll" : '%s,%s' % (lat, lon), "limit" : 50 }
+	parms = { "ll" : '%s,%s' % (lat, lon), "limit" : 50, 'v' : '20110615' }
 	if query != '':
 	    parms['query'] = query
 
