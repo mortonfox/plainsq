@@ -339,6 +339,10 @@ def call4sq(self, client, method, path, params = None):
 	    errorType = meta.get('errorType', '')
 	    errorDetail = meta.get('errorDetail', '')
 
+	    if errorType == 'deprecated':
+		self.response.out.write('<p><span class="error">Deprecated: %s</span>' % errorDetail)
+		return jsn
+
 	    if errorType != '' or errorDetail != '':
 		errorpage(self, '%s : %s' % (errorType, errorDetail))
 		return
