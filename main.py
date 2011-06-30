@@ -40,6 +40,7 @@ import cgi
 from math import (radians, sin, cos, atan2, degrees)
 from datetime import (datetime, date, timedelta)
 import urllib
+import urllib2
 
 TOKEN_COOKIE = 'plainsq_token'
 TOKEN_PREFIX = 'token_plainsq_'
@@ -353,6 +354,15 @@ def call4sq(self, client, method, path, params = None):
 	errorpage(self,
 		"Can't connect to Foursquare. #SadMayor Refresh to retry.")
 	return
+
+    except urllib2.HTTPError, e:
+	jsn = simplejson.loads(e.read())
+	meta = jsn.get('meta', {})
+	errormsg = meta.get('errorDetail', 'Unknown error')
+	errorpage(self, 
+		'Error %d from Foursquare API call to %s:<br>%s' % (e.code, e.geturl(), errormsg))
+	return
+
 
 def errorpage(self, msg, errcode=503):
     """
