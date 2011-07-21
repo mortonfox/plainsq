@@ -14,7 +14,7 @@ Version: 0.0.4
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: June 13, 2011
+Last updated: July 21, 2011
 </pre>
 """
 
@@ -59,7 +59,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.4 20110613'
+USER_AGENT = 'plainsq:0.0.4 20110721'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -628,6 +628,10 @@ def addr_fmt_2(location, contact):
 	    s += '(%s)%s-%s<br>' % (phone[0:3], phone[3:6], phone[6:])
 
 	twitter = contact.get('twitter', '')
+
+	# Discard invalid characters.
+	twitter = re.sub(r'[^a-zA-Z0-9_]', '', twitter)
+
 	if len(twitter) > 0:
 	    s += '<a href="http://mobile.twitter.com/%s">@%s</a><br>' % (
 		    urllib.quote(twitter), escape(twitter))
