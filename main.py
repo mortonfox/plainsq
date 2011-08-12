@@ -10,11 +10,11 @@ check-ins by phones that do not have GPS.
 <p>PlainSquare uses Foursquare OAuth to log in, so it does not store user passwords. It is written in Python and is meant to be hosted on Google App Engine.
 
 <pre>
-Version: 0.0.4
+Version: 0.0.5
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: July 21, 2011
+Last updated: August 12, 2011
 </pre>
 """
 
@@ -59,7 +59,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.4 20110721'
+USER_AGENT = 'plainsq:0.0.5 20110812'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -275,7 +275,7 @@ def getclient(self):
     self.response.out.write('Not logged in.')
     self.redirect('/login')
 
-def htmlbegin(self, title):
+def htmlbegin(self, title, nolocate = False):
     self.response.out.write(
 """<!DOCTYPE html>
 <html>
@@ -292,8 +292,11 @@ def htmlbegin(self, title):
 </head>
 
 <body>
-<p><a class="button" href="/"><b>PlainSq</b></a> - %s
-""" % (title, title))
+<p><a class="button" href="/"><b>PlainSq</b>%s</a> - %s
+""" % (
+    title,
+    '' if nolocate else '<span class="linksep"> | </span><a class="button" href="/geoloc">Locate</a>',
+    title))
 
 def htmlend(self, noabout=False, nologout=False):
     self.response.out.write("""
@@ -421,7 +424,7 @@ class LoginHandler(webapp.RequestHandler):
     """
     def get(self):
 	# This page should be cached. So omit the no_cache() call.
-	htmlbegin(self, "Log in")
+	htmlbegin(self, "Log in", nolocate = True)
 
 	self.response.out.write("""
 <p>In order to use PlainSq features, you need to log in with Foursquare.
@@ -553,7 +556,7 @@ class LogoutHandler(webapp.RequestHandler):
 	self.del_cookie(TOKEN_COOKIE)
 	self.del_cookie(DEBUG_COOKIE)
 
-	htmlbegin(self, "Logout")
+	htmlbegin(self, "Logout", nolocate = True)
 	self.response.out.write('<p>You have been logged out')
 	htmlend(self, nologout=True)
 
@@ -1701,7 +1704,7 @@ class AboutHandler(webapp.RequestHandler):
     """
     def get(self):
 	# This page should be cached. So omit the no_cache() call.
-	htmlbegin(self, "About")
+	htmlbegin(self, "About", nolocate = True)
 	self.response.out.write(__doc__)
 	htmlend(self, noabout=True, nologout=True)
 
