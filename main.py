@@ -1560,7 +1560,7 @@ You've unlocked the %s badge:
 
 def checkin_score_fmt(score):
     return """
-<p><img src="http://foursquare.com%s" style="float:left">
+<p><img src="%s" style="float:left">
 %s points: %s<br style="clear:both">
 """ % (score['icon'], score['points'], score['message'])
 
