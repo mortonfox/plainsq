@@ -838,14 +838,17 @@ def special_fmt(special):
     venue = special.get('venue', {})
 
     s += '<p><img src="http://foursquare.com/img/specials/%s.png" style="float:left"> %s<br style="clear:both">' % (
-	    special['icon'], special['title'])
+	    special.get('icon', 'check-in'), special.get('title', 'Special Offer'))
 
+    if venue:
+	s += '<p><a class="button" href="/venue?vid=%s"><b>%s</b></a><br>%s' % (
+		escape(venue.get('id', '')),
+		escape(venue.get('name', '')), 
+		addr_fmt(venue))
 
-    s += '<p><a class="button" href="/venue?vid=%s"><b>%s</b></a><br>%s<br>Message: %s' % (
-	    escape(venue.get('id', '')),
-	    escape(venue.get('name', '')), 
-	    addr_fmt(venue),
-	    escape(special.get('message', '')))
+    message = special.get('message')
+    if message:
+	s += '<br>Message: %s' % escape(message)
 
     desc = special.get('description')
     if desc:
@@ -857,7 +860,7 @@ def special_fmt(special):
 
     unlocked = special.get('unlocked')
     if unlocked:
-	s += '<br>Unlocked: %s' % escape(unlocked)
+	s += '<br>Unlocked: %s' % unlocked
 
     state = special.get('state')
     if state:
@@ -1603,6 +1606,11 @@ def checkin_fmt(checkin, notif):
     if len(scores) > 0:
 	s += ''.join([checkin_score_fmt(score) 
 	    for score in scores[0]['scores']])
+
+    specials = find_notifs(notif, 'special')
+    if len(specials) > 0:
+	s += ''.join([special_fmt(item.get('special', {}))
+	    for item in specials])
 
     leaderboard = find_notifs(notif, 'leaderboard')
     if len(leaderboard) > 0:
