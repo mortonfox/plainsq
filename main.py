@@ -1315,7 +1315,9 @@ class ShoutHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	self.response.out.write('<p>%s' % escape(notif[0]['item']['message']))
+	msgs = find_notifs(notif, 'message')
+	if len(msgs) > 0:
+	    self.response.out.write('<p>%s' % escape(msgs[0]['message']))
 
 	debug_json(self, jsn)
 	htmlend(self)
