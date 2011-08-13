@@ -1258,6 +1258,12 @@ def friend_checkin_fmt(checkin, lat, lon, dnow):
     d1 = datetime.fromtimestamp(checkin['createdAt'])
     s += fuzzy_delta(dnow - d1)
 
+    source = checkin.get('source')
+    if source:
+	s += '<br>via <a href="%s">%s</a>' % (
+		source.get('url', ''), 
+		source.get('name', ''))
+
     return s
 
 class FriendsHandler(webapp.RequestHandler):
