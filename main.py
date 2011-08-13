@@ -732,6 +732,10 @@ def vinfo_fmt(venue):
 	    venue_cmds(venue, checkin_long=True),
 	    addr_fmt(venue))
 
+    url = venue.get('url')
+    if url:
+	s += '<br><a href="%s">%s</a>' % (url, url)
+
     location = venue.get('location', {})
     if location is not None:
 	lat = location.get('lat')
@@ -833,15 +837,43 @@ def special_fmt(special):
     s = ''
     venue = special.get('venue', {})
 
-    pcat = get_prim_category(venue.get('categories'))
-    if pcat is not None:
-	s += category_fmt(pcat)
+    s += '<p><img src="http://foursquare.com/img/specials/%s.png" style="float:left"> %s<br style="clear:both">' % (
+	    special['icon'], special['title'])
 
-    s += '<p>%s (%s): %s / %s' % (
-	    escape(venue.get('name', '')), special['type'],
-	    escape(special.get('message', '')),
-	    escape(special.get('description', '')),
-	    )
+
+    s += '<p><a class="button" href="/venue?vid=%s"><b>%s</b></a><br>%s<br>Message: %s' % (
+	    escape(venue.get('id', '')),
+	    escape(venue.get('name', '')), 
+	    addr_fmt(venue),
+	    escape(special.get('message', '')))
+
+    desc = special.get('description')
+    if desc:
+	s += '<br>Description: %s' % escape(desc)
+
+    fineprint = special.get('finePrint')
+    if fineprint:
+	s += '<br>Fine print: %s' % escape(fineprint)
+
+    unlocked = special.get('unlocked')
+    if unlocked:
+	s += '<br>Unlocked: %s' % escape(unlocked)
+
+    state = special.get('state')
+    if state:
+	s += '<br>State: %s' % escape(state)
+
+    progress = special.get('progress')
+    if progress:
+	s += '<br>Progress: %d %s of %d' % (
+		progress,
+		special.get('progressDescription', ''),
+		special.get('target', 0))
+
+    detail = special.get('detail')
+    if detail:
+	s += '<br>Detail: %d' % detail
+
     return s
 
 
@@ -1059,7 +1091,7 @@ def badge_fmt(badge):
 		unlockstr = """
 Unlocked at <a href="/venue?vid=%s">%s</a>%s on %s.
 """ % (
-	venue['id'], venue['name'], locstr, 
+	escape(venue['id']), escape(venue['name']), locstr, 
 	datetime.fromtimestamp(checkins[0]['createdAt']).ctime())
 
     desc = badge.get('description')
@@ -1329,7 +1361,7 @@ def venue_fmt(venue, lat, lon):
     s = ''
 
     s += '<a class="button" href="/venue?vid=%s"><b>%s</b></a> %s<br>%s' % (
-	    venue['id'], escape(venue['name']), 
+	    escape(venue['id']), escape(venue['name']), 
 	    venue_cmds(venue), addr_fmt(venue))
 
     location = venue.get('location')
