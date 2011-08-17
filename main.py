@@ -653,10 +653,10 @@ def google_map(lat, lon):
     Static Google Map.
     """
     return """
-<p><img width="150" height="150" alt="[Google Map]"
+<p><img width="250" height="250" alt="[Google Map]"
 src="http://maps.google.com/maps/api/staticmap?%s">
 """ % escape(urllib.urlencode( {
-    'size' : '150x150', 
+    'size' : '250x250', 
     'format' : 'gif',
     'sensor' : 'false',
     'zoom' : '14',
@@ -1785,9 +1785,9 @@ function error(msg) {
 
 function map(lat, lon) {
     var mapelem = document.getElementById('map');
-    mapelem.innerHTML = '<img width="150" height="150" alt="[Google Map]" '+
+    mapelem.innerHTML = '<img width="250" height="250" alt="[Google Map]" '+
 	'src="http://maps.google.com/maps/api/staticmap?' +
-	'size=150x150&format=gif&sensor=true&zoom=14&' +
+	'size=250x250&format=gif&sensor=true&zoom=14&' +
 	'markers=size:mid|color:blue|' + lat + ',' + lon + '">';
 }
 
