@@ -14,7 +14,7 @@ Version: 0.0.5
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: August 12, 2011
+Last updated: August 17, 2011
 </pre>
 """
 
@@ -59,7 +59,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.5 20110812'
+USER_AGENT = 'plainsq:0.0.5 20110817'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -292,7 +292,7 @@ def htmlbegin(self, title, nolocate = False):
 </head>
 
 <body>
-<p><a class="button" href="/"><b>PlainSq</b>%s</a> - %s
+<p><a class="button" href="/"><b>PlainSq</b></a>%s - %s
 """ % (
     title,
     '' if nolocate else '<span class="linksep"> | </span><a class="button" href="/geoloc">Locate</a>',
