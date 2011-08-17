@@ -1801,16 +1801,23 @@ function success_callback(pos) {
 	pos.coords.latitude + ',' + pos.coords.longitude);
     // Redirect to our coordinates handler once we have the info.
     window.location = '/coords?geolat=' + pos.coords.latitude + 
-	'&geolong=' + pos.coords.longitude
+	'&geolong=' + pos.coords.longitude;
 }
 
 if (navigator.geolocation) {
     show('Detecting location...');
     navigator.geolocation.getCurrentPosition(
-	success_callback, error_callback, { timeout: 30000 });
+	success_callback, 
+	error_callback, 
+	{ 
+	    enableHighAccuracy: true, 
+	    maximumAge: 0, 
+	    timeout: 30000
+	}
+    );
 }
 else {
-    error('Geolocation API not supported in this browser.')
+    error('Geolocation API not supported in this browser.');
 }
 </script>
 """)
