@@ -1,15 +1,18 @@
 // Javascript for Geolocation handler page.
 
-var itercount = 0;
-var watchid = null;
+var itercount, watchid, lastupdate;
 
 function show(msg) {
     var out = document.getElementById('output');
     out.innerHTML = msg;
+
+    var err = document.getElementById('error');
+    err.innerHTML = '';
 }
 
 function error(msg) {
-    show('<span class="error">' + msg + '</span>');
+    var err = document.getElementById('error');
+    err.innerHTML = '<span class="error">' + msg + '</span><br>';
 }
 
 function map(lat, lon) {
@@ -50,7 +53,15 @@ function conv_coord(coord, nsew) {
 }
 
 function success_callback(pos) {
-    var lat, lon;
+    var lat, lon, now;
+
+    // Don't update too frequently.
+    now = (new Date()).getTime();
+    if (now - lastupdate < 2000) {
+	return;
+    }
+    lastupdate = now;
+
     itercount += 1;
     lat = pos.coords.latitude;
     lon = pos.coords.longitude;
@@ -63,6 +74,9 @@ function success_callback(pos) {
 
 function start() {
     itercount = 0;
+    lastupdate = 0;
+    watchid = null;
+
     if (navigator.geolocation) {
 	show('Detecting location...');
 	watchid = navigator.geolocation.watchPosition(

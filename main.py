@@ -1768,7 +1768,7 @@ class GeoLocHandler2(webapp.RequestHandler):
 <noscript>
 <p><span class="error">No Javascript support or Javascript disabled.</span> Can't detect location.
 </noscript>
-<p><span id="output">&nbsp;</span>
+<p><span id="error">&nbsp;</span><span id="output">&nbsp;</span>
 <p><span id="map">&nbsp;</span>
 <script type="text/javascript" src="geoloc.js"></script>
 """)
