@@ -10,11 +10,11 @@ check-ins by phones that do not have GPS.
 <p>PlainSquare uses Foursquare OAuth to log in, so it does not store user passwords. It is written in Python and is meant to be hosted on Google App Engine.
 
 <pre>
-Version: 0.0.5
+Version: 0.0.6
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: August 17, 2011
+Last updated: August 22, 2011
 </pre>
 """
 
@@ -59,7 +59,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.5 20110817'
+USER_AGENT = 'plainsq:0.0.6 20110822'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -470,10 +470,10 @@ class MainHandler(webapp.RequestHandler):
         self.response.out.write("""
 <ol class="menulist">
 
-<li><a class="widebutton" href="/geoloc" accesskey="1">Detect location</a></li>
+<li><a class="widebutton" href="/geoloc2" accesskey="1">Detect location</a></li>
 
-<li><form class="formbox" action="/coords" method="get">
-Enter coordinates: <input class="inputbox" type="text" name="coords" size="8"
+<li><form class="formbox" action="/setloc" method="get">
+Set location: <input class="inputbox" type="text" name="newloc" size="16"
 accesskey="2"><input class="submitbutton" type="submit" value="Go"></form></li>
 
 <li><a class="widebutton" href="/venues" accesskey="3">Nearest Venues</a></li>
@@ -487,7 +487,7 @@ accesskey="4"><input class="submitbutton" type="submit" value="Search"></form></
 <li><a class="widebutton" href="/friends" accesskey="6">Find friends</a></li>
 
 <li><form class="formbox" action="/shout" method="post">
-Shout: <input class="inputbox" type="text" name="message" size="8" accesskey="7">
+Shout: <input class="inputbox" type="text" name="message" size="16" accesskey="7">
 <input class="submitbutton" type="submit" value="Shout"></form></li>
 
 <li><a class="widebutton" href="%s" accesskey="8">Leaderboard</a></li>
@@ -502,11 +502,16 @@ Shout: <input class="inputbox" type="text" name="message" size="8" accesskey="7"
 
 </ol>
 
-<p>Enter coordinates as a series of digits, e.g.:
+<hr>
+<p>'Set location' input can be either a place name / zip code or coordinates.
+<br>
+<br>Enter coordinates as a series of 6 or more digits, e.g.:
 <br>
 <br>39123457512345 means N 39&deg; 12.345' W 75&deg; 12.345'
 <br>391234751234 means N 39&deg; 12.340' W 75&deg; 12.340'
 <br>3912375123 means N 39&deg; 12.300' W 75&deg; 12.300'
+<br>
+<br>Any other input format will be passed to a geocoder for interpretation.
 """ % (leaderboard, "off" if get_debug(self) else "on"))
 
 	htmlend(self)
@@ -1465,10 +1470,16 @@ class VenuesHandler(webapp.RequestHandler):
 	    return jsn
 
 	self.response.out.write("""
-<form style="margin:0; padding:0;" action="/addvenue" method="post"><p>
-Add venue here and check in: <input type="text" name="vname" size="15"><input type="submit" value="Add Venue"></p></form>
+<form class="formbox" action="/venues" method="get">
+Search Venues: <input class="inputbox" type="text" name="query" size="8"><input class="submitbutton" type="submit" value="Search"></form>
+""")
 
-<p>""" + venues_fmt(response, lat, lon))
+	self.response.out.write('<p>' + venues_fmt(response, lat, lon))
+
+	self.response.out.write("""
+<form class="formbox" action="/addvenue" method="post">
+Not found? Add a venue here and check in:<br><input class="inputbox" type="text" name="vname" size="16"><input class="submitbutton" type="submit" value="Add Venue"></form>
+""")
 
 	debug_json(self, jsn)
 	htmlend(self)
@@ -1507,6 +1518,97 @@ def isFloat(s):
 	return True
     except ValueError:
 	return False
+
+class SetlocHandler(webapp.RequestHandler):
+    """
+    This handles the 'set location' input box. If the locations string is six
+    or more digits, it will be parsed as user-input coordinates. Otherwise, it
+    will be fed to the Google Geocoding API.
+    """
+    def get(self):
+	self.post()
+
+    def post(self):
+	no_cache(self)
+
+	htmlbegin(self, 'Set location')
+
+	newloc = self.request.get('newloc').strip()
+
+	if re.match('^\d{6,}$', newloc):
+	    (lat, lon) = parse_coord(newloc)
+	    set_coords(self, lat, lon)
+	    self.redirect('/venues')
+	    return
+
+	try:
+	    args = urllib.urlencode({
+		"sensor" : "false",
+		"address" : newloc,
+		})
+	    req = urllib2.Request('http://maps.googleapis.com/maps/api/geocode/json?%s' % args)
+	    resp = urllib2.urlopen(req)
+
+	except DownloadError:
+	    errorpage(self,
+		    "Can't connect to Google Geocoding API. Refresh to retry.")
+	    return
+
+	except urllib2.HTTPError, e:
+	    output = e.read()
+	    errorpage(self, 
+		    'Error %d from Google Geocoding API call to %s:<br>%s' % (e.code, e.geturl(), output))
+	    return
+
+	output = resp.read()
+	jsn = simplejson.loads(output)
+
+	status = jsn.get('status')
+	if not status:
+	    status = 'Unknown Error'
+	if status != 'OK' and status != 'ZERO_RESULTS':
+	    errorpage(self,
+		    'Error from Google Geocoding API: %s' % status)
+	    return
+
+	results = jsn.get('results')
+	if results:
+	    self.response.out.write("""
+<p>Did you mean?
+<ul class="vlist">
+%s
+</ul>
+""" % ''.join(
+    ['<li>%s</li>' % geocode_result_fmt(res) 
+	for res in results]))
+	else:
+	    self.response.out.write('<p>No search results.')
+
+	self.response.out.write("""
+<form class="formbox" action="/setloc" method="get">
+Search again? <input class="inputbox" type="text" name="newloc" size="16"><input class="submitbutton" type="submit" value="Go"></form>
+""")
+
+
+
+	htmlend(self)
+
+def geocode_result_fmt(result):
+    addr = result.get('formatted_address', '')
+    geometry = result.get('geometry', {})
+    location = geometry.get('location', {})
+    lat = location.get('lat', 0)
+    lng = location.get('lng', 0)
+
+    s = '<a class="button" href="/coords?%s">%s</a>' % (
+	    escape(urllib.urlencode({
+		'geolat' : lat,
+		'geolong' : lng,
+		})),
+	    escape(addr))
+    s += '<br>%s' % convcoords(lat, lng)
+    s +=  google_map(lat, lng)
+    return s
 
 class CoordsHandler(webapp.RequestHandler):
     """
@@ -2353,6 +2455,7 @@ def main():
 	('/shout', ShoutHandler),
 	('/venues', VenuesHandler),
 	('/coords', CoordsHandler),
+	('/setloc', SetlocHandler),
 	('/checkin', CheckinHandler),
 	('/addvenue', AddVenueHandler),
 	('/about', AboutHandler),
