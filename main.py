@@ -295,7 +295,7 @@ def htmlbegin(self, title, nolocate = False):
 <p><a class="button" href="/"><b>PlainSq</b></a>%s - %s
 """ % (
     title,
-    '' if nolocate else '<span class="linksep"> | </span><a class="button" href="/geoloc2">Locate</a>',
+    '' if nolocate else '<span class="linksep"> | </span><a class="button" href="/geoloc">Locate</a>',
     title))
 
 def htmlend(self, noabout=False, nologout=False):
@@ -470,7 +470,7 @@ class MainHandler(webapp.RequestHandler):
         self.response.out.write("""
 <ol class="menulist">
 
-<li><a class="widebutton" href="/geoloc2" accesskey="1">Detect location</a></li>
+<li><a class="widebutton" href="/geoloc" accesskey="1">Detect location</a></li>
 
 <li><form class="formbox" action="/setloc" method="get">
 Set location: <input class="inputbox" type="text" name="newloc" size="16"
@@ -1589,8 +1589,6 @@ class SetlocHandler(webapp.RequestHandler):
 Search again? <input class="inputbox" type="text" name="newloc" size="16"><input class="submitbutton" type="submit" value="Go"></form>
 """)
 
-
-
 	htmlend(self)
 
 def geocode_result_fmt(result):
@@ -1630,21 +1628,8 @@ class CoordsHandler(webapp.RequestHandler):
 	if isFloat(geolat) and isFloat(geolong):
 	    set_coords(self, geolat, geolong)
 	    self.redirect('/venues')
-	    return
-
-	coordinput = self.request.get('coords')
-
-	# Extract digits. Ignore all other characters.
-	instr = re.sub(r'[^0-9]', '', coordinput)
-
-	if len(instr) >= 4:
-	    (lat, lon) = parse_coord(instr)
-	    set_coords(self, lat, lon)
-	    self.redirect('/venues')
 	else:
-	    self.response.out.write(
-		    '<p><span class="error">Bad input coords: %s</span>'
-		    % escape(coordinput))
+	    self.redirect('/')
 
 	htmlend(self)
 
@@ -1858,7 +1843,7 @@ class AboutHandler(webapp.RequestHandler):
 	self.response.out.write(__doc__)
 	htmlend(self, noabout=True, nologout=True)
 
-class GeoLocHandler2(webapp.RequestHandler):
+class GeoLocHandler(webapp.RequestHandler):
     """
     Geolocation Handler with GPS monitoring and refresh.
     Uses HTML5 Geolocation API.
@@ -1874,74 +1859,6 @@ class GeoLocHandler2(webapp.RequestHandler):
 <p><span id="map">&nbsp;</span>
 <script type="text/javascript" src="geoloc.js"></script>
 """)
-	htmlend(self)
-
-class GeoLocHandler(webapp.RequestHandler):
-    """
-    Geolocation Handler. Will attempt to detect location using HTML5
-    Geolocation API and set our coordinates accordingly.
-    """
-    def get(self):
-	# This page should be cached. So omit the no_cache() call.
-	htmlbegin(self, "Detect Location")
-	self.response.out.write("""
-<noscript>
-<p><span class="error">No Javascript support or Javascript disabled.</span> Can't detect location.
-</noscript>
-<p><span id="output">&nbsp;</span>
-<script type="text/javascript">
-function show(msg) {
-    var out = document.getElementById('output');
-    out.innerHTML = msg;
-}
-
-function error(msg) {
-    show('<span class="error">' + msg + '</span>');
-}
-
-function error_callback(err) {
-    switch (err.code) {
-    case err.PERMISSION_DENIED:
-	error('No permission to get location: ' + err.message);
-	break;
-    case err.POSITION_UNAVAILABLE:
-	error('Could not get location: ' + err.message);
-	break;
-    case err.TIMEOUT:
-	error('Network timeout: ' + err.message);
-	break;
-    default:
-	error('Unknown error: ' + err.message);
-	break;
-    }
-}
-
-function success_callback(pos) {
-    show('Detected coordinates: ' + 
-	pos.coords.latitude + ',' + pos.coords.longitude);
-    // Redirect to our coordinates handler once we have the info.
-    window.location = '/coords?geolat=' + pos.coords.latitude + 
-	'&geolong=' + pos.coords.longitude;
-}
-
-if (navigator.geolocation) {
-    show('Detecting location...');
-    navigator.geolocation.getCurrentPosition(
-	success_callback, 
-	error_callback, 
-	{ 
-	    enableHighAccuracy: true, 
-	    maximumAge: 0, 
-	    timeout: 30000
-	}
-    );
-}
-else {
-    error('Geolocation API not supported in this browser.');
-}
-</script>
-""")
-
 	htmlend(self)
 
 class PurgeHandler(webapp.RequestHandler):
@@ -2460,7 +2377,6 @@ def main():
 	('/addvenue', AddVenueHandler),
 	('/about', AboutHandler),
 	('/geoloc', GeoLocHandler),
-	('/geoloc2', GeoLocHandler2),
 	('/purge', PurgeHandler),
 	('/checkin_long', CheckinLongHandler),
 	('/checkin_long2', CheckinLong2Handler),
