@@ -17,10 +17,7 @@ function error(msg) {
 
 function map(lat, lon) {
     var mapelem = document.getElementById('map');
-    mapelem.innerHTML = '<img width="250" height="250" alt="[Google Map]" '+
-	'src="http://maps.google.com/maps/api/staticmap?' +
-	'size=250x250&format=gif&sensor=true&zoom=14&' +
-	'markers=size:mid|color:blue|' + lat + ',' + lon + '">';
+    mapelem.innerHTML = google_map(lat, lon);
 }
 
 function error_callback(err) {
@@ -40,18 +37,6 @@ function error_callback(err) {
     }
 }
 
-function conv_coord(coord, nsew) {
-    var d, degs, mins;
-    d = nsew[0];
-    if (coord < 0) {
-	d = nsew[1];
-	coord = -coord;
-    }
-    degs = Math.floor(coord);
-    mins = (coord - degs) * 60;
-    return d + degs + ' ' + mins.toFixed(3);
-}
-
 function success_callback(pos) {
     var lat, lon, now;
 
@@ -65,10 +50,9 @@ function success_callback(pos) {
     itercount += 1;
     lat = pos.coords.latitude;
     lon = pos.coords.longitude;
-    show(conv_coord(lat, 'NS') + ' ' + conv_coord(lon, 'EW') + 
-	' (' + itercount + 
-	') <a class="button" href="/coords?geolat=' + lat + 
-	'&geolong=' + lon + '">Go</a>');
+    show(conv_coords(lat, lon) + ' (' + itercount + 
+	') <a class="button" href="/coords?geolat=' + encodeURIComponent(lat) + 
+	'&geolong=' + encodeURIComponent(lon) + '">Go</a>');
     map(lat, lon);
 }
 
