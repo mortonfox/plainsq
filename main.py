@@ -1545,6 +1545,13 @@ size="16"><input class="submitbutton" type="submit" value="Go"></form>
 """)
 
 	newloc = self.request.get('newloc').strip()
+
+	if re.match('^\d{6,}$', newloc):
+	    (lat, lon) = parse_coord(newloc)
+	    set_coords(self, lat, lon)
+	    self.redirect('/venues')
+	    return
+
 	self.response.out.write("""
 <script>
 window.onload = do_geocode('%s');
