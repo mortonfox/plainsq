@@ -376,7 +376,7 @@ def errorpage(self, msg, errcode=503):
     self.response.out.write('<p><span class="error">Error: %s</span>' % msg)
     htmlend(self)
 
-def userheader(self, client, lat, lon, badges=0, mayor=0):
+def userheader(self, client, lat, lon):
     """ 
     Display the logged-in user's icon, name, and position.
     """
@@ -1083,8 +1083,8 @@ def badge_fmt(badge):
 	iconurl = img['prefix'] + str(img['sizes'][0]) + img['name']
 
     unlockstr = ''
-    unlocks = badge['unlocks']
-    if len(unlocks) > 0:
+    unlocks = badge.get('unlocks')
+    if unlocks:
 	checkins = unlocks[0]['checkins']
 	if len(checkins) > 0:
 	    venue = checkins[0].get('venue')
@@ -1105,13 +1105,10 @@ Unlocked at <a href="/venue?vid=%s">%s</a>%s on %s.
     if desc is None:
 	desc = badge.get('hint', '')
 
-    if unlockstr == '':
-	text = '<span class="grayed">%s<br>%s</span>' % (badge['name'], desc)
-    else:
-	text = '%s<br>%s<br>%s' % (badge.get('name', ''), desc, unlockstr)
+    text = '<b>%s</b><br>%s<br>%s<br style="clear:both">' % (badge.get('name', ''), desc, unlockstr)
 
     return """
-<p><img src="%s" style="float:left"> %s<br style="clear:both">
+<img src="%s" style="float:right; padding:3px;">%s
 """ % (iconurl, text)
 
 class BadgesHandler(webapp.RequestHandler):
@@ -1131,7 +1128,6 @@ class BadgesHandler(webapp.RequestHandler):
 	    return
 
 	htmlbegin(self, "Badges")
-	userheader(self, client, lat, lon, badges=1)
 
 	resp = jsn.get('response')
 	if resp is None:
@@ -1148,8 +1144,13 @@ class BadgesHandler(webapp.RequestHandler):
 	if len(badges) == 0:
 	    self.response.out.write('<p>No badges yet.')
 	else:
-	    self.response.out.write(''.join([
-		badge_fmt(b) for b in badges.values()]))
+	    # Sort badges by reverse unlock order.
+	    # Retain only unlocked badges.
+	    keys = filter(lambda k: badges[k].get('unlocks'), sorted(badges.keys(), reverse=True))
+	    self.response.out.write(
+		    '<ol class="numseplist">%s</ol>' % 
+		    ''.join([
+			'<li>%s</li>' % badge_fmt(badges[k]) for k in keys]))
 
 	debug_json(self, jsn)
 	htmlend(self)
@@ -1173,7 +1174,7 @@ class MayorHandler(webapp.RequestHandler):
 
 	htmlbegin(self, "Mayorships")
 
-	user = userheader(self, client, lat, lon, mayor=1)
+	user = userheader(self, client, lat, lon)
 	if user is None:
 	    return
 
