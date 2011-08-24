@@ -1210,7 +1210,7 @@ def friend_checkin_fmt(checkin, lat, lon, dnow):
     """
     Format checkin record from one friend.
     """
-    s = '<p>'
+    s = ''
 
     venue = checkin.get('venue')
     user = checkin.get('user')
@@ -1238,6 +1238,11 @@ def friend_checkin_fmt(checkin, lat, lon, dnow):
 	s += '"%s"<br>' % escape(shout)
 
     s += '%s<br>' % comments_cmd(checkin)
+
+    if user:
+	photo = user.get('photo')
+	if photo:
+	    s += '<img src="%s" style="float:right; padding:3px;">' % photo
 
     dist = checkin.get('distance')
     if dist is not None:
@@ -1268,6 +1273,8 @@ def friend_checkin_fmt(checkin, lat, lon, dnow):
 	s += '<br>via <a href="%s">%s</a>' % (
 		source.get('url', ''), 
 		source.get('name', ''))
+    
+    s += '<br style="clear:both">'
 
     return s
 
