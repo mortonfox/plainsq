@@ -1,20 +1,18 @@
 #!/usr/bin/env python
 
 """
-<p>PlainSquare - This webapp is similar to Foursquare's mobile website but
-allows manual input of coordinates. That will allow nearest venue searches and
-check-ins by phones that do not have GPS.
+<p>PlainSquare is a lightweight Foursquare client for mobile web browsers. It is intended as a full-featured substitute for Foursquare Mobile. PlainSquare supports both geolocation (using device GPS or cellular / wi-fi positioning) and manual coordinate entry for phones without GPS.
 
-<p>Input is optimized for handsets without a full keyboard by allowing coordinate entry using only digits. PlainSquare streamlines the check-in process, making the default no-frills action single-click.
+<p>PlainSquare speeds up check-ins by making this operation single-click if you do not need to shout or change your broadcast options. PlainSquare is also designed to send you through as few screens as possible to do most common Foursquare tasks.
 
-<p>PlainSquare uses Foursquare OAuth to log in, so it does not store user passwords. It is written in Python and is meant to be hosted on Google App Engine.
+<p>PlainSquare uses OAuth version 2 to log in to Foursquare to avoid having to store user passwords. PlainSquare supports version 2 of the Foursquare API. It is written in Python and designed for hosting on Google App Engine. 
 
 <pre>
 Version: 0.0.6
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: August 22, 2011
+Last updated: August 24, 2011
 </pre>
 """
 
@@ -59,7 +57,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.6 20110822'
+USER_AGENT = 'plainsq:0.0.6 20110824'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
