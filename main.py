@@ -12,7 +12,7 @@ Version: 0.0.6
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: August 24, 2011
+Last updated: September 2, 2011
 </pre>
 """
 
@@ -57,7 +57,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.6 20110824'
+USER_AGENT = 'plainsq:0.0.6 20110902'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -489,7 +489,7 @@ accesskey="4"><input class="submitbutton" type="submit" value="Search"></form></
 Shout: <input class="inputbox" type="text" name="message" size="16" accesskey="7">
 <input class="submitbutton" type="submit" value="Shout"></form></li>
 
-<li><a class="widebutton" href="%s" accesskey="8">Leaderboard</a></li>
+<li><a class="widebutton" href="/leader" accesskey="8">Leaderboard</a></li>
 
 <li><a class="widebutton" href="/specials" accesskey="9">Specials</a></li>
 
@@ -511,7 +511,7 @@ Shout: <input class="inputbox" type="text" name="message" size="16" accesskey="7
 <br>3912375123 means N 39&deg; 12.300' W 75&deg; 12.300'
 <br>
 <br>Any other input format will be passed to a geocoder for interpretation.
-""" % (leaderboard, "off" if get_debug(self) else "on"))
+""" % ("off" if get_debug(self) else "on"))
 
 	htmlend(self)
 
@@ -1154,6 +1154,63 @@ class BadgesHandler(webapp.RequestHandler):
 
 	debug_json(self, jsn)
 	htmlend(self)
+
+def leader_fmt(leader):
+    """
+    Format a user on the leaderboard page.
+    """
+    user = leader.get('user', {})
+    scores = leader.get('scores', {})
+    return '<img src="%s" style="float:right"><b>%d: %s from %s</b><br>Recent: %d<br>Max: %d<br>Checkins:%d<br style="clear:both">' % (
+	    user.get('photo', ''),
+	    leader.get('rank', 0),
+	    name_fmt(user),
+	    escape(user.get('homeCity', '')),
+	    scores.get('recent', 0),
+	    scores.get('max', 0),
+	    scores.get('checkinsCount', 0))
+
+class LeaderHandler(webapp.RequestHandler):
+    """
+    Handler for leaderboard command.
+    """
+    def get(self):
+	no_cache(self)
+
+	client = getclient(self)
+	if client is None:
+	    return
+
+	jsn = call4sq(self, client, 'get', path='/users/leaderboard',
+		params = { 'neighbors' : '20' })
+	if jsn is None:
+	    return
+
+	htmlbegin(self, 'Leaderboard')
+
+	resp = jsn.get('response')
+	if resp is None:
+	    logging.error('Missing response from /users/leaderboard:')
+	    logging.error(jsn)
+	    return jsn
+
+	leaderboard = resp.get('leaderboard')
+	if leaderboard is None:
+	    logging.error('Missing leaderboard from /users/leaderboard:')
+	    logging.error(jsn)
+	    return jsn
+
+	if leaderboard.get('count'):
+	    self.response.out.write(
+		    '<ul class="seplist">%s</ul>' % ''.join(
+			['<li>%s</li>' % leader_fmt(x) 
+			    for x in leaderboard.get('items', [])]))
+	else:
+	    self.response.out.write('<p>Empty leaderboard?')
+
+	debug_json(self, jsn)
+	htmlend(self)
+
 
 def mayor_venue_fmt(venue):
     return '<li><a class="button" href="/venue?vid=%s"><b>%s</b></a> %s<br>%s</li>' % (
@@ -2413,6 +2470,7 @@ def main():
 	('/venue', VInfoHandler),
 	('/history', HistoryHandler),
 	('/debug', DebugHandler),
+	('/leader', LeaderHandler),
 	('/badges', BadgesHandler),
 	('/mayor', MayorHandler),
 	('/friends', FriendsHandler),
