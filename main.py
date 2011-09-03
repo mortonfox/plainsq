@@ -493,7 +493,9 @@ Shout: <input class="inputbox" type="text" name="message" size="16" accesskey="7
 
 <li><a class="widebutton" href="/specials" accesskey="9">Specials</a></li>
 
-<li><a class="widebutton" href="/badges" accesskey="0">Badges</a></li>
+<li><a class="widebutton" href="/notif" accesskey="0">Notifications</a></li>
+
+<li><a class="widebutton" href="/badges">Badges</a></li>
 
 <li><a class="widebutton" href="/mayor">Mayorships</a></li>
 
@@ -1169,6 +1171,68 @@ def leader_fmt(leader):
 	    scores.get('recent', 0),
 	    scores.get('max', 0),
 	    scores.get('checkinsCount', 0))
+
+def notif_fmt(notif):
+    s = ''
+    target = notif.get('target', {})
+    targetType = target.get('type', '')
+
+    if targetType == 'checkin' or targetType == 'tip':
+	venue = target.get('object', {}).get('venue', {})
+	s = '<a class="vbutton" href="http://foursquare.com/venue/%s">%s</a>' % (
+		venue.get('id', ''), escape(venue.get('name', '')))
+    elif targetType == 'venue':
+	venue = target.get('object', {})
+	s = '<a class="vbutton" href="http://foursquare.com/venue/%s">%s</a>' % (
+		venue.get('id', ''), escape(venue.get('name', '')))
+
+    return '<li><img src="%s" style="float:right"><i>%s</i><br>%s<br>%s<br style="clear:both"></li>' % (
+	    notif.get('image', {}).get('fullPath', ''),
+	    datetime.fromtimestamp(notif.get('createdAt', 0)).ctime(),
+	    escape(notif.get('text', '')),
+	    s,
+	    )
+
+class NotifHandler(webapp.RequestHandler):
+    """
+    Handler for notifications command.
+    """
+    def get(self):
+	no_cache(self)
+
+	client = getclient(self)
+	if client is None:
+	    return
+
+	jsn = call4sq(self, client, 'get', path='/updates/notifications',
+		params = { 'limit' : '50' })
+	if jsn is None:
+	    return
+
+	htmlbegin(self, 'Notifications')
+
+	resp = jsn.get('response')
+	if resp is None:
+	    logging.error('Missing response from /updates/notifications:')
+	    logging.error(jsn)
+	    return jsn
+
+	notifs = resp.get('notifications')
+	if notifs is None:
+	    logging.error('Missing notifications from /updates/notifications:')
+	    logging.error(jsn)
+	    return jsn
+
+	if notifs.get('count'):
+	    self.response.out.write(
+		'<ol class="numseplist">%s</ol>' % 
+		''.join([notif_fmt(n) for n in notifs.get('items', [])]))
+	else:
+	    self.response.out.write('<p>No notifications yet.')
+
+	debug_json(self, jsn)
+	htmlend(self)
+
 
 class LeaderHandler(webapp.RequestHandler):
     """
@@ -2470,6 +2534,7 @@ def main():
 	('/venue', VInfoHandler),
 	('/history', HistoryHandler),
 	('/debug', DebugHandler),
+	('/notif', NotifHandler),
 	('/leader', LeaderHandler),
 	('/badges', BadgesHandler),
 	('/mayor', MayorHandler),
