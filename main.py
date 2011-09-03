@@ -45,8 +45,6 @@ TOKEN_PREFIX = 'token_plainsq_'
 
 COORD_PREFIX = 'coord_plainsq_'
 
-USERID_PREFIX = 'userid_plainsq_'
-
 AUTH_URL = 'https://foursquare.com/oauth2/authenticate'
 ACCESS_URL = 'https://foursquare.com/oauth2/access_token'
 API_URL = 'https://api.foursquare.com/v2'
@@ -132,24 +130,6 @@ def no_cache(self):
     """
     self.response.headers.add_header('Cache-Control', 'no-cache') 
     self.response.headers.add_header('User-Agent', USER_AGENT) 
-
-
-def set_userid(self, userid):
-    """
-    Cache the userid.
-    """
-    uuid = self.request.cookies.get(TOKEN_COOKIE)
-    if uuid is not None:
-	memcache.set(USERID_PREFIX + uuid, userid)
-
-
-def get_userid(self):
-    """
-    Get the cached userid, if available.
-    """
-    uuid = self.request.cookies.get(TOKEN_COOKIE)
-    if uuid is not None:
-	return memcache.get(USERID_PREFIX + uuid)
 
 
 def query_coords(self, uuid = None):
@@ -414,7 +394,7 @@ def userheader(self, client, lat, lon):
 	    % (photo, escape(firstname), escape(venueName),
 		convcoords(lat, lon)))
 
-    return user
+    return jsn
 
 class LoginHandler(webapp.RequestHandler):
     """
@@ -451,19 +431,15 @@ class MainHandler(webapp.RequestHandler):
 
 	htmlbegin(self, "Main")
 
-	userid = None
-	user = userheader(self, client, lat, lon)
-	if user is None:
-	    # If the users/self query failed then check if we have a saved
-	    # userid from memcache. If so, then we can still display the menu.
-	    userid = get_userid(self)
-	    if userid is None:
-		return
-	else:
-	    userid = user['id']
-	    set_userid(self, userid)
-	leaderboard = 'http://foursquare.com/iphone/me?uid=%s' \
-		% userid
+	# Unread notifications count should be in the notification tray in
+	# the user query.
+	unreadcount = -1
+	jsn = userheader(self, client, lat, lon)
+	if jsn:
+	    notifs = jsn.get('notifications', [])
+	    for notif in notifs:
+		if notif.get('type', '') == 'notificationTray':
+		    unreadcount = notif.get('item', {}).get('unreadCount', {})
 
         self.response.out.write("""
 <script type="text/javascript" src="geocode.js"></script>
@@ -493,7 +469,7 @@ Shout: <input class="inputbox" type="text" name="message" size="16" accesskey="7
 
 <li><a class="widebutton" href="/specials" accesskey="9">Specials</a></li>
 
-<li><a class="widebutton" href="/notif" accesskey="0">Notifications</a></li>
+<li><a class="widebutton" href="/notif" accesskey="0">Notifications (%d)</a></li>
 
 <li><a class="widebutton" href="/badges">Badges</a></li>
 
@@ -513,8 +489,9 @@ Shout: <input class="inputbox" type="text" name="message" size="16" accesskey="7
 <br>3912375123 means N 39&deg; 12.300' W 75&deg; 12.300'
 <br>
 <br>Any other input format will be passed to a geocoder for interpretation.
-""" % ("off" if get_debug(self) else "on"))
+""" % (unreadcount, "off" if get_debug(self) else "on"))
 
+	debug_json(self, jsn)
 	htmlend(self)
 
 class OAuthHandler(webapp.RequestHandler):
@@ -1224,14 +1201,31 @@ class NotifHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
+	jsn2 = None
+
 	if notifs.get('count'):
+	    items = notifs.get('items', [])
+
 	    self.response.out.write(
 		'<ol class="numseplist">%s</ol>' % 
-		''.join([notif_fmt(n) for n in notifs.get('items', [])]))
+		''.join([notif_fmt(n) for n in items]))
+
+	    hwmark = 0
+	    if items:
+		hwmark = items[0].get('createdAt', 0)	    
+
+	    if get_debug(self):
+		self.response.out.write('<br>Setting highwater mark to %d' % hwmark)
+
+	    # Mark notifications as read.
+	    jsn2 = call4sq(self, client, 'post', 
+		    path='/updates/marknotificationsread',
+		    params = { 'highWatermark' : hwmark })
 	else:
 	    self.response.out.write('<p>No notifications yet.')
 
 	debug_json(self, jsn)
+	debug_json(self, jsn2)
 	htmlend(self)
 
 
@@ -1296,10 +1290,11 @@ class MayorHandler(webapp.RequestHandler):
 
 	htmlbegin(self, "Mayorships")
 
-	user = userheader(self, client, lat, lon)
-	if user is None:
+	jsn = userheader(self, client, lat, lon)
+	if jsn is None:
 	    return
 
+	user = jsn.get('response', {}).get('user', {})
 	mayorships = user.get('mayorships', {})
 	count = mayorships.get('count', 0)
 	if count == 0:
@@ -1309,7 +1304,7 @@ class MayorHandler(webapp.RequestHandler):
 		'<ol class="numseplist">%s</ol>' % 
 		''.join([mayor_venue_fmt(v) for v in mayorships['items']]))
 
-	debug_json(self, user)
+	debug_json(self, jsn)
 	htmlend(self)
 
 COMPASS_DIRS = [ 'S', 'SW', 'W', 'NW', 'N', 'NE', 'E', 'SE', 'S' ]
