@@ -1176,13 +1176,14 @@ def notif_fmt(notif):
     s = ''
     target = notif.get('target', {})
     targetType = target.get('type', '')
+    venue = None
 
     if targetType == 'checkin' or targetType == 'tip':
 	venue = target.get('object', {}).get('venue', {})
-	s = '<a class="vbutton" href="http://foursquare.com/venue/%s">%s</a>' % (
-		venue.get('id', ''), escape(venue.get('name', '')))
     elif targetType == 'venue':
 	venue = target.get('object', {})
+
+    if venue:
 	s = '<a class="vbutton" href="http://foursquare.com/venue/%s">%s</a>' % (
 		venue.get('id', ''), escape(venue.get('name', '')))
 
