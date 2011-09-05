@@ -1161,7 +1161,7 @@ def notif_fmt(notif):
 	venue = target.get('object', {})
 
     if venue:
-	s = '<a class="vbutton" href="http://foursquare.com/venue/%s">%s</a>' % (
+	s = '<a class="button" href="/venue?vid=%s">%s</a>' % (
 		venue.get('id', ''), escape(venue.get('name', '')))
 
     return '<li><img src="%s" style="float:right"><i>%s</i><br>%s<br>%s<br style="clear:both"></li>' % (
