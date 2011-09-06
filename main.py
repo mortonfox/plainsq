@@ -8,8 +8,8 @@
 <p>PlainSquare uses OAuth version 2 to log in to Foursquare to avoid having to store user passwords. PlainSquare supports version 2 of the Foursquare API. It is written in Python and designed for hosting on Google App Engine. 
 
 <pre>
-Version: 0.0.6
-Author: Po Shan Cheah (morton@mortonfox.com)
+Version: 0.0.7
+Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a>)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
 Last updated: September 6, 2011
@@ -55,7 +55,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.6 20110906'
+USER_AGENT = 'plainsq:0.0.7 20110906'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -448,7 +448,7 @@ class MainHandler(webapp.RequestHandler):
 <li><a class="widebutton" href="/geoloc" accesskey="1">Detect location</a></li>
 
 <li><form class="formbox" action="/setloc" onSubmit="box_onsubmit(); return false;" method="get">
-Set location: <input class="inputbox" type="text" name="newloc" id="newloc" size="16"
+Set location: <a href="/setlochelp">[?]</a> <input class="inputbox" type="text" name="newloc" id="newloc" size="16"
 accesskey="2"><input class="submitbutton" type="submit" value="Go"></form></li>
 
 <li><a class="widebutton" href="/venues" accesskey="3">Nearest Venues</a></li>
@@ -478,9 +478,21 @@ Shout: <input class="inputbox" type="text" name="message" size="16" accesskey="7
 <li><a class="widebutton" href="/debug">Turn debugging %s</a></li>
 
 </ol>
+""" % (unreadcount, "off" if get_debug(self) else "on"))
 
-<hr>
-<p>'Set location' input can be either a place name / zip code or coordinates.
+	debug_json(self, jsn)
+	htmlend(self)
+
+
+class SetlocHelpHandler(webapp.RequestHandler):
+    """
+    Handler for 'Set location' help info.
+    """
+    def get(self):
+	# This page should be cached. So omit the no_cache() call.
+	htmlbegin(self, "Set Location Help")
+	self.response.out.write("""
+<p>You can enter either coordinates or a place name / zip code into the 'Set location' input box.
 <br>
 <br>Enter coordinates as a series of 6 or more digits, e.g.:
 <br>
@@ -488,11 +500,16 @@ Shout: <input class="inputbox" type="text" name="message" size="16" accesskey="7
 <br>391234751234 means N 39&deg; 12.340' W 75&deg; 12.340'
 <br>3912375123 means N 39&deg; 12.300' W 75&deg; 12.300'
 <br>
-<br>Any other input format will be passed to a geocoder for interpretation.
-""" % (unreadcount, "off" if get_debug(self) else "on"))
-
-	debug_json(self, jsn)
+<br>In the above input format, PlainSq assumes that the coordinates are in the N/W quadrant. If you need to enter coordinates in another quadrant, specify N/S and E/W in the input string, e.g.:
+<br>
+<br>N3912345E7512345 means N 39&deg; 12.345' E 75&deg; 12.345'
+<br>N391234E751234 means N 39&deg; 12.340' E 75&deg; 12.340'
+<br>N39123E75123 means N 39&deg; 12.300' E 75&deg; 12.300'
+<br>
+<br>Any other input format will be passed to the Google Maps geocoder for interpretation.
+""")
 	htmlend(self)
+
 
 class OAuthHandler(webapp.RequestHandler):
     """
@@ -1630,12 +1647,13 @@ def deg_min(st):
 	min = min[:2] + '.' + min[2:]
     return (deg, min)
 
-def parse_coord(coordstr):
+def parse_coord_digits(coordstr):
     """
     Parse user-entered coordinates.
-    These coordinates are entered as digits only. The string is split into
-    two halves. The first half fills in dd mm.mmm in the latitude and 
-    the second half fills in dd mm.mmm in the longitude.
+    This function handles the case where coordinates are entered as digits
+    only. The string is split into two halves. The first half fills in dd
+    mm.mmm in the latitude and the second half fills in dd mm.mmm in the
+    longitude. These coordinates are assumed to be in the N/W quadrant.
     """
     mid = int((len(coordstr) + 1) / 2)
     latstr = coordstr[:mid]
@@ -1648,6 +1666,43 @@ def parse_coord(coordstr):
     lon = "%.6f" % -(int(d) + float(m) / 60)
 
     return (lat, lon)
+
+
+def parse_coord_nsew(matchObj):
+    """
+    Parse user-entered coordinates.
+    This function is the same as parse_coord_digits but also allows the user to
+    enter N or S and E or W. For example, the user can enter something like
+    NddddddEdddddd for coordinates in the N/E quadrant.
+    """
+    sign = 1
+    if matchObj.group(1).upper() == 'S':
+	sign = -1
+    (d, m) = deg_min(matchObj.group(2))
+    lat = "%.6f" % (sign * (int(d) + float(m) / 60))
+
+    sign = 1
+    if matchObj.group(3).upper() == 'W':
+	sign = -1
+    (d, m) = deg_min(matchObj.group(4))
+    lon = "%.6f" % (sign * (int(d) + float(m) / 60))
+
+    return (lat, lon)
+
+
+def parse_coord(coordstr):
+    """
+    Parse user-entered coordinates.
+    """
+    if re.match('^\d{6,}$', coordstr):
+	return parse_coord_digits(coordstr)
+
+    matchObj = re.match('^([NnSs])(\d{3,})([EeWw])(\d{3,})$', coordstr)
+    if matchObj:
+	return parse_coord_nsew(matchObj)
+
+    return None
+
 
 def isFloat(s):
     try:
@@ -1682,8 +1737,9 @@ size="16"><input class="submitbutton" type="submit" value="Go"></form>
 
 	newloc = self.request.get('newloc').strip()
 
-	if re.match('^\d{6,}$', newloc):
-	    (lat, lon) = parse_coord(newloc)
+	coords = parse_coord(newloc)
+	if coords:
+	    (lat, lon) = coords
 	    set_coords(self, lat, lon)
 	    self.redirect('/venues')
 	    return
@@ -1711,8 +1767,9 @@ class SetlocHandler(webapp.RequestHandler):
 
 	newloc = self.request.get('newloc').strip()
 
-	if re.match('^\d{6,}$', newloc):
-	    (lat, lon) = parse_coord(newloc)
+	coords = parse_coord(newloc)
+	if coords:
+	    (lat, lon) = coords
 	    set_coords(self, lat, lon)
 	    self.redirect('/venues')
 	    return
@@ -2536,6 +2593,7 @@ def main():
     # logging.getLogger().setLevel(logging.DEBUG)
     application = webapp.WSGIApplication([
 	('/', MainHandler),
+	('/setlochelp', SetlocHelpHandler),
 	('/login', LoginHandler),
 	('/login2', LoginHandler2),
 	('/oauth', OAuthHandler),
