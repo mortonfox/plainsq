@@ -1,7 +1,7 @@
 // Shared javascript functions.
 
 function google_map(lat, lon) {
-    return '<img width="250" height="250" alt="[Google Map]" '+
+    return '<img id="gmap" width="250" height="250" alt="[Google Map]" '+
 	'src="http://maps.google.com/maps/api/staticmap?' +
 	'size=250x250&format=gif&sensor=true&zoom=14&' +
 	'markers=size:mid|color:blue|' + encodeURIComponent(lat) + ',' +

@@ -3,10 +3,12 @@
 var itercount, watchid, lastupdate;
 
 function show(msg) {
-    var out = document.getElementById('output');
+    var out, err;
+
+    out = document.getElementById('output');
     out.innerHTML = msg;
 
-    var err = document.getElementById('error');
+    err = document.getElementById('error');
     err.innerHTML = '';
 }
 
@@ -37,12 +39,36 @@ function error_callback(err) {
     }
 }
 
+// Check if Google Map image has been loaded.
+function check_gmap_loaded() {
+    var gmap = document.getElementById('gmap');
+    if (gmap === null) {
+	// If Google Map image is not present at all, then this test is
+	// irrelevant anyway.
+	return true;
+    }
+
+    if (!gmap.complete) {
+	return false;
+    }
+
+    if (typeof gmap.naturalWidth !== "undefined" && gmap.naturalWidth === 0) {
+	return false;
+    }
+
+    return true;
+}
+
 function success_callback(pos) {
     var lat, lon, now;
 
     // Don't update too frequently.
     now = (new Date()).getTime();
     if (now - lastupdate < 2000) {
+	return;
+    }
+    if (!check_gmap_loaded() && (now - lastupdate < 10000)) {
+	// Allow up to 10 seconds for Google Map to finish loading.
 	return;
     }
     lastupdate = now;
