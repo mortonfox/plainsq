@@ -12,7 +12,7 @@ Version: 0.0.6
 Author: Po Shan Cheah (morton@mortonfox.com)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: September 2, 2011
+Last updated: September 6, 2011
 </pre>
 """
 
@@ -55,7 +55,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.6 20110902'
+USER_AGENT = 'plainsq:0.0.6 20110906'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -820,8 +820,10 @@ def special_fmt(special):
     s = ''
     venue = special.get('venue', {})
 
-    s += '<p><img src="http://foursquare.com/img/specials/%s.png" style="float:left"> %s<br style="clear:both">' % (
-	    special.get('icon', 'check-in'), special.get('title', 'Special Offer'))
+    s += '<table align="right"><caption align="bottom">%s</caption><tr><td><img src="http://foursquare.com/img/specials/%s.png"></td></tr></table>' % (
+	    special.get('title', 'Special Offer'),
+	    special.get('icon', 'check-in'),
+	    )
 
     if venue:
 	s += '<p><a class="button" href="/venue?vid=%s"><b>%s</b></a><br>%s' % (
@@ -859,6 +861,8 @@ def special_fmt(special):
     detail = special.get('detail')
     if detail:
 	s += '<br>Detail: %d' % detail
+
+    s += '<br style="clear:both">'
 
     return s
 
@@ -1865,7 +1869,7 @@ def checkin_fmt(checkin, notif):
 
     specials = find_notifs(notif, 'special')
     if len(specials) > 0:
-	s += ''.join([special_fmt(item.get('special', {}))
+	s += ''.join(['<p>' + special_fmt(item.get('special', {}))
 	    for item in specials])
 
     leaderboard = find_notifs(notif, 'leaderboard')
