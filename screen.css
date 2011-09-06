@@ -56,4 +56,8 @@
     border-left-style: none;
 }
 
+.image caption {
+    font-size: 80%;
+}
+
 /* vim: set tw=0: */

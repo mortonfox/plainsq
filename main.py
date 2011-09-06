@@ -820,7 +820,7 @@ def special_fmt(special):
     s = ''
     venue = special.get('venue', {})
 
-    s += '<table align="right"><caption align="bottom">%s</caption><tr><td><img src="http://foursquare.com/img/specials/%s.png"></td></tr></table>' % (
+    s += '<table class="image" align="right"><caption align="bottom">%s</caption><tr><td><img src="http://foursquare.com/img/specials/%s.png"></td></tr></table>' % (
 	    special.get('title', 'Special Offer'),
 	    special.get('icon', 'check-in'),
 	    )
@@ -1276,9 +1276,18 @@ class LeaderHandler(webapp.RequestHandler):
 
 
 def mayor_venue_fmt(venue):
-    return '<li><a class="button" href="/venue?vid=%s"><b>%s</b></a> %s<br>%s</li>' % (
+    s = ''
+    pcat = get_prim_category(venue.get('categories'))
+    if pcat:
+	s += '<table class="image" align="right"><caption align="bottom">%s</caption><tr><td><img src="%s"></td></tr></table>' % (
+		pcat.get('name', ''),
+		pcat.get('icon', ''),
+		)
+    s += '<a class="button" href="/venue?vid=%s"><b>%s</b></a> %s<br>%s' % (
 	    venue['id'], escape(venue['name']), venue_cmds(venue),
 	    addr_fmt(venue))
+    s += '<br style="clear:both">'
+    return s
 
 class MayorHandler(webapp.RequestHandler):
     """
@@ -1306,7 +1315,7 @@ class MayorHandler(webapp.RequestHandler):
 	else:
 	    self.response.out.write(
 		'<ol class="numseplist">%s</ol>' % 
-		''.join([mayor_venue_fmt(v) for v in mayorships['items']]))
+		''.join(['<li>%s</li>' % mayor_venue_fmt(v) for v in mayorships['items']]))
 
 	debug_json(self, jsn)
 	htmlend(self)
