@@ -627,13 +627,14 @@ def addr_fmt_2(location, contact):
 		    escape(city), escape(state), escape(zip), escape(country))
 
     if contact is not None:
-	phone = contact.get('formattedPhone')
-	if phone:
-	    s += '%s<br>' % phone
-	else:
-	    phone = contact.get('phone', '')
-	    if len(phone) > 6:
-		s += '(%s)%s-%s<br>' % (phone[0:3], phone[3:6], phone[6:])
+	phone = contact.get('phone', '')
+	formattedPhone = contact.get('formattedPhone')
+	if formattedPhone:
+	    phoneStr = formattedPhone
+	elif len(phone) > 6:
+	    phoneStr = '(%s)%s-%s' % (phone[0:3], phone[3:6], phone[6:])
+	if phone and phoneStr:
+	    s += '<a href="tel:%s">%s</a><br>' % (phone, phoneStr)
 
 	twitter = contact.get('twitter', '')
 
