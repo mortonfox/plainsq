@@ -360,7 +360,8 @@ def userheader(self, client, lat, lon):
     """ 
     Display the logged-in user's icon, name, and position.
     """
-    jsn = call4sq(self, client, 'get', '/users/self')
+    jsn = call4sq(self, client, 'get', '/users/self',
+	    params = { 'v' : '20110914' })
     if jsn is None:
 	return
 
@@ -939,7 +940,6 @@ class VInfoHandler(webapp.RequestHandler):
 	    return
 
 	htmlbegin(self, "Venue info")
-	userheader(self, client, lat, lon)
 
 	resp = jsn.get('response')
 	if resp is None:
@@ -1038,7 +1038,6 @@ class HistoryHandler(webapp.RequestHandler):
 	    return
 
 	htmlbegin(self, "History")
-	userheader(self, client, lat, lon)
 
 	resp = jsn.get('response')
 	if resp is None:
@@ -1320,19 +1319,29 @@ class MayorHandler(webapp.RequestHandler):
 
 	htmlbegin(self, "Mayorships")
 
-	jsn = userheader(self, client, lat, lon)
+	jsn = call4sq(self, client, 'get', path='/users/self/mayorships')
 	if jsn is None:
 	    return
 
-	user = jsn.get('response', {}).get('user', {})
-	mayorships = user.get('mayorships', {})
+	resp = jsn.get('response')
+	if resp is None:
+	    logging.error('Missing response from /users/mayorships:')
+	    logging.error(jsn)
+	    return jsn
+
+	mayorships = resp.get('mayorships')
+	if mayorships is None:
+	    logging.error('Missing mayorships from /users/mayorships:')
+	    logging.error(jsn)
+	    return jsn
+
 	count = mayorships.get('count', 0)
 	if count == 0:
 	    self.response.out.write('<p>No mayorships yet.')
 	else:
 	    self.response.out.write(
 		'<ol class="numseplist">%s</ol>' % 
-		''.join(['<li>%s</li>' % mayor_venue_fmt(v) for v in mayorships['items']]))
+		''.join(['<li>%s</li>' % mayor_venue_fmt(v.get('venue', {})) for v in mayorships.get('items', [])]))
 
 	debug_json(self, jsn)
 	htmlend(self)
@@ -1443,7 +1452,6 @@ class FriendsHandler(webapp.RequestHandler):
 	    return
 
 	htmlbegin(self, "Find Friends")
-	userheader(self, client, lat, lon)
 
 	response = jsn.get('response')
 	if response is None:
@@ -1615,7 +1623,6 @@ class VenuesHandler(webapp.RequestHandler):
 	    return
 
 	htmlbegin(self, "Venue search")
-	userheader(self, client, lat, lon)
 
 	response = jsn.get('response')
 	if response is None:
@@ -2291,7 +2298,6 @@ class SpecialsHandler(webapp.RequestHandler):
 	    return
 
 	htmlbegin(self, "Specials")
-	userheader(self, client, lat, lon)
 
 	response = jsn.get('response')
 	if response is None:
@@ -2448,7 +2454,6 @@ class PhotoHandler(webapp.RequestHandler):
 	    return
 
 	htmlbegin(self, "Photo")
-	userheader(self, client, lat, lon)
 
 	response = jsn.get('response')
 	if response is None:
@@ -2491,7 +2496,6 @@ class CommentsHandler(webapp.RequestHandler):
 	    return
 
 	htmlbegin(self, "Checkin Comments")
-	userheader(self, client, lat, lon)
 
 	response = jsn.get('response')
 	if response is None:
