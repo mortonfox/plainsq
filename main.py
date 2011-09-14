@@ -1174,15 +1174,22 @@ def notif_fmt(notif):
     target = notif.get('target', {})
     targetType = target.get('type', '')
     venue = None
+    checkin = None
 
-    if targetType == 'checkin' or targetType == 'tip':
+    if targetType == 'tip':
 	venue = target.get('object', {}).get('venue', {})
+    elif targetType == 'checkin':
+	checkin = target.get('object', {})
     elif targetType == 'venue':
 	venue = target.get('object', {})
 
     if venue:
 	s = '<a class="button" href="/venue?vid=%s">%s</a>' % (
 		venue.get('id', ''), escape(venue.get('name', '')))
+
+    if checkin:
+	s = '<a class="button" href="/comments?chkid=%s">%s</a>' % (
+		checkin.get('id', ''), escape(checkin.get('venue', {}).get('name', '')))
 
     return '<li><img src="%s" class="usericon" style="float:right"><i>%s</i><br>%s<br>%s<br style="clear:both"></li>' % (
 	    notif.get('image', {}).get('fullPath', ''),
