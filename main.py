@@ -12,7 +12,7 @@ Version: 0.0.7
 Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a>)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: September 6, 2011
+Last updated: September 14, 2011
 </pre>
 """
 
@@ -55,7 +55,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.7 20110906'
+USER_AGENT = 'plainsq:0.0.7 20110914'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -389,7 +389,7 @@ def userheader(self, client, lat, lon):
 		venueName = venue.get('name', '')
 
     self.response.out.write(
-	    '<p><img src="%s" style="float:left"> %s @ %s<br>Loc: %s'
+	    '<p><img src="%s" class="usericon" style="float:left"> %s @ %s<br>Loc: %s'
 	    '<br style="clear:both">' 
 	    % (photo, escape(firstname), escape(venueName),
 		convcoords(lat, lon)))
@@ -706,7 +706,7 @@ def venue_checkin_fmt(checkin, dnow):
     Format the info about a user checked in at this venue.
     """
     s = ''
-    s += '<p><img src="%s" style="float:left">%s from %s' % (
+    s += '<p><img src="%s" class="usericon" style="float:left">%s from %s' % (
 	    checkin['user']['photo'],
 	    name_fmt(checkin['user']),
 	    escape(checkin['user'].get('homeCity', '')))
@@ -777,7 +777,7 @@ def vinfo_fmt(venue):
 	s += '<p>No mayor'
     else:
 	s += """
-<p><img src="%s" style="float:left">%s (%sx) 
+<p><img src="%s" class="usericon" style="float:left">%s (%sx) 
 from %s is the mayor<br style="clear:both"> 
 """ % (user['photo'], 
 	name_fmt(user),
@@ -898,7 +898,7 @@ def tip_fmt(tip):
     Format a tip on the venue page.
     """
     return """
-<p><img src="%s" style="float:left">%s from %s says: 
+<p><img src="%s" class="usericon" style="float:left">%s from %s says: 
 %s (Posted: %s)<br style="clear:both">
 """ % (tip['user']['photo'],
 	name_fmt(tip['user']),
@@ -1161,7 +1161,7 @@ def leader_fmt(leader):
     """
     user = leader.get('user', {})
     scores = leader.get('scores', {})
-    return '<img src="%s" style="float:right"><b>%d: %s from %s</b><br>Recent: %d<br>Max: %d<br>Checkins:%d<br style="clear:both">' % (
+    return '<img src="%s" class="usericon" style="float:right"><b>%d: %s from %s</b><br>Recent: %d<br>Max: %d<br>Checkins:%d<br style="clear:both">' % (
 	    user.get('photo', ''),
 	    leader.get('rank', 0),
 	    name_fmt(user),
@@ -1185,7 +1185,7 @@ def notif_fmt(notif):
 	s = '<a class="button" href="/venue?vid=%s">%s</a>' % (
 		venue.get('id', ''), escape(venue.get('name', '')))
 
-    return '<li><img src="%s" style="float:right"><i>%s</i><br>%s<br>%s<br style="clear:both"></li>' % (
+    return '<li><img src="%s" class="usericon" style="float:right"><i>%s</i><br>%s<br>%s<br style="clear:both"></li>' % (
 	    notif.get('image', {}).get('fullPath', ''),
 	    datetime.fromtimestamp(notif.get('createdAt', 0)).ctime(),
 	    escape(notif.get('text', '')),
@@ -1389,7 +1389,7 @@ def friend_checkin_fmt(checkin, lat, lon, dnow):
     if user:
 	photo = user.get('photo')
 	if photo:
-	    s += '<img src="%s" style="float:right; padding:3px;">' % photo
+	    s += '<img src="%s" class="usericon" style="float:right; padding:3px;">' % photo
 
     dist = checkin.get('distance')
     if dist is not None:
@@ -1921,7 +1921,7 @@ def checkin_fmt(checkin, notif):
 	user = mayor.get('user')
 	msg = escape(mayor['message'])
 	s += '<p>%s' % msg if user is None else """
-<p><img src="%s" style="float:left">%s<br style="clear:both">
+<p><img src="%s" class="usericon" style="float:left">%s<br style="clear:both">
 """ % (user['photo'], msg)
     
     badges = find_notifs(notif, 'badge')
@@ -1948,7 +1948,7 @@ def checkin_ldr_row_fmt(leader):
     user = leader.get('user', {})
     scores = leader.get('scores', {})
     return """
-<p><img src="%s" style="float:left"> #%d: %s %s from %s<br>
+<p><img src="%s" class="usericon" style="float:left"> #%d: %s %s from %s<br>
 %d points, %d checkins, %d max<br style="clear:both">
 """ % (user.get('photo', ''),
 	leader.get('rank', 0),

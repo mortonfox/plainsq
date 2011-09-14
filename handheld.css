@@ -91,4 +91,9 @@
     border-left-style: none;
 }
 
+.usericon {
+    width: 50px;
+    height: auto;
+}
+
 /* vim: set tw=0: */
