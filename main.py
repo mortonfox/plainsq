@@ -264,9 +264,7 @@ def htmlbegin(self, title, nolocate = False):
 <meta name="HandheldFriendly" content="true" />
 <meta name="viewport" content="width=device-width, height=device-height, user-scalable=yes" />
 
-<link rel="stylesheet" href="/screen.css" media="all" type="text/css">
-<link rel="stylesheet" href="/handheld.css" media="handheld, only screen and (max-device-width:480px)" type="text/css">
-
+<link rel="stylesheet" href="/main.css" type="text/css">
 </head>
 
 <body>
@@ -896,7 +894,7 @@ def specials_fmt(specials, nearby=False):
     """
     return '' if len(specials) == 0 else '<p><b>Specials%s:</b>' % (
 	    ' nearby' if nearby else ''
-	    ) + '<ul class="seplist">%s</ul>' % ''.join(
+	    ) + '<ul class="vlist">%s</ul>' % ''.join(
 		    ['<li>%s</li>' % special_fmt(x) for x in specials])
 
 def tip_fmt(tip):
@@ -1293,7 +1291,7 @@ class LeaderHandler(webapp.RequestHandler):
 
 	if leaderboard.get('count'):
 	    self.response.out.write(
-		    '<ul class="seplist">%s</ul>' % ''.join(
+		    '<ul class="vlist">%s</ul>' % ''.join(
 			['<li>%s</li>' % leader_fmt(x) 
 			    for x in leaderboard.get('items', [])]))
 	else:
