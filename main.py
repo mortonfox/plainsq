@@ -268,10 +268,10 @@ def htmlbegin(self, title, nolocate = False):
 </head>
 
 <body>
-<div class="header"><a class="button" href="/"><b>PlainSq</b></a>%s - %s</div>
+<div class="header"><a class="button" href="/">Home</a>%s - %s</div>
 """ % (
     title,
-    '' if nolocate else '<a class="beforesep button" href="/geoloc">Locate</a>',
+    '' if nolocate else '<span class="beforesep"><a class="button" href="/geoloc">Locate</a></span>',
     title))
 
 def htmlend(self, noabout=False, nologout=False):
@@ -280,8 +280,8 @@ def htmlend(self, noabout=False, nologout=False):
 </body>
 </html>
 """ % (
-    '' if noabout else '<a class="beforesep button" href="/about">About</a>',
-    '' if nologout else '<a class="beforesep button" href="/logout">Log out</a>'))
+    '' if noabout else '<span class="beforesep"><a class="button" href="/about">About</a></span>',
+    '' if nologout else '<span class="beforesep"><a class="button" href="/logout">Log out</a></span>'))
 
 def conv_a_coord(coord, nsew):
     coord = float(coord)
