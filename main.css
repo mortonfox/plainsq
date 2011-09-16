@@ -47,6 +47,13 @@ body {
     }
 
     .menulist { padding: 0 0 0 1.5em; }
+
+    .beforesep:before { content: " | "; }
+
+    .footer { 
+	border-top: 1px solid #000000; 
+	padding-top: 0.5em;
+    }
 }
 
 @media handheld, only screen and (max-device-width:480px) {
@@ -66,13 +73,9 @@ body {
 	border-style: solid;
     }
 
-    .button, .vbutton {
-	display: inline-block;
-    }
+    .button, .vbutton { display: inline-block; }
 
-    .formbutton {
-	color: #0000FF;
-    }
+    .formbutton { color: #0000FF; }
 
     .formbutton, .button:link, .button:visited, .vbutton:link, .vbutton:visited {
 	border-bottom-color: #7f7f7f;
@@ -87,8 +90,6 @@ body {
 	border-right-color: #bfbfbf;
     }
 
-    .linksep { display: none; }
-
     .buttonbox { display: block; }
 
     .formbox, .widebutton { 
@@ -99,9 +100,7 @@ body {
 	font-family: arial, "lucida console", helvetica, sans-serif;
     }
 
-    .widebutton { 
-	text-decoration: none; 
-    }
+    .widebutton { text-decoration: none; }
 
     .inputbox { height: 20px; }
 

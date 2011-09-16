@@ -268,21 +268,20 @@ def htmlbegin(self, title, nolocate = False):
 </head>
 
 <body>
-<p><a class="button" href="/"><b>PlainSq</b></a>%s - %s
+<div class="header"><a class="button" href="/"><b>PlainSq</b></a>%s - %s</div>
 """ % (
     title,
-    '' if nolocate else '<span class="linksep"> | </span><a class="button" href="/geoloc">Locate</a>',
+    '' if nolocate else '<a class="beforesep button" href="/geoloc">Locate</a>',
     title))
 
 def htmlend(self, noabout=False, nologout=False):
     self.response.out.write("""
-<hr>
-<a class="button" href="/">Home</a>%s%s
+<div class="footer"><a class="button" href="/">Home</a>%s%s</div>
 </body>
 </html>
 """ % (
-    '' if noabout else '<span class="linksep"> | </span><a class="button" href="/about">About</a>',
-    '' if nologout else '<span class="linksep"> | </span><a class="button" href="/logout">Log out</a>'))
+    '' if noabout else '<a class="beforesep button" href="/about">About</a>',
+    '' if nologout else '<a class="beforesep button" href="/logout">Log out</a>'))
 
 def conv_a_coord(coord, nsew):
     coord = float(coord)
