@@ -12,7 +12,7 @@ Version: 0.0.7
 Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a>)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: September 14, 2011
+Last updated: November 9, 2011
 </pre>
 """
 
@@ -55,7 +55,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.7 20110914'
+USER_AGENT = 'plainsq:0.0.7 20111109'
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -300,12 +300,16 @@ def convcoords(lat, lon):
     """
     return conv_a_coord(lat, 'NS') + ' ' + conv_a_coord(lon, 'EW')
 
-def call4sq(self, client, method, path, params = None):
+def call4sq(self, client, method, path, params = {}):
     """
     Call the Foursquare API. Handle errors.
     Returns None if there was an error. Otherwise, returns the parsed JSON.
     """
     try:
+	# Supply a default version.
+	if 'v' not in params:
+	    params['v'] = '20110615'
+
 	if method == 'post':
 	    result = client.post(path, params)
 	else:
