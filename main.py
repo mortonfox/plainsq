@@ -391,7 +391,7 @@ def userheader(self, client, lat, lon):
 		venueName = venue.get('name', '')
 
     self.response.out.write(
-	    '<p><img src="%s" class="usericon" style="float:left"> %s @ %s<br>Loc: %s'
+	    '<p><img src="%s" class="usericon" alt="" style="float:left"> %s @ %s<br>Loc: %s'
 	    '<br style="clear:both">' 
 	    % (photo, escape(firstname), escape(venueName),
 		convcoords(lat, lon)))
@@ -594,7 +594,7 @@ def venue_cmds(venue, checkin_long=False):
 <input class="formbutton" type="submit" value="checkin">
 </form>""" % venue['id']
 
-    return '<span class="buttonbox">%s</span>' % s
+    return '<div class="buttonbox">%s</div>' % s
 
 def addr_fmt(venue):
     """
@@ -713,7 +713,7 @@ def venue_checkin_fmt(checkin, dnow):
     Format the info about a user checked in at this venue.
     """
     s = ''
-    s += '<p><img src="%s" class="usericon" style="float:left">%s from %s' % (
+    s += '<p><img src="%s" class="usericon" alt="" style="float:left">%s from %s' % (
 	    checkin['user']['photo'],
 	    name_fmt(checkin['user']),
 	    escape(checkin['user'].get('homeCity', '')))
@@ -784,7 +784,7 @@ def vinfo_fmt(venue):
 	s += '<p>No mayor'
     else:
 	s += """
-<p><img src="%s" class="usericon" style="float:left">%s (%sx) 
+<p><img src="%s" class="usericon" alt="" style="float:left">%s (%sx) 
 from %s is the mayor<br style="clear:both"> 
 """ % (user['photo'], 
 	name_fmt(user),
@@ -844,7 +844,7 @@ def special_fmt(special):
     s = ''
     venue = special.get('venue', {})
 
-    s += '<table class="image" align="right"><caption align="bottom">%s</caption><tr><td><img src="http://foursquare.com/img/specials/%s.png"></td></tr></table>' % (
+    s += '<table class="image" style="float:right"><caption style="caption-side: bottom">%s</caption><tr><td><img src="http://foursquare.com/img/specials/%s.png" alt=""></td></tr></table>' % (
 	    special.get('title', 'Special Offer'),
 	    special.get('icon', 'check-in'),
 	    )
@@ -905,7 +905,7 @@ def tip_fmt(tip):
     Format a tip on the venue page.
     """
     return """
-<p><img src="%s" class="usericon" style="float:left">%s from %s says: 
+<p><img src="%s" class="usericon" alt="" style="float:left">%s from %s says: 
 %s (Posted: %s)<br style="clear:both">
 """ % (tip['user']['photo'],
 	name_fmt(tip['user']),
@@ -1113,7 +1113,7 @@ Unlocked at <a href="/venue?vid=%s">%s</a>%s on %s.
     text = '<b>%s</b><br>%s<br>%s<br style="clear:both">' % (badge.get('name', ''), desc, unlockstr)
 
     return """
-<img src="%s" style="float:right; padding:3px;">%s
+<img src="%s" alt="" style="float:right; padding:3px;">%s
 """ % (iconurl, text)
 
 class BadgesHandler(webapp.RequestHandler):
@@ -1166,7 +1166,7 @@ def leader_fmt(leader):
     """
     user = leader.get('user', {})
     scores = leader.get('scores', {})
-    return '<img src="%s" class="usericon" style="float:right"><b>%d: %s from %s</b><br>Recent: %d<br>Max: %d<br>Checkins:%d<br style="clear:both">' % (
+    return '<img src="%s" class="usericon" alt="" style="float:right"><b>%d: %s from %s</b><br>Recent: %d<br>Max: %d<br>Checkins:%d<br style="clear:both">' % (
 	    user.get('photo', ''),
 	    leader.get('rank', 0),
 	    name_fmt(user),
@@ -1197,7 +1197,7 @@ def notif_fmt(notif):
 	s = '<a class="button" href="/comments?chkid=%s">%s</a>' % (
 		checkin.get('id', ''), escape(checkin.get('venue', {}).get('name', '')))
 
-    return '<li><img src="%s" class="usericon" style="float:right"><i>%s</i><br>%s<br>%s<br style="clear:both"></li>' % (
+    return '<li><img src="%s" class="usericon" alt="" style="float:right"><i>%s</i><br>%s<br>%s<br style="clear:both"></li>' % (
 	    notif.get('image', {}).get('fullPath', ''),
 	    datetime.fromtimestamp(notif.get('createdAt', 0)).ctime(),
 	    escape(notif.get('text', '')),
@@ -1411,7 +1411,7 @@ def friend_checkin_fmt(checkin, lat, lon, dnow):
     if user:
 	photo = user.get('photo')
 	if photo:
-	    s += '<img src="%s" class="usericon" style="float:right; padding:3px;">' % photo
+	    s += '<img src="%s" class="usericon" alt="" style="float:right; padding:3px;">' % photo
 
     dist = checkin.get('distance')
     if dist is not None:
@@ -1744,7 +1744,7 @@ class SetlocJSHandler(webapp.RequestHandler):
 	htmlbegin(self, 'Set location')
 	self.response.out.write("""
 <noscript>
-<p><span class="error">No Javascript support or Javascript disabled.</span> Can't set location.
+<p><span class="error">No Javascript support or Javascript disabled.</span> Can't set location.</p>
 </noscript>
 <p><span id="error"></span><span id="output"></span>
 <form class="formbox" action="/setloc" onSubmit="box_onsubmit(); return false;" method="get">
@@ -1941,7 +1941,7 @@ def checkin_fmt(checkin, notif):
 	user = mayor.get('user')
 	msg = escape(mayor['message'])
 	s += '<p>%s' % msg if user is None else """
-<p><img src="%s" class="usericon" style="float:left">%s<br style="clear:both">
+<p><img src="%s" class="usericon" alt="" style="float:left">%s<br style="clear:both">
 """ % (user['photo'], msg)
     
     badges = find_notifs(notif, 'badge')
@@ -1968,7 +1968,7 @@ def checkin_ldr_row_fmt(leader):
     user = leader.get('user', {})
     scores = leader.get('scores', {})
     return """
-<p><img src="%s" class="usericon" style="float:left"> #%d: %s %s from %s<br>
+<p><img src="%s" class="usericon" alt="" style="float:left"> #%d: %s %s from %s<br>
 %d points, %d checkins, %d max<br style="clear:both">
 """ % (user.get('photo', ''),
 	leader.get('rank', 0),
@@ -2106,7 +2106,7 @@ class GeoLocHandler(webapp.RequestHandler):
 	htmlbegin(self, "Detect Location")
 	self.response.out.write("""
 <noscript>
-<p><span class="error">No Javascript support or Javascript disabled.</span> Can't detect location.
+<p><span class="error">No Javascript support or Javascript disabled.</span> Can't detect location.</p>
 </noscript>
 <p><span id="error">&nbsp;</span><span id="output">&nbsp;</span>
 <p><span id="map">&nbsp;</span>
