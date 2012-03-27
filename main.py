@@ -8,11 +8,11 @@
 <p>PlainSquare uses OAuth version 2 to log in to Foursquare to avoid having to store user passwords. PlainSquare supports version 2 of the Foursquare API. It is written in Python and designed for hosting on Google App Engine. 
 
 <pre>
-Version: 0.0.7
+Version: 0.0.8
 Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a>)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: November 9, 2011
+Last updated: March 26, 2012
 </pre>
 """
 
@@ -56,6 +56,9 @@ DEBUG_COOKIE = 'plainsq_debug'
 METERS_PER_MILE = 1609.344
 
 USER_AGENT = 'plainsq:0.0.7 20111109'
+
+# Send location parameters if distance is below MAX_MILES_LOC.
+MAX_MILES_LOC = 0.3
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
@@ -562,7 +565,7 @@ class LogoutHandler(webapp.RequestHandler):
 	self.response.out.write('<p>You have been logged out')
 	htmlend(self, nologout=True)
 
-def venue_cmds(venue, checkin_long=False):
+def venue_cmds(venue, dist = 9999, checkin_long=False):
     """
     Show checkin/moveto links in venue header.
     """
@@ -572,7 +575,8 @@ def venue_cmds(venue, checkin_long=False):
 	s += ' <a class="vbutton" href="/checkin_long?%s">checkin with options</a>' % \
 		escape(urllib.urlencode( { 
 		    'vid' : venue['id'], 
-		    'vname' : venue['name'].encode('utf-8')
+		    'vname' : venue['name'].encode('utf-8'),
+		    'dist' : dist,
 		    } ))
 
     location = venue.get('location')
@@ -591,8 +595,9 @@ def venue_cmds(venue, checkin_long=False):
 
     s += """<form style="margin:0; padding:0;" action="/checkin" method="post">
 <input type="hidden" name="vid" value="%s">
+<input type="hidden" name="dist" value="%f">
 <input class="formbutton" type="submit" value="checkin">
-</form>""" % venue['id']
+</form>""" % (venue['id'], dist)
 
     return '<div class="buttonbox">%s</div>' % s
 
@@ -1547,12 +1552,8 @@ def venue_fmt(venue, lat, lon):
     """
     Format a venue in the venue search page.
     """
-    s = ''
-
-    s += '<a class="button" href="/venue?vid=%s"><b>%s</b></a> %s<br>%s' % (
-	    escape(venue['id']), escape(venue['name']), 
-	    venue_cmds(venue), addr_fmt(venue))
-
+    dist = None
+    diststr = ''
     location = venue.get('location')
     if location is not None:
 	# Show distance and bearing from current coordinates.
@@ -1564,7 +1565,16 @@ def venue_fmt(venue, lat, lon):
 	    compass = ''
 	    if vlat is not None and vlng is not None:
 		compass = bearing(lat, lon, vlat, vlng)
-	    s += '(%.1f mi %s)<br>' % (dist, compass)
+	    diststr = '(%.1f mi %s)<br>' % (dist, compass)
+
+    if dist is None:
+	dist = 9999
+
+    s = ''
+    s += '<a class="button" href="/venue?vid=%s"><b>%s</b></a> %s<br>%s' % (
+	    escape(venue['id']), escape(venue['name']), 
+	    venue_cmds(venue, dist=dist, checkin_long=True), addr_fmt(venue))
+    s += diststr
 
     return s
 
@@ -1988,14 +1998,16 @@ def checkin_ldr_fmt(leaderboard):
     s += '<p>%s' % leaderboard.get('message', '')
     return s
 
-def do_checkin(self, client, vid):
+def do_checkin(self, client, vid, useloc = False):
     (lat, lon) = coords(self)
 
-    jsn = call4sq(self, client, 'post', path='/checkins/add',
-	    params = {
-		"venueId" : vid,
-		"broadcast" : "public",
-		})
+    params = {
+	"venueId" : vid,
+	"broadcast" : "public",
+	}
+    if useloc:
+	params['ll'] = '%s,%s' % (lat, lon)
+    jsn = call4sq(self, client, 'post', path='/checkins/add', params=params)
     if jsn is None:
 	return
 
@@ -2044,7 +2056,11 @@ class CheckinHandler(webapp.RequestHandler):
 	    self.redirect('/')
 	    return
 
-	do_checkin(self, client, vid)
+	dist = self.request.get('dist')
+	# logging.debug('checkin: dist = %s' % dist)
+	useloc = isFloat(dist) and float(dist) < MAX_MILES_LOC
+
+	do_checkin(self, client, vid, useloc)
 
 class AddVenueHandler(webapp.RequestHandler):
     """
@@ -2084,7 +2100,7 @@ class AddVenueHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	do_checkin(self, client, venue['id'])
+	do_checkin(self, client, venue['id'], True)
 
 class AboutHandler(webapp.RequestHandler):
     """
@@ -2167,6 +2183,10 @@ class CheckinLong2Handler(webapp.RequestHandler):
 	    self.redirect('/')
 	    return
 
+	dist = self.request.get('dist')
+	# logging.debug('checkin_long2: dist = %s' % dist)
+	useloc = isFloat(dist) and float(dist) < MAX_MILES_LOC
+
 	shout = self.request.get('shout')
 	private = int(self.request.get('private'))
 	twitter = int(self.request.get('twitter'))
@@ -2182,12 +2202,15 @@ class CheckinLong2Handler(webapp.RequestHandler):
 	if facebook:
 	    broadstrs += 'facebook'
 
-	jsn = call4sq(self, client, 'post', path='/checkins/add',
-		params = {
-		    'venueId' : vid,
-		    'shout' : shout,
-		    'broadcast' : ','.join(broadstrs),
-		    })
+	params = {
+	    'venueId' : vid,
+	    'shout' : shout,
+	    'broadcast' : ','.join(broadstrs),
+	    }
+	if useloc:
+	    params['ll'] = '%s,%s' % (lat, lon)
+
+	jsn = call4sq(self, client, 'post', path='/checkins/add', params=params)
 	if jsn is None:
 	    return
 
@@ -2231,6 +2254,7 @@ class CheckinLongHandler(webapp.RequestHandler):
 
 	vid = self.request.get('vid')
 	vname = self.request.get('vname')
+	dist = self.request.get('dist')
 
 	jsn = call4sq(self, client, 'get', '/settings/all')
 	if jsn is None:
@@ -2268,6 +2292,7 @@ class CheckinLongHandler(webapp.RequestHandler):
 <form action="/checkin_long2" method="post">
 Shout (optional): <input class="inputbox" type="text" name="shout" size="15"><br>
 <input type="hidden" value="%s" name="vid">
+<input type="hidden" value="%s" name="dist">
 <input class="formbutton" type="submit" value="check-in"><br>
 <select name="private">
 <option value="1" %s>Don't show your friends</option>
@@ -2283,7 +2308,7 @@ Shout (optional): <input class="inputbox" type="text" name="shout" size="15"><br
 </select><br>
 </form>
 """
-	    % ( escape(vid), private and sel, private or sel,
+	    % ( escape(vid), escape(dist), private and sel, private or sel,
 		twitter or sel, twitter and sel,
 		facebook or sel, facebook and sel ))
 
