@@ -35,7 +35,7 @@ import sys
 import StringIO
 import os
 import cgi
-from math import (radians, sin, cos, atan2, degrees)
+from math import (radians, sin, cos, atan2, degrees, sqrt)
 from datetime import (datetime, date, timedelta)
 import urllib
 import urllib2
@@ -55,7 +55,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.7 20111109'
+USER_AGENT = 'plainsq:0.0.8 20120327'
 
 # Send location parameters if distance is below MAX_MILES_LOC.
 MAX_MILES_LOC = 0.3
@@ -565,19 +565,20 @@ class LogoutHandler(webapp.RequestHandler):
 	self.response.out.write('<p>You have been logged out')
 	htmlend(self, nologout=True)
 
-def venue_cmds(venue, dist = 9999, checkin_long=False):
+def venue_cmds(venue, dist):
     """
     Show checkin/moveto links in venue header.
     """
+    if dist is None:
+	dist = 9999
+
     s = ''
-    # s = '<a class="vbutton" href="/checkin?vid=%s">checkin</a>' % venue['id']
-    if checkin_long:
-	s += ' <a class="vbutton" href="/checkin_long?%s">checkin with options</a>' % \
-		escape(urllib.urlencode( { 
-		    'vid' : venue['id'], 
-		    'vname' : venue['name'].encode('utf-8'),
-		    'dist' : dist,
-		    } ))
+    s += ' <a class="vbutton" href="/checkin_long?%s">checkin with options</a>' % \
+	    escape(urllib.urlencode( { 
+		'vid' : venue['id'], 
+		'vname' : venue['name'].encode('utf-8'),
+		'dist' : dist,
+		} ))
 
     location = venue.get('location')
     if location is not None:
@@ -733,28 +734,37 @@ def venue_checkin_fmt(checkin, dnow):
     s += '<br style="clear:both">'
     return s
 
-def vinfo_fmt(venue):
+def vinfo_fmt(venue, lat, lon):
     """
     Format info on a venue.
     """
+    gmap_str = ''
+    dist_str = ''
+    dist = None
+    location = venue.get('location', {})
+    vlat = location.get('lat')
+    vlon = location.get('lng')
+    if vlat is not None and vlon is not None:
+	# Add static Google Map to the page.
+	gmap_str = google_map(vlat, vlon)
+
+	dist = distance(lat, lon, vlat, vlon)
+	compass = bearing(lat, lon, vlat, vlon)
+	dist_str = '(%.1f mi %s)<br>' % (dist, compass)
+
     s = ''
 
     s += '<p>%s %s<br>%s' % (
 	    escape(venue['name']),
-	    venue_cmds(venue, checkin_long=True),
+	    venue_cmds(venue, dist),
 	    addr_fmt(venue))
+    s += dist_str
 
     url = venue.get('url')
     if url:
 	s += '<br><a href="%s">%s</a>' % (url, url)
 
-    location = venue.get('location', {})
-    if location is not None:
-	lat = location.get('lat')
-	lng = location.get('lng')
-	if lat is not None and lng is not None:
-	    # Add static Google Map to the page.
-	    s += google_map(lat, lng)
+    s += gmap_str
 
     cats = venue.get('categories', [])
     s += ''.join([category_fmt(c) for c in cats])
@@ -964,7 +974,7 @@ class VInfoHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	self.response.out.write(vinfo_fmt(venue))
+	self.response.out.write(vinfo_fmt(venue, lat, lon))
 
 	debug_json(self, jsn)
 	htmlend(self)
@@ -998,7 +1008,7 @@ def comments_cmd(checkin):
     return '<span class="buttonbox"><a class="vbutton" href="/comments?chkid=%s">%s, %s</a></span>' % (
 	    checkin['id'], cstr, pstr)
 
-def history_checkin_fmt(checkin, dnow):
+def history_checkin_fmt(checkin, dnow, lat, lon):
     """
     Format an item from the check-in history.
     """
@@ -1011,10 +1021,23 @@ def history_checkin_fmt(checkin, dnow):
 	if id is None:
 	    s += '<b>%s</b><br>' % escape(venue['name'])
 	else:
+	    location = venue.get('location', {})
+	    vlat = location.get('lat')
+	    vlon = location.get('lng')
+	    dist = None
+	    dist_str = ''
+	    if vlat is not None and vlon is not None:
+		dist = distance(lat, lon, vlat, vlon)
+		compass = bearing(lat, lon, vlat, vlon)
+		dist_str = '(%.1f mi %s)<br>' % (dist, compass)
+
 	    s += '<a class="button" href="/venue?vid=%s"><b>%s</b></a> %s<br>%s' % (
-		    id, escape(venue['name']), venue_cmds(venue),
-		    addr_fmt(venue)
-		    )
+		    id, escape(venue['name']), 
+		    venue_cmds(venue, dist),
+		    addr_fmt(venue))
+
+	    s += dist_str
+
     else:
 	location = checkin.get('location')
 	if location is not None:
@@ -1071,7 +1094,7 @@ class HistoryHandler(webapp.RequestHandler):
 %s
 </ul>
 """ % ''.join(
-    ['<li>%s</li>' % history_checkin_fmt(c, dnow)
+    ['<li>%s</li>' % history_checkin_fmt(c, dnow, lat, lon)
 	for c in checkins['items']]))
 
 	debug_json(self, jsn)
@@ -1309,7 +1332,7 @@ class LeaderHandler(webapp.RequestHandler):
 	htmlend(self)
 
 
-def mayor_venue_fmt(venue):
+def mayor_venue_fmt(venue, lat, lon):
     s = ''
     pcat = get_prim_category(venue.get('categories'))
     if pcat:
@@ -1317,9 +1340,22 @@ def mayor_venue_fmt(venue):
 		pcat.get('name', ''),
 		pcat.get('icon', ''),
 		)
+
+    location = venue.get('location', {})
+    vlat = location.get('lat')
+    vlon = location.get('lng')
+    dist = None
+    dist_str = ''
+    if vlat is not None and vlon is not None:
+	dist = distance(lat, lon, vlat, vlon)
+	compass = bearing(lat, lon, vlat, vlon)
+	dist_str = '(%.1f mi %s)<br>' % (dist, compass)
+
     s += '<a class="button" href="/venue?vid=%s"><b>%s</b></a> %s<br>%s' % (
-	    venue['id'], escape(venue['name']), venue_cmds(venue),
+	    venue['id'], escape(venue['name']), 
+	    venue_cmds(venue, dist),
 	    addr_fmt(venue))
+    s += dist_str
     s += '<br style="clear:both">'
     return s
 
@@ -1359,7 +1395,7 @@ class MayorHandler(webapp.RequestHandler):
 	else:
 	    self.response.out.write(
 		'<ol class="numseplist">%s</ol>' % 
-		''.join(['<li>%s</li>' % mayor_venue_fmt(v.get('venue', {})) for v in mayorships.get('items', [])]))
+		''.join(['<li>%s</li>' % mayor_venue_fmt(v.get('venue', {}), lat, lon) for v in mayorships.get('items', [])]))
 
 	debug_json(self, jsn)
 	htmlend(self)
@@ -1368,7 +1404,11 @@ COMPASS_DIRS = [ 'S', 'SW', 'W', 'NW', 'N', 'NE', 'E', 'SE', 'S' ]
 
 def bearing(lat, lon, vlat, vlon):
     """
-    Compute compass direction from (lat, lon) to (vlat, vlon)
+    Compute bearing from (lat, lon) to (vlat, vlon)
+    Returns compass direction.
+
+    Adapted from code by Chris Veness (scripts-geo@movable-type.co.uk) at
+    http://www.movable-type.co.uk/scripts/latlong.html
     """
     dlon = radians(float(vlon) - float(lon))
     lat1 = radians(float(lat))
@@ -1379,6 +1419,26 @@ def bearing(lat, lon, vlat, vlon):
     brng = degrees(atan2(y, x))
 
     return COMPASS_DIRS[int((brng + 180 + 22.5) / 45)]
+
+def distance(lat, lon, vlat, vlon):
+    """
+    Compute distance from (lat, lon) to (vlat, vlon) using haversine formula.
+    Returns distance in miles.
+
+    Adapted from code by Chris Veness (scripts-geo@movable-type.co.uk) at
+    http://www.movable-type.co.uk/scripts/latlong.html
+    """
+    earth_radius = 6371 * 1000.0 / METERS_PER_MILE
+    dLat = radians(float(vlat) - float(lat))
+    dLon = radians(float(vlon) - float(lon))
+    lat1 = radians(float(lat))
+    lat2 = radians(float(vlat))
+
+    a = sin(dLat/2) * sin(dLat/2) + sin(dLon/2) * sin(dLon/2) * cos(lat1) * cos(lat2) 
+    c = 2 * atan2(sqrt(a), sqrt(1-a)) 
+    d = earth_radius * c
+
+    return d
 
 def friend_checkin_fmt(checkin, lat, lon, dnow):
     """
@@ -1428,13 +1488,14 @@ def friend_checkin_fmt(checkin, lat, lon, dnow):
     else:
 	location = checkin.get('location', {})
 
-    geolat = location.get('lat')
-    geolong = location.get('lng')
+    vlat = location.get('lat')
+    vlon = location.get('lng')
 	
-    if geolat is None or geolong is None:
-	compass = ''
-    else:
-	compass = ' ' + bearing(lat, lon, geolat, geolong)
+    compass = ''
+    if vlat is not None and vlon is not None:
+	compass = ' ' + bearing(lat, lon, vlat, vlon)
+	if dist is None:
+	    dist = distance(lat, lon, vlat, vlon)
 
     if dist is not None:
 	s += '(%.1f mi%s)<br>' % (dist, compass)
@@ -1553,28 +1614,21 @@ def venue_fmt(venue, lat, lon):
     Format a venue in the venue search page.
     """
     dist = None
-    diststr = ''
-    location = venue.get('location')
-    if location is not None:
-	# Show distance and bearing from current coordinates.
-	dist = location.get('distance')
-	if dist is not None:
-	    dist = float(dist) / METERS_PER_MILE
-	    vlat = location.get('lat')
-	    vlng = location.get('lng')
-	    compass = ''
-	    if vlat is not None and vlng is not None:
-		compass = bearing(lat, lon, vlat, vlng)
-	    diststr = '(%.1f mi %s)<br>' % (dist, compass)
-
-    if dist is None:
-	dist = 9999
+    dist_str = ''
+    location = venue.get('location', {})
+    vlat = location.get('lat')
+    vlon = location.get('lng')
+    if vlat is not None and vlon is not None:
+	dist = distance(lat, lon, vlat, vlon)
+	compass = bearing(lat, lon, vlat, vlon)
+	dist_str = '(%.1f mi %s)<br>' % (dist, compass)
 
     s = ''
     s += '<a class="button" href="/venue?vid=%s"><b>%s</b></a> %s<br>%s' % (
 	    escape(venue['id']), escape(venue['name']), 
-	    venue_cmds(venue, dist=dist, checkin_long=True), addr_fmt(venue))
-    s += diststr
+	    venue_cmds(venue, dist), 
+	    addr_fmt(venue))
+    s += dist_str
 
     return s
 
@@ -2547,7 +2601,7 @@ class CommentsHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	self.response.out.write(checkin_comments_fmt(checkin))
+	self.response.out.write(checkin_comments_fmt(checkin, lat, lon))
 
 	self.response.out.write("""
 <p>
@@ -2608,10 +2662,10 @@ def del_comment_cmd(checkin, comment):
     return '<a class="vbutton" href="/delcomment?chkid=%s&commid=%s">delete</a>' % (
 	    checkin['id'], comment['id'])
 
-def checkin_comments_fmt(checkin):
+def checkin_comments_fmt(checkin, lat, lon):
     s = ''
     dnow = datetime.utcnow()
-    s += '<p></p>' + history_checkin_fmt(checkin, dnow)
+    s += '<p></p>' + history_checkin_fmt(checkin, dnow, lat, lon)
     
     s += '<p>-- %s --' % pluralize(checkin['comments']['count'], 'comment')
     if checkin['comments']['count'] > 0:
