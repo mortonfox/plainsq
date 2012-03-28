@@ -2248,13 +2248,13 @@ class CheckinLong2Handler(webapp.RequestHandler):
 
 	broadstrs = []
 	if private:
-	    broadstrs += 'private'
+	    broadstrs.append('private')
 	else:
-	    broadstrs += 'public'
+	    broadstrs.append('public')
 	if twitter:
-	    broadstrs += 'twitter'
+	    broadstrs.append('twitter')
 	if facebook:
-	    broadstrs += 'facebook'
+	    broadstrs.append('facebook')
 
 	params = {
 	    'venueId' : vid,
