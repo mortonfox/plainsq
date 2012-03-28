@@ -58,7 +58,7 @@ METERS_PER_MILE = 1609.344
 USER_AGENT = 'plainsq:0.0.8 20120327'
 
 # Send location parameters if distance is below MAX_MILES_LOC.
-MAX_MILES_LOC = 0.3
+MAX_MILES_LOC = 1.1
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     # In development environment, use local callback.
