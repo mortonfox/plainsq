@@ -76,9 +76,9 @@ function success_callback(pos) {
     itercount += 1;
     lat = pos.coords.latitude;
     lon = pos.coords.longitude;
-    show(conv_coords(lat, lon) + ' (' + itercount + 
-	') <a class="button" href="/coords?geolat=' + encodeURIComponent(lat) + 
-	'&geolong=' + encodeURIComponent(lon) + '">Go</a>');
+    show('<a class="button" href="/coords?geolat=' + encodeURIComponent(lat) + 
+	'&geolong=' + encodeURIComponent(lon) + '">' + 
+	conv_coords(lat, lon) + ' (' + itercount + ')</a>');
     map(lat, lon);
 }
 

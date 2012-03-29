@@ -573,6 +573,13 @@ def venue_cmds(venue, dist):
 	dist = 9999
 
     s = ''
+
+    s += """<form style="margin:0; padding:0; display:inline !important;" action="/checkin" method="post">
+<input type="hidden" name="vid" value="%s">
+<input type="hidden" name="dist" value="%f">
+<input class="formbutton" type="submit" value="checkin">
+</form>""" % (venue['id'], dist)
+
     s += ' <a class="vbutton" href="/checkin_long?%s">checkin with options</a>' % \
 	    escape(urllib.urlencode( { 
 		'vid' : venue['id'], 
@@ -593,12 +600,6 @@ def venue_cmds(venue, dist):
 
     # Link to venue page on Foursquare regular website.
     s += ' <a class="vbutton" href="http://foursquare.com/venue/%s">web</a>' % venue['id']
-
-    s += """<form style="margin:0; padding:0;" action="/checkin" method="post">
-<input type="hidden" name="vid" value="%s">
-<input type="hidden" name="dist" value="%f">
-<input class="formbutton" type="submit" value="checkin">
-</form>""" % (venue['id'], dist)
 
     return '<div class="buttonbox">%s</div>' % s
 
@@ -2178,7 +2179,7 @@ class GeoLocHandler(webapp.RequestHandler):
 <noscript>
 <p><span class="error">No Javascript support or Javascript disabled.</span> Can't detect location.</p>
 </noscript>
-<p><span id="error">&nbsp;</span><span id="output">&nbsp;</span>
+<p><span id="output">&nbsp;</span><span id="error">&nbsp;</span>
 <p><span id="map">&nbsp;</span>
 <script type="text/javascript" src="lib.js"></script>
 <script type="text/javascript" src="geoloc.js"></script>
