@@ -1,0 +1,89 @@
+
+.button, .vbutton, .formbutton {
+    padding: 10px; text-decoration: none; 
+    font-family: arial, "lucida console", helvetica, sans-serif;
+    font-size: inherit;
+
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    -khtml-border-radius: 5px;
+    border-radius: 5px;
+
+    background-color: #dfdfdf;
+    border-width: 3px;
+    border-style: solid;
+}
+
+.button, .vbutton { display: inline-block; }
+
+.formbutton { color: #0000FF; }
+
+.formbutton, .button:link, .button:visited, .vbutton:link, .vbutton:visited {
+    border-bottom-color: #7f7f7f;
+    border-right-color: #7f7f7f;
+    border-top-color: #bfbfbf;
+    border-left-color: #bfbfbf;
+}
+.button:active, .vbutton:active {
+    border-top-color: #7f7f7f;
+    border-left-color: #7f7f7f;
+    border-bottom-color: #bfbfbf;
+    border-right-color: #bfbfbf;
+}
+
+.buttonbox { display: block; }
+
+.vbutton:before { content: "" !important; }
+.vbutton:after { content: "" !important; }
+
+.formbox, .widebutton { 
+    padding: 10px;
+    margin: 0;
+    display: block; 
+    border: 1px solid #000000; 
+    font-family: arial, "lucida console", helvetica, sans-serif;
+}
+
+.widebutton { text-decoration: none; }
+
+.inputbox { height: 20px; }
+
+.submitbutton { 
+    font-family: arial, "lucida console", helvetica, sans-serif;
+    font-size: inherit;
+}
+
+.menulist { list-style-type: none; padding: 0; }
+
+.beforesep:before { content: "" !important; }
+
+/* Limit the size of user icons. */
+.usericon {
+    width: 50px;
+    height: auto;
+}
+
+.header, .footer { 
+    color: #ffffff; 
+    background-color: #000000; 
+
+    font-style: italic;
+}
+
+.header .button, .footer .button {
+    background-color: inherit;
+    color: #ffffff;
+
+    font-weight: bold;
+    font-style: normal;
+
+    -moz-border-radius: 0;
+    -webkit-border-radius: 0;
+    -khtml-border-radius: 0;
+    border-radius: 0;
+
+    border-width: 0 2px 0 0;
+    border-color: #ffffff;
+}
+
+/* vim: set tw=0: */

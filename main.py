@@ -267,7 +267,21 @@ def htmlbegin(self, title, nolocate = False):
 <meta name="HandheldFriendly" content="true" />
 <meta name="viewport" content="width=device-width, height=device-height, user-scalable=yes" />
 
-<link rel="stylesheet" href="/main.css" type="text/css">
+<link rel="stylesheet" href="/main.css" type="text/css" />
+<link rel="stylesheet" href="/mobile.css" type="text/css" media="handheld, only screen and (max-device-width:480px)" />
+
+<script type="text/javascript">
+// Fix for Android 2.2 CSS media type problem.
+// From: http://www.paykin.info/java/android-css-media-reloading/
+var isandroid = /android/.test(navigator.userAgent.toLowerCase());
+if (isandroid) {
+    var cssLink = document.createElement("link");
+    cssLink.setAttribute("type", "text/css");
+    cssLink.setAttribute("rel", "stylesheet");
+    cssLink.setAttribute("href", "/mobile.css");
+    document.head.appendChild(cssLink);
+}
+</script>
 </head>
 
 <body>
@@ -1830,7 +1844,7 @@ size="16"><input class="submitbutton" type="submit" value="Go"></form>
 	    return
 
 	self.response.out.write("""
-<script>
+<script type="text/javascript">
 window.onload = do_geocode('%s');
 </script>
 """ % newloc);
