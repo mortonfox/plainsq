@@ -1,11 +1,20 @@
 // Shared javascript functions.
 
-function google_map(lat, lon) {
+function map_image(lat, lon) {
+    var coords;
+    coords = encodeURIComponent(lat) + ',' + encodeURIComponent(lon);
+    return '<img id="gmap" width="250" height="250" alt="[Bing Map]" '+
+	'src="http://dev.virtualearth.net/REST/v1/Imagery/Map/Road/' + 
+	coords + '/14?ms=250,250&pp=' + coords + 
+	';0&key=Aha1lOg_Dx1TU7quU-wNTgDN3K3fI9d4MYRgNGIIX1rQI7SBHs4iLB6LRnbKFN5c">';
+
+    /*
     return '<img id="gmap" width="250" height="250" alt="[Google Map]" '+
 	'src="http://maps.google.com/maps/api/staticmap?' +
 	'size=250x250&format=gif&sensor=true&zoom=14&' +
 	'markers=size:mid|color:blue|' + encodeURIComponent(lat) + ',' +
 	encodeURIComponent(lon) + '">';
+	*/
 }
 
 function conv_coord(coord, nsew) {

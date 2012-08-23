@@ -31,7 +31,7 @@ function fmt_result(result) {
 
     s = '<a class="button" href="/coords?geolat=' + encodeURIComponent(lat) +
 	'&geolong=' + encodeURIComponent(lng) + '">' + addr + '</a><br>' +
-	conv_coords(lat, lng) + '<p>' + google_map(lat, lng);
+	conv_coords(lat, lng) + '<p>' + map_image(lat, lng);
     return s;
 }
 

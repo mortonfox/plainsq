@@ -676,20 +676,26 @@ def category_fmt(cat):
 <br style="clear:both">
 """ % (cat['icon'], path)
 
-def google_map(lat, lon):
+def map_image(lat, lon):
     """
-    Static Google Map.
+    Static Google Map / Bing Map.
     """
+    coords = escape(urllib.quote_plus('%s,%s' % (lat, lon)))
     return """
-<p><img width="250" height="250" alt="[Google Map]"
-src="http://maps.google.com/maps/api/staticmap?%s">
-""" % escape(urllib.urlencode( {
-    'size' : '250x250', 
-    'format' : 'gif',
-    'sensor' : 'false',
-    'zoom' : '14',
-    'markers' : 'size:mid|color:blue|%s,%s' % (lat, lon),
-    } ))
+<p><img width="250" height="250" alt="[Bing Map]"
+src="http://dev.virtualearth.net/REST/v1/Imagery/Map/Road/%s/14?ms=250,250&pp=%s;0&key=Aha1lOg_Dx1TU7quU-wNTgDN3K3fI9d4MYRgNGIIX1rQI7SBHs4iLB6LRnbKFN5c">
+""" % (coords, coords)
+
+#     return """
+# <p><img width="250" height="250" alt="[Google Map]"
+# src="http://maps.google.com/maps/api/staticmap?%s">
+# """ % escape(urllib.urlencode( {
+#     'size' : '250x250', 
+#     'format' : 'gif',
+#     'sensor' : 'false',
+#     'zoom' : '14',
+#     'markers' : 'size:mid|color:blue|%s,%s' % (lat, lon),
+#     } ))
 
 def fuzzy_delta(delta):
     """
@@ -760,8 +766,8 @@ def vinfo_fmt(venue, lat, lon):
     vlat = location.get('lat')
     vlon = location.get('lng')
     if vlat is not None and vlon is not None:
-	# Add static Google Map to the page.
-	gmap_str = google_map(vlat, vlon)
+	# Add static map image to the page.
+	gmap_str = map_image(vlat, vlon)
 
 	dist = distance(lat, lon, vlat, vlon)
 	compass = bearing(lat, lon, vlat, vlon)
@@ -1937,7 +1943,7 @@ def geocode_result_fmt(result):
 		})),
 	    escape(addr))
     s += '<br>%s' % convcoords(lat, lng)
-    s +=  google_map(lat, lng)
+    s +=  map_image(lat, lng)
     return s
 
 class CoordsHandler(webapp.RequestHandler):
@@ -2004,8 +2010,8 @@ def checkin_fmt(checkin, notif):
 	    lat = location.get('lat')
 	    lng = location.get('lng')
 	    if lat is not None and lng is not None:
-		# Add static Google Map to the page.
-		s += google_map(lat, lng)
+		# Add static map image to the page.
+		s += map_image(lat, lng)
 
 	pcat = get_prim_category(venue.get('categories'))
 	if pcat is not None:

@@ -19,7 +19,7 @@ function error(msg) {
 
 function map(lat, lon) {
     var mapelem = document.getElementById('map');
-    mapelem.innerHTML = google_map(lat, lon);
+    mapelem.innerHTML = map_image(lat, lon);
 }
 
 function error_callback(err) {
