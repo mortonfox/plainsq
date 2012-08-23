@@ -1,11 +1,34 @@
 // Shared javascript functions.
 
+// Figure out how big we can make the map in this browser.
+function map_size() {
+    var mapDim;
+    var winW = 300, winH = 300;
+    if (document.body && document.body.offsetWidth) {
+	winW = document.body.offsetWidth;
+	winH = document.body.offsetHeight;
+    }
+    if (document.compatMode=='CSS1Compat' &&
+	    document.documentElement &&
+	    document.documentElement.offsetWidth ) {
+		winW = document.documentElement.offsetWidth;
+		winH = document.documentElement.offsetHeight;
+	    }
+    if (window.innerWidth && window.innerHeight) {
+	winW = window.innerWidth;
+	winH = window.innerHeight;
+    }
+
+    return Math.max(Math.min(winW - 25, winH - 150, 800), 250);
+}
+
 function map_image(lat, lon) {
-    var coords;
+    var coords, mapdim;
     coords = encodeURIComponent(lat) + ',' + encodeURIComponent(lon);
-    return '<img id="gmap" width="250" height="250" alt="[Bing Map]" '+
+    mapdim = map_size();
+    return '<img id="gmap" width="' + mapdim + '" height="' + mapdim + '" alt="[Bing Map]" '+
 	'src="http://dev.virtualearth.net/REST/v1/Imagery/Map/Road/' + 
-	coords + '/14?ms=250,250&pp=' + coords + 
+	coords + '/14?ms=' + mapdim + ',' + mapdim + '&pp=' + coords + 
 	';0&key=Aha1lOg_Dx1TU7quU-wNTgDN3K3fI9d4MYRgNGIIX1rQI7SBHs4iLB6LRnbKFN5c">';
 
     /*
