@@ -19,6 +19,9 @@ function map_size() {
 	winH = window.innerHeight;
     }
 
+    // Bing Map image can be no bigger than 900x834. To be safe, we limit it to
+    // 800 pixels. At the other extreme, we don't want the map to be smaller
+    // than 250 pixels.
     return Math.max(Math.min(winW - 25, winH - 150, 800), 250);
 }
 
