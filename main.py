@@ -8,11 +8,11 @@
 <p>PlainSquare uses OAuth version 2 to log in to Foursquare to avoid having to store user passwords. PlainSquare supports version 2 of the Foursquare API. It is written in Python and designed for hosting on Google App Engine. 
 
 <pre>
-Version: 0.0.8
+Version: 0.0.9
 Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a>)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: March 26, 2012
+Last updated: August 24, 2012
 </pre>
 """
 
@@ -55,7 +55,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.8 20120327'
+USER_AGENT = 'plainsq:0.0.9 20120824'
 
 # Send location parameters if distance is below MAX_MILES_LOC.
 MAX_MILES_LOC = 1.1
@@ -78,18 +78,22 @@ def escape(s):
 
 class AccessToken(db.Model):
     """
-    Store access tokens indexed by login uuid.
+    Access token entity.
     """
-    uuid = db.StringProperty(required=True)
     token = db.StringProperty(required=True)
-    created = db.DateTimeProperty(auto_now_add=True)
 
-class CoordsTable(db.Model):
+class Coords(db.Model):
     """
-    A table that stores coords associated with each login.
+    Coordinates entity.
     """
-    uuid = db.StringProperty(required=True)
     coords = db.StringProperty(required=True)
+
+class User(db.Model):
+    """
+    User login entity.
+    """
+    access_token = db.ReferenceProperty(AccessToken)
+    coords = db.ReferenceProperty(Coords)
     created = db.DateTimeProperty(auto_now_add=True)
 
 def pprint_to_str(obj):
@@ -135,33 +139,29 @@ def no_cache(self):
     self.response.headers.add_header('User-Agent', USER_AGENT) 
 
 
-def query_coords(self, uuid = None):
-    """
-    Run a GQL query to get the coordinates, if available.
-    """
-    if uuid is None:
-	uuid = self.request.cookies.get(TOKEN_COOKIE)
-    if uuid is not None:
-	return CoordsTable.gql('WHERE uuid=:1 LIMIT 1', uuid).get()
-
 def set_coords(self, lat, lon):
     """
     Store the coordinates in our table.
     """
-    result = query_coords(self)
-    if result is None:
-	uuid = self.request.cookies.get(TOKEN_COOKIE)
-	if uuid is not None:
-	    coord_str = "%s,%s" % (lat, lon)
-	    CoordsTable(uuid = uuid, coords = coord_str).put()
-	    # Update memcache.
-	    memcache.set(COORD_PREFIX + uuid, coord_str)
-    else:
-	# Update existing record.
-	result.coords = "%s,%s" % (lat, lon)
-	db.put(result)
+    coord_str = "%s,%s" % (lat, lon)
+
+    uuid = self.request.cookies.get(TOKEN_COOKIE)
+    if uuid is not None:
+	user = User.get_or_insert(uuid)
+	coords = user.coords
+
+	if coords is None:
+	    coords = Coords(coords = coord_str, parent = user)
+	    coords.put()
+	    user.coords = coords
+	    user.put()
+	else:
+	    coords.coords = coord_str
+	    coords.put()
+
 	# Update memcache.
-	memcache.set(COORD_PREFIX + result.uuid, result.coords)
+	memcache.set(COORD_PREFIX + uuid, coord_str)
+
 
 def get_coord_str(self):
     """
@@ -179,7 +179,7 @@ def get_coord_str(self):
 	    return coord_str
 
 	# If not in memcache, try the datastore.
-	result = query_coords(self, uuid)
+	result = User.get_or_insert(uuid).coords
 	if result is not None:
 	    coord_str = result.coords
 	    memcache.set(coord_key, coord_str)
@@ -236,14 +236,10 @@ def getclient(self):
 	# Try to get access token from memcache first.
 	access_token = memcache.get(uuid_key)
 	if access_token is None:
-	
-	    # Retrieve the access token using the login cookie.
-	    result = AccessToken.gql("WHERE uuid = :1 LIMIT 1",
-		    uuid_key).get()
-	    # If the query fails for whatever reason, the user will just
-	    # have to log in again. Not such a big deal.
-	    if result is not None:
-		access_token = result.token
+
+	    access = User.get_or_insert(uuid).access_token
+	    if access is not None:
+		access_token = access.token
 		memcache.set(uuid_key, access_token)
 
     client = newclient()
@@ -553,8 +549,11 @@ class OAuthHandler(webapp.RequestHandler):
 		    TOKEN_COOKIE, uuid_str))
 
 	# Add the access token to the database.
-	acc = AccessToken(uuid = TOKEN_PREFIX + uuid_str, token = access_token)
+	user = User.get_or_insert(uuid_str)
+	acc = AccessToken(token = access_token, parent = user)
 	acc.put()
+	user.access_token = acc
+	user.put()
 
 	self.redirect('/')
 
@@ -2218,19 +2217,21 @@ class PurgeHandler(webapp.RequestHandler):
 
 	htmlbegin(self, 'Purge old database entries')
 
-	query = AccessToken.gql(creatclause)
+	query = User.gql(creatclause)
 	count = 0
 	for result in query:
-	    result.delete()
-	    count += 1
-	self.response.out.write('<p>Deleted %d old entries from AccessToken table' % count)
+	    tmp = result.access_token
+	    if tmp is not None:
+		tmp.delete()
 
-	query = CoordsTable.gql(creatclause)
-	count = 0
-	for result in query:
+	    tmp = result.coords
+	    if tmp is not None:
+		tmp.delete()
+
 	    result.delete()
 	    count += 1
-	self.response.out.write('<p>Deleted %d old entries from CoordsTable table' % count)
+
+	self.response.out.write('<p>Deleted %d old entries from User table' % count)
 
 	memcache.flush_all()
 	self.response.out.write('<p>Flushed memcache')
