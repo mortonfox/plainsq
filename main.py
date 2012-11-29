@@ -56,7 +56,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.9 20120824'
+USER_AGENT = 'plainsq:0.0.10 20121129'
 
 # Send location parameters if distance is below MAX_MILES_LOC.
 MAX_MILES_LOC = 1.1
@@ -116,10 +116,11 @@ def set_debug(self, debug):
     """
     Set the debug option cookie.
     """
-    self.response.headers.add_header(
-	    'Set-Cookie',
-	    '%s=%s; expires=Fri, 31-Dec-2020 23:59:59 GMT'
-	    % (DEBUG_COOKIE, debug))
+    self.response.set_cookie(DEBUG_COOKIE, str(debug), max_age = 60*60*24*365)
+#     self.response.headers.add_header(
+# 	    'Set-Cookie',
+# 	    '%s=%s; expires=Fri, 31-Dec-2020 23:59:59 GMT'
+# 	    % (DEBUG_COOKIE, debug))
 
 def get_debug(self):
     """
@@ -136,8 +137,10 @@ def no_cache(self):
     Turn off web caching so that the browser will refetch the page.
     Also set the user-agent header.
     """
-    self.response.headers.add_header('Cache-Control', 'no-cache') 
-    self.response.headers.add_header('User-Agent', USER_AGENT) 
+    # self.response.headers.add_header('Cache-Control', 'no-cache') 
+    self.response.cache_expires(0)
+    # self.response.headers.add_header('User-Agent', USER_AGENT) 
+    self.response.headers['User-Agent'] = USER_AGENT
 
 
 @db.transactional
@@ -567,10 +570,11 @@ class OAuthHandler(webapp.RequestHandler):
 	uuid_str = str(uuid.uuid1())
 
 	# Set the login cookie.
-	self.response.headers.add_header(
-		'Set-Cookie', 
-		'%s=%s; expires=Fri, 31-Dec-2020 23:59:59 GMT' % (
-		    TOKEN_COOKIE, uuid_str))
+	self.response.set_cookie(TOKEN_COOKIE, uuid_str, max_age = 60*60*24*365)
+# 	self.response.headers.add_header(
+# 		'Set-Cookie', 
+# 		'%s=%s; expires=Fri, 31-Dec-2020 23:59:59 GMT' % (
+# 		    TOKEN_COOKIE, uuid_str))
 
 	self.add_access_token(uuid_str, access_token)
 
@@ -584,9 +588,10 @@ class LogoutHandler(webapp.RequestHandler):
 	""" 
 	Delete cookies by setting expiration to a past date.
 	"""
-	self.response.headers.add_header(
-		'Set-Cookie', 
-		'%s=; expires=Fri, 31-Dec-1980 23:59:59 GMT' % cookie)
+	self.response.delete_cookie(cookie)
+# 	self.response.headers.add_header(
+# 		'Set-Cookie', 
+# 		'%s=; expires=Fri, 31-Dec-1980 23:59:59 GMT' % cookie)
 
     def get(self):
 	# This page should be cached. So omit the no_cache() call.
