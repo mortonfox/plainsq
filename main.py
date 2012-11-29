@@ -8,11 +8,11 @@
 <p>PlainSquare uses OAuth version 2 to log in to Foursquare to avoid having to store user passwords. PlainSquare supports version 2 of the Foursquare API. It is written in Python and designed for hosting on Google App Engine. 
 
 <pre>
-Version: 0.0.9
+Version: 0.0.10
 Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a>)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: August 24, 2012
+Last updated: November 29, 2012
 </pre>
 """
 
@@ -140,6 +140,24 @@ def no_cache(self):
     self.response.headers.add_header('User-Agent', USER_AGENT) 
 
 
+@db.transactional
+def _set_coords(uuid_str, coord_str):
+    # user = User.get_or_insert(uuid_str)
+    user = User.get_by_key_name(uuid_str)
+    if user is None:
+	user = User(key_name = uuid_str)
+	user.put()
+
+    coords = user.coords
+    if coords is None:
+	coords = Coords(coords = coord_str, parent = user)
+	coords.put()
+	user.coords = coords
+	user.put()
+    else:
+	coords.coords = coord_str
+	coords.put()
+
 def set_coords(self, lat, lon):
     """
     Store the coordinates in our table.
@@ -148,17 +166,7 @@ def set_coords(self, lat, lon):
 
     uuid = self.request.cookies.get(TOKEN_COOKIE)
     if uuid is not None:
-	user = User.get_or_insert(uuid)
-	coords = user.coords
-
-	if coords is None:
-	    coords = Coords(coords = coord_str, parent = user)
-	    coords.put()
-	    user.coords = coords
-	    user.put()
-	else:
-	    coords.coords = coord_str
-	    coords.put()
+	_set_coords(uuid, coord_str)
 
 	# Update memcache.
 	memcache.set(COORD_PREFIX + uuid, coord_str)
@@ -532,6 +540,21 @@ class OAuthHandler(webapp.RequestHandler):
     This handler is the callback for the OAuth handshake. It stores the access
     token and secret in cookies and redirects to the main page.
     """
+    @db.transactional
+    def add_access_token(self, uuid_str, access_token):
+	# Add the access token to the database.
+	# user = User.get_or_insert(uuid_str)
+	user = User.get_by_key_name(uuid_str)
+	if user is None:
+	    user = User(key_name = uuid_str)
+	    user.put()
+
+	acc = AccessToken(token = access_token, parent = user)
+	acc.put()
+
+	user.access_token = acc
+	user.put()
+
     def get(self):
 	no_cache(self)
 
@@ -549,12 +572,7 @@ class OAuthHandler(webapp.RequestHandler):
 		'%s=%s; expires=Fri, 31-Dec-2020 23:59:59 GMT' % (
 		    TOKEN_COOKIE, uuid_str))
 
-	# Add the access token to the database.
-	user = User.get_or_insert(uuid_str)
-	acc = AccessToken(token = access_token, parent = user)
-	acc.put()
-	user.access_token = acc
-	user.put()
+	self.add_access_token(uuid_str, access_token)
 
 	self.redirect('/')
 
@@ -2210,6 +2228,17 @@ class PurgeHandler(webapp.RequestHandler):
     """
     Purge old database entries from CoordsTable and AuthToken.
     """
+    @db.transactional
+    def purge_user(self, user):
+	for tmp in AccessToken.all().ancestor(user):
+	    tmp.delete()
+
+	for tmp in Coords.all().ancestor(user):
+	    tmp.delete()
+
+	user.delete()
+
+
     def get(self):
 	no_cache(self)
 
@@ -2219,17 +2248,10 @@ class PurgeHandler(webapp.RequestHandler):
 	htmlbegin(self, 'Purge old database entries')
 
 	query = User.gql(creatclause)
+	# query = User.all()
 	count = 0
-	for result in query:
-	    tmp = result.access_token
-	    if tmp is not None:
-		tmp.delete()
-
-	    tmp = result.coords
-	    if tmp is not None:
-		tmp.delete()
-
-	    result.delete()
+	for user in query:
+	    self.purge_user(user)
 	    count += 1
 
 	self.response.out.write('<p>Deleted %d old entries from User table' % count)
@@ -2708,47 +2730,46 @@ class UnknownHandler(webapp.RequestHandler):
     def get(self, unknown_path):
 	errorpage(self, 'Unknown URL: /%s' % escape(unknown_path), 404)
 
-def main():
     # logging.getLogger().setLevel(logging.DEBUG)
-    application = webapp.WSGIApplication([
-	('/', MainHandler),
-	('/setlochelp', SetlocHelpHandler),
-	('/login', LoginHandler),
-	('/login2', LoginHandler2),
-	('/oauth', OAuthHandler),
-	('/logout', LogoutHandler),
-	('/venue', VInfoHandler),
-	('/history', HistoryHandler),
-	('/debug', DebugHandler),
-	('/notif', NotifHandler),
-	('/leader', LeaderHandler),
-	('/badges', BadgesHandler),
-	('/mayor', MayorHandler),
-	('/friends', FriendsHandler),
-	('/shout', ShoutHandler),
-	('/venues', VenuesHandler),
-	('/coords', CoordsHandler),
-	('/setloc', SetlocHandler),
-	('/setlocjs', SetlocJSHandler),
-	('/checkin', CheckinHandler),
-	('/addvenue', AddVenueHandler),
-	('/about', AboutHandler),
-	('/geoloc', GeoLocHandler),
-	('/purge', PurgeHandler),
-	('/checkin_long', CheckinLongHandler),
-	('/checkin_long2', CheckinLong2Handler),
-	('/specials', SpecialsHandler),
-	('/comments', CommentsHandler),
-	('/addcomment', AddCommentHandler),
-	('/delcomment', DelCommentHandler),
-	('/addphoto', AddPhotoHandler),
-	('/photo', PhotoHandler),
-	('/(.*)', UnknownHandler),
-	], debug=True)
-    util.run_wsgi_app(application)
+app = webapp.WSGIApplication([
+    ('/', MainHandler),
+    ('/setlochelp', SetlocHelpHandler),
+    ('/login', LoginHandler),
+    ('/login2', LoginHandler2),
+    ('/oauth', OAuthHandler),
+    ('/logout', LogoutHandler),
+    ('/venue', VInfoHandler),
+    ('/history', HistoryHandler),
+    ('/debug', DebugHandler),
+    ('/notif', NotifHandler),
+    ('/leader', LeaderHandler),
+    ('/badges', BadgesHandler),
+    ('/mayor', MayorHandler),
+    ('/friends', FriendsHandler),
+    ('/shout', ShoutHandler),
+    ('/venues', VenuesHandler),
+    ('/coords', CoordsHandler),
+    ('/setloc', SetlocHandler),
+    ('/setlocjs', SetlocJSHandler),
+    ('/checkin', CheckinHandler),
+    ('/addvenue', AddVenueHandler),
+    ('/about', AboutHandler),
+    ('/geoloc', GeoLocHandler),
+    ('/purge', PurgeHandler),
+    ('/checkin_long', CheckinLongHandler),
+    ('/checkin_long2', CheckinLong2Handler),
+    ('/specials', SpecialsHandler),
+    ('/comments', CommentsHandler),
+    ('/addcomment', AddCommentHandler),
+    ('/delcomment', DelCommentHandler),
+    ('/addphoto', AddPhotoHandler),
+    ('/photo', PhotoHandler),
+    ('/(.*)', UnknownHandler),
+    ], debug=True)
+# util.run_wsgi_app(application)
 
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
 
 # vim:set tw=0:

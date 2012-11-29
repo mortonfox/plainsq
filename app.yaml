@@ -2,14 +2,15 @@ application: plainsq-hrd
 version: 1
 runtime: python27
 api_version: 1
-threadsafe: false
+threadsafe: true
 
 handlers:
 - url: /favicon.ico
   static_files: favicon.ico
   upload: favicon.ico
 - url: /admin/.*
-  script: $PYTHON_LIB/google/appengine/ext/admin
+  script: google.appengine.ext.admin.application
+#  script: $PYTHON_LIB/google/appengine/ext/admin
   login: admin
 - url: /(.*\.js)
   static_files: \1
@@ -18,7 +19,7 @@ handlers:
   static_files: \1
   upload: .*\.css
 - url: .*
-  script: main.py
+  script: main.app
 
 admin_console:
   pages:
@@ -30,3 +31,7 @@ admin_console:
     url: /admin/xmpp
   - name: My Inbound Mail
     url: /admin/inboundmail
+
+libraries:
+- name: PIL
+  version: latest
