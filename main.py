@@ -21,11 +21,12 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import util
 from google.appengine.api.urlfetch import DownloadError 
 from google.appengine.api import images
-from django.utils import simplejson
+# from django.utils import simplejson
 from google.appengine.ext import db
 from google.appengine.datastore import entity_pb
 from google.appengine.api import memcache
 
+import json
 import oauth2
 import uuid
 import logging
@@ -328,7 +329,7 @@ def call4sq(self, client, method, path, params = {}):
 	else:
 	    result = client.get(path, params)
 
-	jsn = simplejson.loads(result)
+	jsn = json.loads(result)
 
 	meta = jsn.get('meta')
 	if meta is not None:
@@ -351,7 +352,7 @@ def call4sq(self, client, method, path, params = {}):
 	return
 
     except urllib2.HTTPError, e:
-	jsn = simplejson.loads(e.read())
+	jsn = json.loads(e.read())
 	meta = jsn.get('meta', {})
 	errormsg = meta.get('errorDetail', 'Unknown error')
 	errorpage(self, 
@@ -1898,7 +1899,7 @@ class SetlocHandler(webapp.RequestHandler):
 	    return
 
 	output = resp.read()
-	jsn = simplejson.loads(output)
+	jsn = json.loads(output)
 
 	status = jsn.get('status')
 	if not status:

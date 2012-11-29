@@ -29,9 +29,10 @@ Once you have an access token, you can make API calls:
 """
 
 
+import json
 import urllib
 import urllib2
-from django.utils import simplejson
+# from django.utils import simplejson
 import sys
 import uuid
 
@@ -78,7 +79,7 @@ class Client:
 	req = urllib2.Request(url)
 	resp = urllib2.urlopen(req)
 
-	jsn = simplejson.loads(resp.read())
+	jsn = json.loads(resp.read())
 
 	self.setAccessToken(jsn['access_token'])
 	return jsn
