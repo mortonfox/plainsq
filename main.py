@@ -116,15 +116,14 @@ def debug_json(self, jsn):
     if get_debug(self):
 	self.response.out.write('<pre>%s</pre>' % escape(pprint_to_str(jsn)))
 
+def debug_json_str(self, jsn):
+    return pprint_to_str(jsn) if get_debug(self) else ''
+
 def set_debug(self, debug):
     """
     Set the debug option cookie.
     """
     self.response.set_cookie(DEBUG_COOKIE, str(debug), max_age = 60*60*24*365)
-#     self.response.headers.add_header(
-# 	    'Set-Cookie',
-# 	    '%s=%s; expires=Fri, 31-Dec-2020 23:59:59 GMT'
-# 	    % (DEBUG_COOKIE, debug))
 
 def get_debug(self):
     """
@@ -436,13 +435,7 @@ class LoginHandler(webapp.RequestHandler):
     """
     def get(self):
 	# This page should be cached. So omit the no_cache() call.
-	htmlbegin(self, "Log in", nolocate = True)
-
-	self.response.out.write("""
-<p>In order to use PlainSq features, you need to log in with Foursquare.
-<p><a class="button" href="/login2">Log in with Foursquare</a>
-""")
-	htmlend(self, nologout=True)
+	renderpage(self, 'login.htm')
 
 class LoginHandler2(webapp.RequestHandler):
     """
@@ -463,8 +456,6 @@ class MainHandler(webapp.RequestHandler):
 	if client is None:
 	    return
 
-	htmlbegin(self, "Main")
-
 	# Unread notifications count should be in the notification tray in
 	# the user query.
 	unreadcount = -1
@@ -475,47 +466,12 @@ class MainHandler(webapp.RequestHandler):
 		if notif.get('type', '') == 'notificationTray':
 		    unreadcount = notif.get('item', {}).get('unreadCount', {})
 
-        self.response.out.write("""
-<script type="text/javascript" src="geocode.js"></script>
-<ol class="menulist">
-
-<li><a class="widebutton" href="/geoloc" accesskey="1">Detect location</a></li>
-
-<li><form class="formbox" action="/setloc" onSubmit="box_onsubmit(); return false;" method="get">
-Set location: <a href="/setlochelp">[?]</a> <input class="inputbox" type="text" name="newloc" id="newloc" size="16"
-accesskey="2"><input class="submitbutton" type="submit" value="Go"></form></li>
-
-<li><a class="widebutton" href="/venues" accesskey="3">Nearest Venues</a></li>
-
-<li><form class="formbox" action="/venues" method="get">
-Search Venues: <input class="inputbox" type="text" name="query" size="8"
-accesskey="4"><input class="submitbutton" type="submit" value="Search"></form></li>
-
-<li><a class="widebutton" href="/history" accesskey="5">History</a></li>
-
-<li><a class="widebutton" href="/friends" accesskey="6">Find friends</a></li>
-
-<li><form class="formbox" action="/shout" method="post">
-Shout: <input class="inputbox" type="text" name="message" size="16" accesskey="7">
-<input class="submitbutton" type="submit" value="Shout"></form></li>
-
-<li><a class="widebutton" href="/leader" accesskey="8">Leaderboard</a></li>
-
-<li><a class="widebutton" href="/specials" accesskey="9">Specials</a></li>
-
-<li><a class="widebutton" href="/notif" accesskey="0">Notifications (%d)</a></li>
-
-<li><a class="widebutton" href="/badges">Badges</a></li>
-
-<li><a class="widebutton" href="/mayor">Mayorships</a></li>
-
-<li><a class="widebutton" href="/debug">Turn debugging %s</a></li>
-
-</ol>
-""" % (unreadcount, "off" if get_debug(self) else "on"))
-
-	debug_json(self, jsn)
-	htmlend(self)
+	renderpage(self, 'main.htm',
+		{
+		    'unreadcount' : unreadcount,
+		    'debugmode' : get_debug(self),
+		    'debug_json' : debug_json_str(self, jsn),
+		})
 
 
 class SetlocHelpHandler(webapp.RequestHandler):
@@ -524,26 +480,7 @@ class SetlocHelpHandler(webapp.RequestHandler):
     """
     def get(self):
 	# This page should be cached. So omit the no_cache() call.
-	htmlbegin(self, "Set Location Help")
-	self.response.out.write("""
-<p>You can enter either coordinates or a place name / zip code into the 'Set location' input box.
-<br>
-<br>Enter coordinates as a series of 6 or more digits, e.g.:
-<br>
-<br>39123457512345 means N 39&deg; 12.345' W 75&deg; 12.345'
-<br>391234751234 means N 39&deg; 12.340' W 75&deg; 12.340'
-<br>3912375123 means N 39&deg; 12.300' W 75&deg; 12.300'
-<br>
-<br>In the above input format, PlainSq assumes that the coordinates are in the N/W quadrant. If you need to enter coordinates in another quadrant, specify N/S and E/W in the input string, e.g.:
-<br>
-<br>N3912345E7512345 means N 39&deg; 12.345' E 75&deg; 12.345'
-<br>N391234E751234 means N 39&deg; 12.340' E 75&deg; 12.340'
-<br>N39123E75123 means N 39&deg; 12.300' E 75&deg; 12.300'
-<br>
-<br>Any other input format will be passed to the Google Maps geocoder for interpretation.
-""")
-	htmlend(self)
-
+	renderpage(self, 'setlochelp.htm')
 
 class OAuthHandler(webapp.RequestHandler):
     """
@@ -604,10 +541,7 @@ class LogoutHandler(webapp.RequestHandler):
 	# This page should be cached. So omit the no_cache() call.
 	self.del_cookie(TOKEN_COOKIE)
 	self.del_cookie(DEBUG_COOKIE)
-
-	htmlbegin(self, "Logout", nolocate = True)
-	self.response.out.write('<p>You have been logged out')
-	htmlend(self, nologout=True)
+	renderpage(self, 'logout.htm')
 
 def venue_cmds(venue, dist):
     """

@@ -1,0 +1,47 @@
+{% extends 'base.htm' %}
+{% set title = 'Main' %}
+{% block body %}
+<script type="text/javascript" src="geocode.js"></script>
+<ol class="menulist">
+
+<li><a class="widebutton" href="/geoloc" accesskey="1">Detect location</a></li>
+
+<li><form class="formbox" action="/setloc" onSubmit="box_onsubmit(); return false;" method="get">
+Set location: <a href="/setlochelp">[?]</a> <input class="inputbox" type="text" name="newloc" id="newloc" size="16"
+accesskey="2"><input class="submitbutton" type="submit" value="Go"></form></li>
+
+<li><a class="widebutton" href="/venues" accesskey="3">Nearest Venues</a></li>
+
+<li><form class="formbox" action="/venues" method="get">
+Search Venues: <input class="inputbox" type="text" name="query" size="8"
+accesskey="4"><input class="submitbutton" type="submit" value="Search"></form></li>
+
+<li><a class="widebutton" href="/history" accesskey="5">History</a></li>
+
+<li><a class="widebutton" href="/friends" accesskey="6">Find friends</a></li>
+
+<li><form class="formbox" action="/shout" method="post">
+Shout: <input class="inputbox" type="text" name="message" size="16" accesskey="7">
+<input class="submitbutton" type="submit" value="Shout"></form></li>
+
+<li><a class="widebutton" href="/leader" accesskey="8">Leaderboard</a></li>
+
+<li><a class="widebutton" href="/specials" accesskey="9">Specials</a></li>
+
+<li><a class="widebutton" href="/notif" accesskey="0">Notifications ({{ unreadcount|e }})</a></li>
+
+<li><a class="widebutton" href="/badges">Badges</a></li>
+
+<li><a class="widebutton" href="/mayor">Mayorships</a></li>
+
+<li><a class="widebutton" href="/debug">Turn debugging 
+    {% if debugmode %}
+    off
+    {% else %}
+    on
+    {% endif %}
+    </a></li>
+
+</ol>
+{% endblock %}
+

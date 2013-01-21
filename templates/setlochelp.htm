@@ -1,0 +1,20 @@
+{% extends 'base.htm' %}
+{% set title = 'Set Location Help' %}
+{% block body %}
+<p>You can enter either coordinates or a place name / zip code into the 'Set location' input box.
+<br>
+<br>Enter coordinates as a series of 6 or more digits, e.g.:
+<br>
+<br>39123457512345 means N 39&deg; 12.345' W 75&deg; 12.345'
+<br>391234751234 means N 39&deg; 12.340' W 75&deg; 12.340'
+<br>3912375123 means N 39&deg; 12.300' W 75&deg; 12.300'
+<br>
+<br>In the above input format, PlainSq assumes that the coordinates are in the N/W quadrant. If you need to enter coordinates in another quadrant, specify N/S and E/W in the input string, e.g.:
+<br>
+<br>N3912345E7512345 means N 39&deg; 12.345' E 75&deg; 12.345'
+<br>N391234E751234 means N 39&deg; 12.340' E 75&deg; 12.340'
+<br>N39123E75123 means N 39&deg; 12.300' E 75&deg; 12.300'
+<br>
+<br>Any other input format will be passed to the Google Maps geocoder for interpretation.
+{% endblock %}
+
