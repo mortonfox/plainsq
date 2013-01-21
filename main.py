@@ -21,7 +21,6 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import util
 from google.appengine.api.urlfetch import DownloadError 
 from google.appengine.api import images
-# from django.utils import simplejson
 from google.appengine.ext import db
 from google.appengine.datastore import entity_pb
 from google.appengine.api import memcache
@@ -40,6 +39,11 @@ from math import (radians, sin, cos, atan2, degrees, sqrt)
 from datetime import (datetime, date, timedelta)
 import urllib
 import urllib2
+import jinja2
+
+jinja_environment = jinja2.Environment(
+    loader = jinja2.FileSystemLoader(os.path.dirname(__file__) + '/templates'))
+
 
 TOKEN_COOKIE = 'plainsq_token'
 TOKEN_PREFIX = 'token_plainsq_'
@@ -370,6 +374,12 @@ def call4sq(self, client, method, path, params = {}):
 		'Error %d from Foursquare API call to %s:<br>%s' % (e.code, e.geturl(), errormsg))
 	return
 
+def renderpage(self, template_file, params={}):
+    """
+    Render a page using Jinja2.
+    """
+    t = jinja_environment.get_template(template_file)
+    self.response.out.write(t.render(params))
 
 def errorpage(self, msg, errcode=503):
     """
@@ -377,10 +387,7 @@ def errorpage(self, msg, errcode=503):
     page.
     """
     self.error(errcode)
-
-    htmlbegin(self, "Error")
-    self.response.out.write('<p><span class="error">Error: %s</span>' % msg)
-    htmlend(self)
+    renderpage(self, 'error.htm', { 'msg' : msg })
 
 def userheader(self, client, lat, lon):
     """ 

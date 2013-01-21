@@ -10,7 +10,6 @@ handlers:
   upload: favicon.ico
 - url: /admin/.*
   script: google.appengine.ext.admin.application
-#  script: $PYTHON_LIB/google/appengine/ext/admin
   login: admin
 - url: /(.*\.js)
   static_files: \1
@@ -35,3 +34,6 @@ admin_console:
 libraries:
 - name: PIL
   version: latest
+- name: jinja2
+  version: latest
+
