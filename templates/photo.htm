@@ -1,0 +1,11 @@
+{% extends 'base.htm' %}
+{% set title = 'Photo' %}
+{% block body %}
+{% if venue_id %}
+    {% set backurl = '/venue?vid=' ~ venue_id|e %} 
+{% else %}
+    {% set backurl = '/comments?chkid=' ~ checkin_id|e %}
+{% endif %}
+<p><a href="{{ backurl }}"><img src="{{ photourl }}"></a></p>
+{% endblock %}
+

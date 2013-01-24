@@ -1,0 +1,18 @@
+{% extends 'base.htm' %}
+{% set title = 'Venue Search' %}
+{% block body %}
+<form class="formbox" action="/venues" method="get">
+Search Venues: <input class="inputbox" type="text" name="query" size="8"><input class="submitbutton" type="submit" value="Search"></form>
+
+<ul class="vlist">
+    {% for venue in venues %}
+	<li>{{ venue }}</li>
+    {% else %}
+	<p>No venues?</p>
+    {% endfor %}
+</ul>
+
+<form class="formbox" action="/addvenue" method="post">
+Not found? Add a venue here and check in:<br><input class="inputbox" type="text" name="vname" size="16"><input class="submitbutton" type="submit" value="Add Venue"></form>
+{% endblock %}
+

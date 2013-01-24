@@ -1489,8 +1489,6 @@ class FriendsHandler(webapp.RequestHandler):
 	if jsn is None:
 	    return
 
-	htmlbegin(self, "Find Friends")
-
 	response = jsn.get('response')
 	if response is None:
 	    logging.error('Missing response from /checkins/recent:')
@@ -1509,19 +1507,13 @@ class FriendsHandler(webapp.RequestHandler):
 	# use a very large value.
 	recent.sort(key = lambda v: v.get('distance', '1000000'))
 
-	if len(recent) == 0:
-	    self.response.out.write('<p>No friends?')
-	else:
-	    self.response.out.write("""
-<ul class="vlist">
-%s
-</ul>
-""" % ''.join(
-    ['<li>%s</li>' % friend_checkin_fmt(c, lat, lon, dnow)
-	for c in recent]))
+	flist = [friend_checkin_fmt(c, lat, lon, dnow) for c in recent] if len(recent) > 0 else []
+	renderpage(self, 'friends.htm',
+		{
+		    'friends' : flist,
+		    'debug_json' : debug_json_str(self, jsn),
+		})
 
-	debug_json(self, jsn)
-	htmlend(self)
 
 class ShoutHandler(webapp.RequestHandler):
     """
@@ -1591,7 +1583,7 @@ def venue_fmt(venue, lat, lon):
 
     return s
 
-def venues_fmt(jsn, lat, lon):
+def venues_list(jsn, lat, lon):
     """
     Format a list of venues in the venue search page.
     """
@@ -1611,11 +1603,7 @@ def venues_fmt(jsn, lat, lon):
     # use a very large value.
     venues.sort(key = lambda v: v['location'].get('distance', '1000000'))
 
-    return """
-<ul class="vlist">
-%s
-</ul>
-""" % ''.join(['<li>%s</li>' % venue_fmt(v, lat, lon) for v in venues])
+    return [venue_fmt(v, lat, lon) for v in venues]
 
 def remove_dup_vids(venues):
     """
@@ -1658,28 +1646,19 @@ class VenuesHandler(webapp.RequestHandler):
 	if jsn is None:
 	    return
 
-	htmlbegin(self, "Venue search")
-
 	response = jsn.get('response')
 	if response is None:
 	    logging.error('Missing response from /venues/search:')
 	    logging.error(jsn)
 	    return jsn
 
-	self.response.out.write("""
-<form class="formbox" action="/venues" method="get">
-Search Venues: <input class="inputbox" type="text" name="query" size="8"><input class="submitbutton" type="submit" value="Search"></form>
-""")
+	vlist = venues_list(response, lat, lon)
+	renderpage(self, 'venues.htm',
+		{
+		    'venues' : vlist,
+		    'debug_json' : debug_json_str(self, jsn),
+		})
 
-	self.response.out.write('<p>' + venues_fmt(response, lat, lon))
-
-	self.response.out.write("""
-<form class="formbox" action="/addvenue" method="post">
-Not found? Add a venue here and check in:<br><input class="inputbox" type="text" name="vname" size="16"><input class="submitbutton" type="submit" value="Add Venue"></form>
-""")
-
-	debug_json(self, jsn)
-	htmlend(self)
 
 def deg_min(st):
     deg = st[:2]
@@ -2444,13 +2423,6 @@ class AddPhotoHandler(webapp.RequestHandler):
 	else:
 	    self.redirect('/comments?chkid=%s' % escape(checkin_id))
 
-def photo_full_fmt(photo, venue_id = None, checkin_id = None):
-    if venue_id:
-	backurl = '/venue?vid=%s' % escape(venue_id)
-    else:
-	backurl = '/comments?chkid=%s' % escape(checkin_id)
-    return '<p><a href="%s"><img src="%s"></a><br>' % (
-	    backurl, photo['url'])
 	    
 class PhotoHandler(webapp.RequestHandler):
     """
@@ -2475,8 +2447,6 @@ class PhotoHandler(webapp.RequestHandler):
 	if jsn is None:
 	    return
 
-	htmlbegin(self, "Photo")
-
 	response = jsn.get('response')
 	if response is None:
 	    logging.error('Missing response from /photos:')
@@ -2489,11 +2459,13 @@ class PhotoHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	self.response.out.write(photo_full_fmt(photo, 
-	    checkin_id = checkin_id, venue_id = venue_id))
-
-	debug_json(self, jsn)
-	htmlend(self)
+	renderpage(self, 'photo.htm',
+		{
+		    'venue_id' : venue_id,
+		    'checkin_id' : checkin_id,
+		    'photourl' : photo['url'],
+		    'debug_json' : debug_json_str(self, jsn),
+		})
 
 
 class CommentsHandler(webapp.RequestHandler):

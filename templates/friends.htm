@@ -1,0 +1,12 @@
+{% extends 'base.htm' %}
+{% set title = 'Find Friends' %}
+{% block body %}
+<ul class="vlist">
+    {% for friend in friends %}
+	<li>{{ friend }}</li>
+    {% else %}
+	<p>No friends?</p>
+    {% endfor %}
+</ul>
+{% endblock %}
+
