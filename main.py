@@ -140,15 +140,12 @@ def no_cache(self):
     Turn off web caching so that the browser will refetch the page.
     Also set the user-agent header.
     """
-    # self.response.headers.add_header('Cache-Control', 'no-cache') 
     self.response.cache_expires(0)
-    # self.response.headers.add_header('User-Agent', USER_AGENT) 
     self.response.headers['User-Agent'] = USER_AGENT
 
 
 @db.transactional
 def _set_coords(uuid_str, coord_str):
-    # user = User.get_or_insert(uuid_str)
     user = User.get_by_key_name(uuid_str)
     if user is None:
 	user = User(key_name = uuid_str)
@@ -1790,19 +1787,6 @@ class SetlocJSHandler(webapp.RequestHandler):
 
     def post(self):
 	# This page should be cached. So omit the no_cache() call.
-	htmlbegin(self, 'Set location')
-	self.response.out.write("""
-<noscript>
-<p><span class="error">No Javascript support or Javascript disabled.</span> Can't set location.</p>
-</noscript>
-<p><span id="error"></span><span id="output"></span>
-<form class="formbox" action="/setloc" onSubmit="box_onsubmit(); return false;" method="get">
-Search again? <input class="inputbox" type="text" name="newloc" id="newloc"
-size="16"><input class="submitbutton" type="submit" value="Go"></form>
-<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
-<script type="text/javascript" src="lib.js"></script>
-<script type="text/javascript" src="geocode.js"></script>
-""")
 
 	newloc = self.request.get('newloc').strip()
 
@@ -1813,12 +1797,7 @@ size="16"><input class="submitbutton" type="submit" value="Go"></form>
 	    self.redirect('/venues')
 	    return
 
-	self.response.out.write("""
-<script type="text/javascript">
-window.onload = do_geocode('%s');
-</script>
-""" % newloc);
-	htmlend(self)
+	renderpage(self, 'setlocjs.htm', { 'newloc' : newloc })
 
 class SetlocHandler(webapp.RequestHandler):
     """
