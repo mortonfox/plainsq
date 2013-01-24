@@ -1,0 +1,12 @@
+{% extends 'base.htm' %}
+{% set title = 'Detect Location' %}
+{% block body %}
+<noscript>
+<p><span class="error">No Javascript support or Javascript disabled.</span> Can't detect location.</p>
+</noscript>
+<p><span id="output">&nbsp;</span><span id="error">&nbsp;</span>
+<p><span id="map">&nbsp;</span>
+<script type="text/javascript" src="lib.js"></script>
+<script type="text/javascript" src="geoloc.js"></script>
+{% endblock %}
+

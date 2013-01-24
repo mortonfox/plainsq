@@ -1,0 +1,7 @@
+{% extends 'base.htm' %}
+{% set title = 'Purge old database entries' %}
+{% block body %}
+<p>Deleted {{ count }} old entries from User table.</p>
+<p>Flushed memcache.</p>
+{% endblock %}
+

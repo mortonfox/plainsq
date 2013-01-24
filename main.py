@@ -2112,17 +2112,7 @@ class GeoLocHandler(webapp.RequestHandler):
     """
     def get(self):
 	# This page should be cached. So omit the no_cache() call.
-	htmlbegin(self, "Detect Location")
-	self.response.out.write("""
-<noscript>
-<p><span class="error">No Javascript support or Javascript disabled.</span> Can't detect location.</p>
-</noscript>
-<p><span id="output">&nbsp;</span><span id="error">&nbsp;</span>
-<p><span id="map">&nbsp;</span>
-<script type="text/javascript" src="lib.js"></script>
-<script type="text/javascript" src="geoloc.js"></script>
-""")
-	htmlend(self)
+	renderpage(self, 'geoloc.htm')
 
 class PurgeHandler(webapp.RequestHandler):
     """
@@ -2145,21 +2135,16 @@ class PurgeHandler(webapp.RequestHandler):
 	cutoffdate = (date.today() - timedelta(days=30)).isoformat()
 	creatclause = "WHERE created < DATE('%s')" % cutoffdate
 
-	htmlbegin(self, 'Purge old database entries')
-
 	query = User.gql(creatclause)
-	# query = User.all()
 	count = 0
 	for user in query:
 	    self.purge_user(user)
 	    count += 1
 
-	self.response.out.write('<p>Deleted %d old entries from User table' % count)
-
 	memcache.flush_all()
-	self.response.out.write('<p>Flushed memcache')
 
-	htmlend(self)
+	renderpage(self, 'purge.htm', { 'count' : count })
+
 
 class CheckinLong2Handler(webapp.RequestHandler):
     """
