@@ -1,0 +1,46 @@
+{% extends 'base.htm' %}
+{% set title = 'Checkin Comments' %}
+
+{% macro make_plural(count, what) -%}
+    {% if count == 0 %}
+	no {{ what }}
+    {% elif count == 1 %}
+	1 {{ what }}
+    {% else %}
+	{{ count }} {{ what }}s
+    {% endif %}
+{%- endmacro %}
+
+{% block body %}
+
+<br>
+
+{{ this_checkin }}
+
+<p>-- {{ make_plural(comments|length, 'comment') }} --
+
+{% for comment in comments %}
+    {{ comment }}
+{% endfor %}
+
+<p>-- {{ make_plural(photos|length, 'photo') }} --
+
+{% for photo in photos %}
+    {{ photo }}
+{% endfor %}
+
+<form style="margin:0; padding:0;" action="/addcomment" method="post">
+<input class="inputbox" type="text" name="text" size="15"><br>
+<input type="hidden" value="{{ checkin_id|e }}" name="chkid">
+<input class="formbutton" type="submit" value="Add comment"><br>
+</form>
+
+<br>
+
+<form style="margin:0; padding:0;" enctype="multipart/form-data" action="/addphoto" method="post">
+<input class="inputbox" type="file" name="photo"><br>
+<input type="hidden" value="{{ checkin_id|e }}" name="chkid">
+<input class="formbutton" type="submit" value="Add JPEG photo"><br>
+</form>
+{% endblock %}
+

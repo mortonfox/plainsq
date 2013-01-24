@@ -2489,8 +2489,6 @@ class CommentsHandler(webapp.RequestHandler):
 	if jsn is None:
 	    return
 
-	htmlbegin(self, "Checkin Comments")
-
 	response = jsn.get('response')
 	if response is None:
 	    logging.error('Missing response from /checkins:')
@@ -2503,28 +2501,16 @@ class CommentsHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	self.response.out.write(checkin_comments_fmt(checkin, lat, lon))
+	dnow = datetime.utcnow()
+	renderpage(self, 'comments.htm', 
+		{
+		    'checkin_id' : checkin_id,
+		    'this_checkin' : history_checkin_fmt(checkin, dnow, lat, lon),
+		    'comments' : [comment_fmt(c, checkin, dnow) for c in checkin['comments']['items']],
+		    'photos' : [photo_fmt(c, dnow, checkin_id = checkin['id']) for c in checkin['photos']['items']],
+		    'debug_json' : debug_json_str(self, jsn),
+		})
 
-	self.response.out.write("""
-<p>
-<form style="margin:0; padding:0;" action="/addcomment" method="post">
-<input class="inputbox" type="text" name="text" size="15"><br>
-<input type="hidden" value="%s" name="chkid">
-<input class="formbutton" type="submit" value="Add comment"><br>
-</form>
-""" % escape(checkin_id))
-
-	self.response.out.write("""
-<p>
-<form style="margin:0; padding:0;" enctype="multipart/form-data" action="/addphoto" method="post">
-<input class="inputbox" type="file" name="photo"><br>
-<input type="hidden" value="%s" name="chkid">
-<input class="formbutton" type="submit" value="Add JPEG photo"><br>
-</form>
-""" % escape(checkin_id))
-
-	debug_json(self, jsn)
-	htmlend(self)
 
 def comment_fmt(comment, checkin, dnow):
     return '<p>%s: %s (%s)<br>%s<br>' % (
@@ -2564,21 +2550,6 @@ def del_comment_cmd(checkin, comment):
     return '<a class="vbutton" href="/delcomment?chkid=%s&commid=%s">delete</a>' % (
 	    checkin['id'], comment['id'])
 
-def checkin_comments_fmt(checkin, lat, lon):
-    s = ''
-    dnow = datetime.utcnow()
-    s += '<p></p>' + history_checkin_fmt(checkin, dnow, lat, lon)
-    
-    s += '<p>-- %s --' % pluralize(checkin['comments']['count'], 'comment')
-    if checkin['comments']['count'] > 0:
-	s += ''.join([comment_fmt(c, checkin, dnow) for c in checkin['comments']['items']])
-
-    s += '<p>-- %s --' % pluralize(checkin['photos']['count'], 'photo')
-    if checkin['photos']['count'] > 0:
-	s += ''.join([photo_fmt(c, dnow, checkin_id = checkin['id']) 
-	    for c in checkin['photos']['items']])
-
-    return s
 
 class UnknownHandler(webapp.RequestHandler):
     """
