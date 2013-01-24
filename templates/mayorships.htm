@@ -1,0 +1,12 @@
+{% extends 'base.htm' %}
+{% set title = 'Mayorships' %}
+{% block body %}
+<ol class="numseplist">
+    {% for venue in venues %}
+	<li>{{ venue }}</li>
+    {% else %}
+	<p>No mayorships yet.</p>
+    {% endfor %}
+</ol>
+{% endblock %}
+

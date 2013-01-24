@@ -1276,8 +1276,6 @@ class LeaderHandler(webapp.RequestHandler):
 	if jsn is None:
 	    return
 
-	htmlbegin(self, 'Leaderboard')
-
 	resp = jsn.get('response')
 	if resp is None:
 	    logging.error('Missing response from /users/leaderboard:')
@@ -1290,16 +1288,12 @@ class LeaderHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	if leaderboard.get('count'):
-	    self.response.out.write(
-		    '<ul class="vlist">%s</ul>' % ''.join(
-			['<li>%s</li>' % leader_fmt(x) 
-			    for x in leaderboard.get('items', [])]))
-	else:
-	    self.response.out.write('<p>Empty leaderboard?')
-
-	debug_json(self, jsn)
-	htmlend(self)
+	llist = [leader_fmt(x) for x in leaderboard.get('items', [])] if leaderboard.get('count') else []
+	renderpage(self, 'leaderboard.htm',
+		{
+		    'leaders' : llist,
+		    'debug_json' : debug_json_str(self, jsn),
+		})
 
 
 def mayor_venue_fmt(venue, lat, lon):
@@ -1341,8 +1335,6 @@ class MayorHandler(webapp.RequestHandler):
 	if client is None:
 	    return
 
-	htmlbegin(self, "Mayorships")
-
 	jsn = call4sq(self, client, 'get', path='/users/self/mayorships')
 	if jsn is None:
 	    return
@@ -1359,16 +1351,13 @@ class MayorHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	count = mayorships.get('count', 0)
-	if count == 0:
-	    self.response.out.write('<p>No mayorships yet.')
-	else:
-	    self.response.out.write(
-		'<ol class="numseplist">%s</ol>' % 
-		''.join(['<li>%s</li>' % mayor_venue_fmt(v.get('venue', {}), lat, lon) for v in mayorships.get('items', [])]))
+	mlist = [mayor_venue_fmt(v.get('venue', {}), lat, lon) for v in mayorships.get('items', [])] if mayorships.get('count', 0) > 0 else []
+	renderpage(self, 'mayorships.htm',
+		{
+		    'venues' : mlist,
+		    'debug_json' : debug_json_str(self, jsn),
+		})
 
-	debug_json(self, jsn)
-	htmlend(self)
 
 COMPASS_DIRS = [ 'S', 'SW', 'W', 'NW', 'N', 'NE', 'E', 'SE', 'S' ]
 
@@ -2114,9 +2103,7 @@ class AboutHandler(webapp.RequestHandler):
     """
     def get(self):
 	# This page should be cached. So omit the no_cache() call.
-	htmlbegin(self, "About", nolocate = True)
-	self.response.out.write(__doc__)
-	htmlend(self, noabout=True, nologout=True)
+	renderpage(self, 'about.htm', { 'about' : __doc__ })
 
 class GeoLocHandler(webapp.RequestHandler):
     """

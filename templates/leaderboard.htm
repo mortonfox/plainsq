@@ -1,0 +1,12 @@
+{% extends 'base.htm' %}
+{% set title = 'Leaderboard' %}
+{% block body %}
+<ul class="vlist">
+    {% for leader in leaders %}
+	<li>{{ leader }}</li>
+    {% else %}
+	<p>Empty leaderboard?</p>
+    {% endfor %}
+</ul>
+{% endblock %}
+
