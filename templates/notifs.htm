@@ -1,0 +1,17 @@
+{% extends 'base.htm' %}
+{% set title = 'Notifications' %}
+{% block body %}
+<ol class="numseplist">
+    {% for notif in notifs %}
+	<li>{{ notif }}</li>
+    {% else %}
+	<p>No notifications yet.</p>
+    {% endfor %}
+    {% if debugmode %}
+	{% if hwmark %}
+	    <br>Setting highwater mark to {{ hwmark|e }}.
+	{% endif %}
+    {% endif %}
+</ol>
+{% endblock %}
+

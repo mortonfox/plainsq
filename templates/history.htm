@@ -1,0 +1,12 @@
+{% extends 'base.htm' %}
+{% set title = 'History' %}
+{% block body %}
+<ul class="vlist">
+    {% for checkin in checkins %}
+	<li>{{ checkin }}</li>
+    {% else %}
+	<p>No check-ins?</p>
+    {% endfor %}
+</ul>
+{% endblock %}
+

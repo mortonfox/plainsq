@@ -1,0 +1,12 @@
+{% extends 'base.htm' %}
+{% set title = 'Badges' %}
+{% block body %}
+<ol class="numseplist">
+    {% for badge in badges %}
+	<li>{{ badge }}</li>
+    {% else %}
+	<p>No badges yet.</p>
+    {% endfor %}
+</ol>
+{% endblock %}
+

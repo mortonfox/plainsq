@@ -12,7 +12,7 @@ Version: 0.0.10
 Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a>)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: November 29, 2012
+Last updated: January 24, 2013
 </pre>
 """
 
@@ -60,7 +60,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.10 20121129'
+USER_AGENT = 'plainsq:0.0.10 20130124'
 
 # Send location parameters if distance is below MAX_MILES_LOC.
 MAX_MILES_LOC = 1.1
@@ -942,8 +942,6 @@ class VInfoHandler(webapp.RequestHandler):
 	if jsn is None:
 	    return
 
-	htmlbegin(self, "Venue info")
-
 	resp = jsn.get('response')
 	if resp is None:
 	    logging.error('Missing response from /venues:')
@@ -956,10 +954,11 @@ class VInfoHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	self.response.out.write(vinfo_fmt(venue, lat, lon))
-
-	debug_json(self, jsn)
-	htmlend(self)
+	renderpage(self, 'vinfo.htm',
+		{
+		    'vinfo' : vinfo_fmt(venue, lat, lon),
+		    'debug_json' : debug_json_str(self, jsn),
+		})
 
 def pluralize(count, what):
     if count == 0:
@@ -1053,8 +1052,6 @@ class HistoryHandler(webapp.RequestHandler):
 	if jsn is None:
 	    return
 
-	htmlbegin(self, "History")
-
 	resp = jsn.get('response')
 	if resp is None:
 	    logging.error('Missing response from /users/checkins:')
@@ -1067,20 +1064,14 @@ class HistoryHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	if checkins['count'] == 0:
-	    self.response.out.write('<p>No check-ins?')
-	else:
-	    dnow = datetime.utcnow()
-	    self.response.out.write("""
-<ul class="vlist">
-%s
-</ul>
-""" % ''.join(
-    ['<li>%s</li>' % history_checkin_fmt(c, dnow, lat, lon)
-	for c in checkins['items']]))
+	dnow = datetime.utcnow()
+	clist = [history_checkin_fmt(c, dnow, lat, lon) for c in checkins['items']] if checkins['count'] > 0 else []
 
-	debug_json(self, jsn)
-	htmlend(self)
+	renderpage(self, 'history.htm',
+		{
+		    'checkins' : clist,
+		    'debug_json' : debug_json_str(self, jsn),
+		})
 
 class DebugHandler(webapp.RequestHandler):
     """
@@ -1142,8 +1133,6 @@ class BadgesHandler(webapp.RequestHandler):
 	if jsn is None:
 	    return
 
-	htmlbegin(self, "Badges")
-
 	resp = jsn.get('response')
 	if resp is None:
 	    logging.error('Missing response from /users/badges:')
@@ -1156,19 +1145,20 @@ class BadgesHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	if len(badges) == 0:
-	    self.response.out.write('<p>No badges yet.')
-	else:
+	blist = []
+	if len(badges) > 0:
 	    # Sort badges by reverse unlock order.
 	    # Retain only unlocked badges.
 	    keys = filter(lambda k: badges[k].get('unlocks'), sorted(badges.keys(), reverse=True))
-	    self.response.out.write(
-		    '<ol class="numseplist">%s</ol>' % 
-		    ''.join([
-			'<li>%s</li>' % badge_fmt(badges[k]) for k in keys]))
+	    blist = [badge_fmt(badges[k]) for k in keys]
 
-	debug_json(self, jsn)
-	htmlend(self)
+	renderpage(self, 'badges.htm',
+		{
+		    'badges' : blist,
+		    'debug_json' : debug_json_str(self, jsn),
+		})
+
+
 
 def leader_fmt(leader):
     """
@@ -1207,7 +1197,7 @@ def notif_fmt(notif):
 	s = '<a class="button" href="/comments?chkid=%s">%s</a>' % (
 		checkin.get('id', ''), escape(checkin.get('venue', {}).get('name', '')))
 
-    return '<li><img src="%s" class="usericon" alt="" style="float:right"><i>%s</i><br>%s<br>%s<br style="clear:both"></li>' % (
+    return '<img src="%s" class="usericon" alt="" style="float:right"><i>%s</i><br>%s<br>%s<br style="clear:both">' % (
 	    notif.get('image', {}).get('fullPath', ''),
 	    datetime.fromtimestamp(notif.get('createdAt', 0)).ctime(),
 	    escape(notif.get('text', '')),
@@ -1230,8 +1220,6 @@ class NotifHandler(webapp.RequestHandler):
 	if jsn is None:
 	    return
 
-	htmlbegin(self, 'Notifications')
-
 	resp = jsn.get('response')
 	if resp is None:
 	    logging.error('Missing response from /updates/notifications:')
@@ -1246,30 +1234,30 @@ class NotifHandler(webapp.RequestHandler):
 
 	jsn2 = None
 
+	nlist = []
+	hwmark = None
+
 	if notifs.get('count'):
 	    items = notifs.get('items', [])
 
-	    self.response.out.write(
-		'<ol class="numseplist">%s</ol>' % 
-		''.join([notif_fmt(n) for n in items]))
+	    nlist = [notif_fmt(n) for n in items]
 
 	    hwmark = 0
 	    if items:
 		hwmark = items[0].get('createdAt', 0)	    
 
-	    if get_debug(self):
-		self.response.out.write('<br>Setting highwater mark to %d' % hwmark)
-
 	    # Mark notifications as read.
 	    jsn2 = call4sq(self, client, 'post', 
 		    path='/updates/marknotificationsread',
 		    params = { 'highWatermark' : hwmark })
-	else:
-	    self.response.out.write('<p>No notifications yet.')
 
-	debug_json(self, jsn)
-	debug_json(self, jsn2)
-	htmlend(self)
+	renderpage(self, 'notifs.htm',
+		{
+		    'notifs' : nlist,
+		    'hwmark' : hwmark,
+		    'debugmode' : get_debug(self),
+		    'debug_json' : debug_json_str(self, jsn) + debug_json_str(self, jsn2),
+		})
 
 
 class LeaderHandler(webapp.RequestHandler):
