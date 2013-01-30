@@ -1,0 +1,17 @@
+{% extends 'base.htm' %}
+{% set title = 'Set Location' %}
+{% block body %}
+<p>Did you mean?
+<ul class="vlist">
+    {% for result in results %}
+	<li>{{ result }}</li>
+    {% else %}
+	<p>No search results.</p>
+    {% endfor %}
+</ul>
+
+<form class="formbox" action="/setloc" method="get">
+Search again? <input class="inputbox" type="text" name="newloc" size="16"><input class="submitbutton" type="submit" value="Go"></form>
+{% endblock %}
+
+{# vim:set ft=htmldjango tw=0: #}

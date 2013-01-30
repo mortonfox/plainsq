@@ -1,0 +1,38 @@
+{% extends 'base.htm' %}
+{% set title = 'Check In' %}
+
+{% macro pif(bool) -%}
+    {% if bool %}
+	selected="selected"
+    {% endif %}
+{%- endmacro %}
+
+{% macro pifnot(bool) -%}
+    {% if not bool %}
+	selected="selected"
+    {% endif %}
+{%- endmacro %}
+
+{% block body %}
+<p>Check in @ {{ vname|e }}</p>
+<form action="/checkin_long2" method="post">
+Shout (optional): <input class="inputbox" type="text" name="shout" size="15"><br>
+<input type="hidden" value="{{ vid|e }}" name="vid">
+<input type="hidden" value="{{ dist|e }}" name="dist">
+<input class="formbutton" type="submit" value="check-in"><br>
+<select name="private">
+    <option value="1" {{ pif(private) }}>Don't show your friends</option>
+    <option value="0" {{ pifnot(private) }}>Show your friends</option>
+</select><br>
+<select name="twitter">
+    <option value="0" {{ pifnot(twitter) }} >Don't send to Twitter</option>
+    <option value="1" {{ pif(twitter) }}>Send to Twitter</option>
+</select><br>
+<select name="facebook">
+    <option value="0" {{ pifnot(facebook) }} >Don't send to Facebook</option>
+    <option value="1" {{ pif(facebook) }} >Send to Facebook</option>
+</select><br>
+</form>
+{% endblock %}
+
+{# vim:set ft=htmldjango tw=0: #}
