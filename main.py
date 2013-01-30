@@ -418,13 +418,14 @@ def userheader(self, client, lat, lon):
 	    if venue is not None:
 		venueName = venue.get('name', '')
 
-    self.response.out.write(
-	    '<p><img src="%s" class="usericon" alt="" style="float:left"> %s @ %s<br>Loc: %s'
-	    '<br style="clear:both">' 
-	    % (photo, escape(firstname), escape(venueName),
-		convcoords(lat, lon)))
+    return {
+	    'firstname' : firstname,
+	    'venueName' : venueName,
+	    'coords' : convcoords(lat, lon),
+	    'photo' : photo,
+	    'jsn' : jsn,
+	    }
 
-    return jsn
 
 class LoginHandler(webapp.RequestHandler):
     """
@@ -456,8 +457,10 @@ class MainHandler(webapp.RequestHandler):
 	# Unread notifications count should be in the notification tray in
 	# the user query.
 	unreadcount = -1
-	jsn = userheader(self, client, lat, lon)
-	if jsn:
+	usrhdr = userheader(self, client, lat, lon)
+	jsn = None
+	if usrhdr is not None:
+	    jsn = usrhdr.get('jsn', {})
 	    notifs = jsn.get('notifications', [])
 	    for notif in notifs:
 		if notif.get('type', '') == 'notificationTray':
@@ -465,6 +468,7 @@ class MainHandler(webapp.RequestHandler):
 
 	renderpage(self, 'main.htm',
 		{
+		    'userheader' : usrhdr,
 		    'unreadcount' : unreadcount,
 		    'debugmode' : get_debug(self),
 		    'debug_json' : debug_json_str(self, jsn),
@@ -1515,50 +1519,60 @@ class FriendsHandler(webapp.RequestHandler):
 		})
 
 
-class ShoutHandler(webapp.RequestHandler):
-    """
-    This handles user shouts.
-    """
-    def post(self):
-	self.get()
+# class ShoutHandler(webapp.RequestHandler):
+#     """
+#     This handles user shouts.
+#     """
+#     def post(self):
+# 	self.get()
+# 
+#     def get(self):
+# 	no_cache(self)
+# 	(lat, lon) = coords(self)
+# 
+# 	client = getclient(self)
+# 	if client is None:
+# 	    return
+# 
+# 	message = self.request.get('message')
+# 	if message == '':
+# 	    self.redirect('/')
+# 	    return
+# 
+# 	jsn = call4sq(self, client, 'post', path='/checkins/add',
+# 		params = {
+# 		    "shout" : message,
+# 		    "ll" : '%s,%s' % (lat, lon),
+# 		    "broadcast" : "public",
+# 		    })
+# 	if jsn is None:
+# 	    logging.error('Missing response from /checkins/add')
+# 	    return
+# 
+# 	usrhdr = userheader(self, client, lat, lon)
+# 
+# 	jsn = {}
+# 	if usrhdr is not None:
+# 	    jsn = usrhdr.get('jsn', {})
+# 
+# 	notif = jsn.get('notifications')
+# 	if notif is None:
+# 	    logging.error('Missing notifications from /checkins/add:')
+# 	    logging.error(jsn)
+# 	    return jsn
+# 
+# 	msg = None
+# 	msgs = find_notifs(notif, 'message')
+# 	if len(msgs) > 0:
+# 	    msg = msgs[0]['message']
+# 
+# 	renderpage(self, 'shout.htm',
+# 		{
+# 		    'userheader' : usrhdr,
+# 		    'msg' : msg,
+# 		    'debug_json' : debug_json_str(self, jsn),
+# 		})
 
-    def get(self):
-	no_cache(self)
-	(lat, lon) = coords(self)
-
-	client = getclient(self)
-	if client is None:
-	    return
-
-	message = self.request.get('message')
-	if message == '':
-	    self.redirect('/')
-	    return
-
-	jsn = call4sq(self, client, 'post', path='/checkins/add',
-		params = {
-		    "shout" : message,
-		    "ll" : '%s,%s' % (lat, lon),
-		    "broadcast" : "public",
-		    })
-	if jsn is None:
-	    return
-
-	htmlbegin(self, "Shout")
-	userheader(self, client, lat, lon)
-
-	notif = jsn.get('notifications')
-	if notif is None:
-	    logging.error('Missing notifications from /checkins/add:')
-	    logging.error(jsn)
-	    return jsn
-
-	msgs = find_notifs(notif, 'message')
-	if len(msgs) > 0:
-	    self.response.out.write('<p>%s' % escape(msgs[0]['message']))
-
-	debug_json(self, jsn)
-	htmlend(self)
 
 def venue_fmt(venue, lat, lon):
     """
@@ -2574,7 +2588,7 @@ app = webapp.WSGIApplication([
     ('/badges', BadgesHandler),
     ('/mayor', MayorHandler),
     ('/friends', FriendsHandler),
-    ('/shout', ShoutHandler),
+#     ('/shout', ShoutHandler),
     ('/venues', VenuesHandler),
     ('/coords', CoordsHandler),
     ('/setloc', SetlocHandler),

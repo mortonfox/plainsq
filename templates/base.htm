@@ -32,6 +32,13 @@ if (isandroid) {
 	- {{ title|e }}
     </div>
 
+    {% if userheader %}
+    <p><img src="{{ userheader.photo|e }}" class="usericon" alt="" style="float:left">
+    {{ userheader.firstname|e }} @ {{ userheader.venueName|e }}
+    <br>Loc: {{ userheader.coords|e }}
+    <br style="clear:both">
+    {% endif %}
+
     {% block body %}
     {% endblock %}
 
@@ -50,3 +57,5 @@ if (isandroid) {
     </pre>
 </body>
 </html>
+
+{# vim:set ft=htmldjango tw=0: #}
