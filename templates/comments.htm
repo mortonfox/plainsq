@@ -1,18 +1,8 @@
+{% from 'macros.htm' import make_plural %}
 {% extends 'base.htm' %}
 {% set title = 'Checkin Comments' %}
 
-{% macro make_plural(count, what) -%}
-    {% if count == 0 %}
-	no {{ what }}
-    {% elif count == 1 %}
-	1 {{ what }}
-    {% else %}
-	{{ count }} {{ what }}s
-    {% endif %}
-{%- endmacro %}
-
 {% block body %}
-
 <br>
 
 {{ this_checkin }}

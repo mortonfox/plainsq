@@ -1,0 +1,108 @@
+{% macro make_plural(count, what) -%}
+    {% if count == 0 %}
+	no {{ what }}
+    {% elif count == 1 %}
+	1 {{ what }}
+    {% else %}
+	{{ count }} {{ what }}s
+    {% endif %}
+{%- endmacro %}
+
+{% macro map_image(lat, lon) -%}
+    {% if lat and lon %}
+	{% set coords = (lat ~ ',' ~ lon) | urlencode %}
+	<p><img width="250" height="250" alt="[Bing Map]"
+	src="http://dev.virtualearth.net/REST/v1/Imagery/Map/Road/{{ coords }}/14?ms=250,250&pp={{ coords }};0&key=Aha1lOg_Dx1TU7quU-wNTgDN3K3fI9d4MYRgNGIIX1rQI7SBHs4iLB6LRnbKFN5c">
+    {% endif %}
+{%- endmacro %}
+
+{% macro vinfo_fmt(venue, dist, compass) -%}
+    {% set gmap_str = '' %}
+    {% set dist_str = '' %}
+    {% set location = venue.location %}
+    {% if location.lat and location.lng %}
+	{% set gmap_str = map_image(location.lat, location.lng) %}
+	{% set dist_str = '(%.1f mi %s)<br>' | format(dist|float, compass|e) %}
+    {% endif %}
+
+    <p>{{ venue.name|e }} {{ venue_cmds(venue, dist) }}
+    <br>{{ addr_fmt(venue) }}
+
+    {{ dist_str }}
+
+    {% if venue.url %}
+	<br><a href="{{ venue.url|urlencode }}">{{ venue.url|e }}</a>
+    {% endif %}
+
+    {{ gmap_str }}
+
+    {% for cat in venue.categories %}
+	{{ category_fmt(cat) }}
+    {% endfor %}
+
+    <p>Tags: {{ venue.tags | join(', ') | e }}
+
+    {% if venue.stats %}
+	<p>Checkins: {{ stats.checkinsCount|e }} 
+	<br>Users: {{ stats.usersCount|e }}
+    {% endif %}
+
+    {% if venue.beenHere %}
+	<br>Your checkins: {{ venue.beenHere.count|e }}
+    {% endif %}
+
+    {% if venue.hereNow %}
+	<br>Here now: {{ venue.hereNow.count|e }}
+    {% endif %}
+
+    {% set mayor = venue.mayor %}
+    {% if mayor %}
+	{% set user = mayor.user %}
+	{% if user %}
+	    <p><img src="{{ user.photo|e }}" class="usericon" alt="" style="float:left">
+	    {{ name_fmt(user) }} ({{ mayor.count|e }}x) from {{ mayor.homeCity|e }} is the mayor.
+	    <br style="clear:both"> 
+	{% else %}
+	    <p>No mayor.
+	{% endif %}
+    {% endif %}
+
+    {% set herenow = venue.hereNow %}
+    {% if herenow %}
+	{% if herenow.count > 0 %}
+	    <p><b>Checked in here:</b>
+	    {% for grp in herenow.groups %}
+		{% for item in grp.items %}
+		    {{ venue_checkin_fmt(item) }}
+		{% endfor %}
+	    {% endfor %}
+	{% endif %}
+    {% endif %}
+
+    {{ tips_fmt(venue.tips) }}
+    {{ specials_fmt(venue.specials) }}
+    {{ specials_fmt(venue.specialsNearby, nearby=true) }}
+
+    {% set photos = venue.photos %}
+    {% set count = photos.count %}
+    {% if count %}
+	{% for grp in photos.groups %}
+	    <p>-- {{ grp.name|e }}: {{ grp.count|e }} --
+	    {% for item in grp.items %}
+		{{ photo_fmt(item, venue.id) }}
+	    {% endfor %}
+	{% endfor %}
+    {% else %}
+	<p>-- No photos --
+    {% endif %}
+
+    <p>
+    <form style="margin:0; padding:0;" enctype="multipart/form-data" action="/addphoto" method="post">
+    <input type="file" name="photo"><br>
+    <input type="hidden" value="{{ venue.id|e }}" name="venid">
+    <input type="submit" value="Add JPEG photo"><br>
+    </form>
+{%- endmacro %}
+
+
+{# vim:set ft=htmldjango tw=0: #}

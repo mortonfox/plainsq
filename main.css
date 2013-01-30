@@ -61,6 +61,7 @@ body {
     .footer { 
 	border-top: 1px solid #000000; 
 	padding-top: 0.5em;
+	margin-top: 1em;
     }
 }
 

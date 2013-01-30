@@ -40,9 +40,27 @@ from datetime import (datetime, date, timedelta)
 import urllib
 import urllib2
 import jinja2
+from markupsafe import Markup
 
 jinja_environment = jinja2.Environment(
     loader = jinja2.FileSystemLoader(os.path.dirname(__file__) + '/templates'))
+
+def urlencode_filter(s):
+    if type(s) == 'Markup':
+        s = s.unescape()
+    s = s.encode('utf8')
+    s = urllib.quote_plus(s)
+    return Markup(s)
+
+jinja_environment.filters['urlencode'] = urlencode_filter
+
+dt_now = datetime.utcnow()
+
+def fuzzydelta_filter(s):
+    d1 = datetime.fromtimestamp(s)
+    return fuzzy_delta(dnow - d1)
+
+jinja_environment.filters['fuzzydelta'] = fuzzydelta_filter
 
 
 TOKEN_COOKIE = 'plainsq_token'
