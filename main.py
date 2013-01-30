@@ -264,49 +264,49 @@ def getclient(self):
     self.response.out.write('Not logged in.')
     self.redirect('/login')
 
-def htmlbegin(self, title, nolocate = False):
-    self.response.out.write(
-"""<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>PlainSq - %s</title>
+# def htmlbegin(self, title, nolocate = False):
+#     self.response.out.write(
+# """<!DOCTYPE html>
+# <html>
+# <head>
+# <meta charset="utf-8">
+# <title>PlainSq - %s</title>
+# 
+# <meta name="HandheldFriendly" content="true" />
+# <meta name="viewport" content="width=device-width, height=device-height, user-scalable=yes" />
+# 
+# <link rel="stylesheet" href="/main.css" type="text/css" />
+# <link rel="stylesheet" href="/mobile.css" type="text/css" media="handheld, only screen and (max-device-width:480px)" />
+# 
+# <script type="text/javascript">
+# // Fix for Android 2.2 CSS media type problem.
+# // From: http://www.paykin.info/java/android-css-media-reloading/
+# var isandroid = /android/.test(navigator.userAgent.toLowerCase());
+# if (isandroid) {
+#     var cssLink = document.createElement("link");
+#     cssLink.setAttribute("type", "text/css");
+#     cssLink.setAttribute("rel", "stylesheet");
+#     cssLink.setAttribute("href", "/mobile.css");
+#     document.head.appendChild(cssLink);
+# }
+# </script>
+# </head>
+# 
+# <body>
+# <div class="header"><a class="button" href="/">Home</a>%s - %s</div>
+# """ % (
+#     title,
+#     '' if nolocate else '<span class="beforesep"><a class="button" href="/geoloc">Locate</a></span>',
+#     title))
 
-<meta name="HandheldFriendly" content="true" />
-<meta name="viewport" content="width=device-width, height=device-height, user-scalable=yes" />
-
-<link rel="stylesheet" href="/main.css" type="text/css" />
-<link rel="stylesheet" href="/mobile.css" type="text/css" media="handheld, only screen and (max-device-width:480px)" />
-
-<script type="text/javascript">
-// Fix for Android 2.2 CSS media type problem.
-// From: http://www.paykin.info/java/android-css-media-reloading/
-var isandroid = /android/.test(navigator.userAgent.toLowerCase());
-if (isandroid) {
-    var cssLink = document.createElement("link");
-    cssLink.setAttribute("type", "text/css");
-    cssLink.setAttribute("rel", "stylesheet");
-    cssLink.setAttribute("href", "/mobile.css");
-    document.head.appendChild(cssLink);
-}
-</script>
-</head>
-
-<body>
-<div class="header"><a class="button" href="/">Home</a>%s - %s</div>
-""" % (
-    title,
-    '' if nolocate else '<span class="beforesep"><a class="button" href="/geoloc">Locate</a></span>',
-    title))
-
-def htmlend(self, noabout=False, nologout=False):
-    self.response.out.write("""
-<div class="footer"><a class="button" href="/">Home</a>%s%s</div>
-</body>
-</html>
-""" % (
-    '' if noabout else '<span class="beforesep"><a class="button" href="/about">About</a></span>',
-    '' if nologout else '<span class="beforesep"><a class="button" href="/logout">Log out</a></span>'))
+# def htmlend(self, noabout=False, nologout=False):
+#     self.response.out.write("""
+# <div class="footer"><a class="button" href="/">Home</a>%s%s</div>
+# </body>
+# </html>
+# """ % (
+#     '' if noabout else '<span class="beforesep"><a class="button" href="/about">About</a></span>',
+#     '' if nologout else '<span class="beforesep"><a class="button" href="/logout">Log out</a></span>'))
 
 def conv_a_coord(coord, nsew):
     coord = float(coord)
@@ -1971,21 +1971,22 @@ def checkin_ldr_fmt(leaderboard):
     s += '<p>%s' % leaderboard.get('message', '')
     return s
 
-def do_checkin(self, client, vid, useloc = False):
+def do_checkin(self, client, vid, useloc = False, broadcast = 'public', shout = None):
     (lat, lon) = coords(self)
 
     params = {
 	"venueId" : vid,
-	"broadcast" : "public",
+	"broadcast" : broadcast,
 	}
+    if shout is not None:
+	params['shout'] = shout
     if useloc:
 	params['ll'] = '%s,%s' % (lat, lon)
     jsn = call4sq(self, client, 'post', path='/checkins/add', params=params)
     if jsn is None:
 	return
 
-    htmlbegin(self, "Check in")
-    userheader(self, client, lat, lon)
+    usrhdr = userheader(self, client, lat, lon)
 
     response = jsn.get('response')
     if response is None:
@@ -2005,10 +2006,13 @@ def do_checkin(self, client, vid, useloc = False):
 	logging.error(jsn)
 	return jsn
 
-    self.response.out.write(checkin_fmt(checkin, notif))
+    renderpage(self, 'checkin.htm', 
+	    { 
+		'checkin_html' : checkin_fmt(checkin, notif),
+		'userheader' : usrhdr,
+		'debug_json' : debug_json_str(self, jsn),
+	    })
 
-    debug_json(self, jsn)
-    htmlend(self)
 
 class CheckinHandler(webapp.RequestHandler):
     """
@@ -2135,7 +2139,6 @@ class CheckinLong2Handler(webapp.RequestHandler):
     def get(self):
 	no_cache(self)
 
-	(lat, lon) = coords(self)
 	client = getclient(self)
 	if client is None:
 	    return
@@ -2164,43 +2167,8 @@ class CheckinLong2Handler(webapp.RequestHandler):
 	if facebook:
 	    broadstrs.append('facebook')
 
-	params = {
-	    'venueId' : vid,
-	    'shout' : shout,
-	    'broadcast' : ','.join(broadstrs),
-	    }
-	if useloc:
-	    params['ll'] = '%s,%s' % (lat, lon)
+	do_checkin(self, client, vid, useloc, ','.join(broadstrs), shout)
 
-	jsn = call4sq(self, client, 'post', path='/checkins/add', params=params)
-	if jsn is None:
-	    return
-
-	htmlbegin(self, "Check in")
-	userheader(self, client, lat, lon)
-
-	response = jsn.get('response')
-	if response is None:
-	    logging.error('Missing response from /checkins/add:')
-	    logging.error(jsn)
-	    return jsn
-
-	checkin = response.get('checkin')
-	if checkin is None:
-	    logging.error('Missing checkin from /checkins/add:')
-	    logging.error(jsn)
-	    return jsn
-
-	notif = jsn.get('notifications')
-	if notif is None:
-	    logging.error('Missing notifications from /checkins/add:')
-	    logging.error(jsn)
-	    return jsn
-
-	self.response.out.write(checkin_fmt(checkin, notif))
-
-	debug_json(self, jsn)
-	htmlend(self)
 
 class CheckinLongHandler(webapp.RequestHandler):
     """
