@@ -1771,17 +1771,15 @@ class SetlocJSHandler(webapp.RequestHandler):
 
 class SetlocHandler(webapp.RequestHandler):
     """
-    This handles the 'set location' input box. If the locations string is six
-    or more digits, it will be parsed as user-input coordinates. Otherwise, it
-    will be fed to the Google Geocoding API.
+    This handles the 'set location' input box if Javascript is disabled. If the
+    locations string is six or more digits, it will be parsed as user-input
+    coordinates. Otherwise, it will be fed to the Google Geocoding API.
     """
     def get(self):
 	self.post()
 
     def post(self):
 	no_cache(self)
-
-	htmlbegin(self, 'Set location')
 
 	newloc = self.request.get('newloc').strip()
 
@@ -1823,24 +1821,14 @@ class SetlocHandler(webapp.RequestHandler):
 	    return
 
 	results = jsn.get('results')
-	if results:
-	    self.response.out.write("""
-<p>Did you mean?
-<ul class="vlist">
-%s
-</ul>
-""" % ''.join(
-    ['<li>%s</li>' % geocode_result_fmt(res) 
-	for res in results]))
-	else:
-	    self.response.out.write('<p>No search results.')
+	georesults = [ geocode_result_fmt(res) for res in results ] if results else []
 
-	self.response.out.write("""
-<form class="formbox" action="/setloc" method="get">
-Search again? <input class="inputbox" type="text" name="newloc" size="16"><input class="submitbutton" type="submit" value="Go"></form>
-""")
+	renderpage(self, 'setloc.htm',
+		{
+		    'results' : georesults,
+		    'debug_json' : debug_json_str(self, jsn),
+		})
 
-	htmlend(self)
 
 def geocode_result_fmt(result):
     addr = result.get('formatted_address', '')
@@ -1870,8 +1858,6 @@ class CoordsHandler(webapp.RequestHandler):
     def post(self):
 	no_cache(self)
 
-	htmlbegin(self, "Change location")
-
 	geolat = self.request.get('geolat')
 	geolong = self.request.get('geolong')
 
@@ -1882,7 +1868,6 @@ class CoordsHandler(webapp.RequestHandler):
 	else:
 	    self.redirect('/')
 
-	htmlend(self)
 
 def checkin_badge_fmt(badge):
     iconurl = ""
@@ -2237,8 +2222,7 @@ class CheckinLongHandler(webapp.RequestHandler):
 	if jsn is None:
 	    return
 
-	htmlbegin(self, "Check in")
-	userheader(self, client, lat, lon)
+	usrhdr = userheader(self, client, lat, lon)
 
 	response = jsn.get('response')
 	if response is None:
@@ -2261,36 +2245,18 @@ class CheckinLongHandler(webapp.RequestHandler):
 	if settings['sendToFacebook']:
 	    facebook = 1
 
-	self.response.out.write('<p>Check in @ %s' % escape(vname))
+	renderpage(self, 'checkin_long.htm',
+		{
+		    'userheader' : usrhdr,
+		    'debug_json' : debug_json_str(self, jsn),
+		    'vname' : vname,
+		    'vid' : vid,
+		    'dist' : dist,
+		    'private' : private,
+		    'twitter' : twitter,
+		    'facebook' : facebook,
+		})
 
-	sel = 'selected="selected"'
-
-	self.response.out.write("""
-<form action="/checkin_long2" method="post">
-Shout (optional): <input class="inputbox" type="text" name="shout" size="15"><br>
-<input type="hidden" value="%s" name="vid">
-<input type="hidden" value="%s" name="dist">
-<input class="formbutton" type="submit" value="check-in"><br>
-<select name="private">
-<option value="1" %s>Don't show your friends</option>
-<option value="0" %s>Show your friends</option>
-</select><br>
-<select name="twitter">
-<option value="0" %s>Don't send to Twitter</option>
-<option value="1" %s>Send to Twitter</option>
-</select><br>
-<select name="facebook">
-<option value="0" %s>Don't send to Facebook</option>
-<option value="1" %s>Send to Facebook</option>
-</select><br>
-</form>
-"""
-	    % ( escape(vid), escape(dist), private and sel, private or sel,
-		twitter or sel, twitter and sel,
-		facebook or sel, facebook and sel ))
-
-	debug_json(self, jsn)
-	htmlend(self)
 
 class SpecialsHandler(webapp.RequestHandler):
     """
@@ -2312,8 +2278,6 @@ class SpecialsHandler(webapp.RequestHandler):
 	if jsn is None:
 	    return
 
-	htmlbegin(self, "Specials")
-
 	response = jsn.get('response')
 	if response is None:
 	    logging.error('Missing response from /specials/search:')
@@ -2326,13 +2290,13 @@ class SpecialsHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	if specials['count'] == 0:
-	    self.response.out.write('<p>No specials nearby')
-	else:
-	    self.response.out.write(specials_fmt(specials['items']))
+	renderpage(self, 'specials.htm', 
+		{ 
+		    'specials' : specials,
+		    'specials_html' : specials_fmt(specials['items']),
+		    'debug_json' : debug_json_str(self, jsn),
+		})
 
-	debug_json(self, jsn)
-	htmlend(self)
 
 class DelCommentHandler(webapp.RequestHandler):
     """
