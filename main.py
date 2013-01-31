@@ -323,49 +323,6 @@ def getclient(self):
     self.response.out.write('Not logged in.')
     self.redirect('/login')
 
-# def htmlbegin(self, title, nolocate = False):
-#     self.response.out.write(
-# """<!DOCTYPE html>
-# <html>
-# <head>
-# <meta charset="utf-8">
-# <title>PlainSq - %s</title>
-# 
-# <meta name="HandheldFriendly" content="true" />
-# <meta name="viewport" content="width=device-width, height=device-height, user-scalable=yes" />
-# 
-# <link rel="stylesheet" href="/main.css" type="text/css" />
-# <link rel="stylesheet" href="/mobile.css" type="text/css" media="handheld, only screen and (max-device-width:480px)" />
-# 
-# <script type="text/javascript">
-# // Fix for Android 2.2 CSS media type problem.
-# // From: http://www.paykin.info/java/android-css-media-reloading/
-# var isandroid = /android/.test(navigator.userAgent.toLowerCase());
-# if (isandroid) {
-#     var cssLink = document.createElement("link");
-#     cssLink.setAttribute("type", "text/css");
-#     cssLink.setAttribute("rel", "stylesheet");
-#     cssLink.setAttribute("href", "/mobile.css");
-#     document.head.appendChild(cssLink);
-# }
-# </script>
-# </head>
-# 
-# <body>
-# <div class="header"><a class="button" href="/">Home</a>%s - %s</div>
-# """ % (
-#     title,
-#     '' if nolocate else '<span class="beforesep"><a class="button" href="/geoloc">Locate</a></span>',
-#     title))
-
-# def htmlend(self, noabout=False, nologout=False):
-#     self.response.out.write("""
-# <div class="footer"><a class="button" href="/">Home</a>%s%s</div>
-# </body>
-# </html>
-# """ % (
-#     '' if noabout else '<span class="beforesep"><a class="button" href="/about">About</a></span>',
-#     '' if nologout else '<span class="beforesep"><a class="button" href="/logout">Log out</a></span>'))
 
 def conv_a_coord(coord, nsew):
     coord = float(coord)
@@ -575,10 +532,6 @@ class OAuthHandler(webapp.RequestHandler):
 
 	# Set the login cookie.
 	self.response.set_cookie(TOKEN_COOKIE, uuid_str, max_age = 60*60*24*365)
-# 	self.response.headers.add_header(
-# 		'Set-Cookie', 
-# 		'%s=%s; expires=Fri, 31-Dec-2020 23:59:59 GMT' % (
-# 		    TOKEN_COOKIE, uuid_str))
 
 	self.add_access_token(uuid_str, access_token)
 
@@ -593,9 +546,6 @@ class LogoutHandler(webapp.RequestHandler):
 	Delete cookies by setting expiration to a past date.
 	"""
 	self.response.delete_cookie(cookie)
-# 	self.response.headers.add_header(
-# 		'Set-Cookie', 
-# 		'%s=; expires=Fri, 31-Dec-1980 23:59:59 GMT' % cookie)
 
     def get(self):
 	# This page should be cached. So omit the no_cache() call.
@@ -759,136 +709,7 @@ def name_fmt(user):
 	    user.get('lastName', ''))
 	    )
 
-def venue_checkin_fmt(checkin, dnow):
-    """
-    Format the info about a user checked in at this venue.
-    """
-    s = ''
-    s += '<p><img src="%s" class="usericon" alt="" style="float:left">%s from %s' % (
-	    checkin['user']['photo'],
-	    name_fmt(checkin['user']),
-	    escape(checkin['user'].get('homeCity', '')))
 
-    shout = checkin.get('shout')
-    if shout is not None:
-	s += '<br>"%s"' % escape(shout)
-
-    d1 = datetime.fromtimestamp(checkin['createdAt'])
-    s += '<br>%s' % fuzzy_delta(dnow - d1)
-
-    s += '<br style="clear:both">'
-    return s
-
-def vinfo_fmt(venue, lat, lon):
-    """
-    Format info on a venue.
-    """
-    gmap_str = ''
-    dist_str = ''
-    dist = None
-    location = venue.get('location', {})
-    vlat = location.get('lat')
-    vlon = location.get('lng')
-    if vlat is not None and vlon is not None:
-	# Add static map image to the page.
-	gmap_str = map_image(vlat, vlon)
-
-	dist = distance(lat, lon, vlat, vlon)
-	compass = bearing(lat, lon, vlat, vlon)
-	dist_str = '(%.1f mi %s)<br>' % (dist, compass)
-
-    s = ''
-
-    s += '<p>%s %s<br>%s' % (
-	    escape(venue['name']),
-	    venue_cmds(venue, dist),
-	    addr_fmt(venue))
-    s += dist_str
-
-    url = venue.get('url')
-    if url:
-	s += '<br><a href="%s">%s</a>' % (url, url)
-
-    s += gmap_str
-
-    cats = venue.get('categories', [])
-    s += ''.join([category_fmt(c) for c in cats])
-
-    tags = venue.get('tags', [])
-    if len(tags) > 0:
-	s += '<p>Tags: %s' % escape(', '.join(tags))
-
-    stats = venue.get('stats')
-    if stats is not None:
-	s += """
-<p>Checkins: %s <br>Users: %s
-""" % (stats['checkinsCount'], stats['usersCount'])
-
-    beenhere = venue.get('beenHere')
-    if beenhere is not None:
-	s += """
-<br>Your checkins: %s
-""" % beenhere['count']
-
-    herenow = venue.get('hereNow')
-    if herenow is not None:
-	s += """
-<br>Here now: %s
-""" % herenow['count']
-
-    mayor = venue.get('mayor')
-    if mayor is not None:
-	user = mayor.get('user')
-
-    if user is None:
-	s += '<p>No mayor'
-    else:
-	s += """
-<p><img src="%s" class="usericon" alt="" style="float:left">%s (%sx) 
-from %s is the mayor<br style="clear:both"> 
-""" % (user['photo'], 
-	name_fmt(user),
-	mayor['count'], 
-	escape(user.get('homeCity', '')))
-
-    if herenow is not None:
-	if herenow['count'] > 0:
-	    s += '<p><b>Checked in here:</b>'
-	hngroups = herenow.get('groups', [])
-	dnow = datetime.utcnow()
-	for g in hngroups:
-	    items = g.get('items', [])
-	    s += ''.join(
-		    [venue_checkin_fmt(c, dnow) for c in items])
-
-    s += tips_fmt(venue.get('tips', []))
-    s += specials_fmt(venue.get('specials', []))
-    s += specials_fmt(venue.get('specialsNearby', []), nearby=True)
-
-    photos = venue.get('photos')
-    if photos is None:
-	count = 0
-    else:
-	count = photos.get('count', 0)
-
-    if count == 0:
-	s += '<p>-- No photos --'
-    else:
-	for group in photos['groups']:
-	    s += '<p>-- %s: %d --' % (group['name'], group['count'])
-	    s += ''.join([photo_fmt(p, dnow, venue_id = venue['id']) 
-		for p in group['items']])
-
-    s += """
-<p>
-<form style="margin:0; padding:0;" enctype="multipart/form-data" action="/addphoto" method="post">
-<input type="file" name="photo"><br>
-<input type="hidden" value="%s" name="venid">
-<input type="submit" value="Add JPEG photo"><br>
-</form>
-""" % venue['id']
-
-    return s
 
 def get_prim_category(cats):
     if cats is not None:
@@ -950,39 +771,6 @@ def special_fmt(special):
 
     return s
 
-
-def specials_fmt(specials, nearby=False):
-    """
-    Format venue specials.
-    """
-    return '' if len(specials) == 0 else '<p><b>Specials%s:</b>' % (
-	    ' nearby' if nearby else ''
-	    ) + '<ul class="vlist">%s</ul>' % ''.join(
-		    ['<li>%s</li>' % special_fmt(x) for x in specials])
-
-def tip_fmt(tip):
-    """
-    Format a tip on the venue page.
-    """
-    return """
-<p><img src="%s" class="usericon" alt="" style="float:left">%s from %s says: 
-%s (Posted: %s)<br style="clear:both">
-""" % (tip['user']['photo'],
-	name_fmt(tip['user']),
-	escape(tip['user'].get('homeCity', '')),
-	escape(tip['text']),
-	datetime.fromtimestamp(tip['createdAt']).ctime())
-
-def tips_fmt(tips):
-    """
-    Format a list of tips on the venue page.
-    """
-    s = ''
-    if tips['count'] > 0:
-	s += '<p><b>Tips:</b>'
-    for grp in tips['groups']:
-	s += ''.join([tip_fmt(t) for t in grp['items']])
-    return s
 
 class VInfoHandler(webapp.RequestHandler):
     """
