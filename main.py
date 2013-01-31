@@ -929,12 +929,11 @@ class HistoryHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	dnow = datetime.utcnow()
-	clist = [history_checkin_fmt(c, dnow, lat, lon) for c in checkins['items']] if checkins['count'] > 0 else []
-
 	renderpage(self, 'history.htm',
 		{
-		    'checkins' : clist,
+		    'checkins' : checkins,
+		    'lat' : lat,
+		    'lon' : lon,
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 
@@ -1379,60 +1378,6 @@ class FriendsHandler(webapp.RequestHandler):
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 
-
-# class ShoutHandler(webapp.RequestHandler):
-#     """
-#     This handles user shouts.
-#     """
-#     def post(self):
-# 	self.get()
-# 
-#     def get(self):
-# 	no_cache(self)
-# 	(lat, lon) = coords(self)
-# 
-# 	client = getclient(self)
-# 	if client is None:
-# 	    return
-# 
-# 	message = self.request.get('message')
-# 	if message == '':
-# 	    self.redirect('/')
-# 	    return
-# 
-# 	jsn = call4sq(self, client, 'post', path='/checkins/add',
-# 		params = {
-# 		    "shout" : message,
-# 		    "ll" : '%s,%s' % (lat, lon),
-# 		    "broadcast" : "public",
-# 		    })
-# 	if jsn is None:
-# 	    logging.error('Missing response from /checkins/add')
-# 	    return
-# 
-# 	usrhdr = userheader(self, client, lat, lon)
-# 
-# 	jsn = {}
-# 	if usrhdr is not None:
-# 	    jsn = usrhdr.get('jsn', {})
-# 
-# 	notif = jsn.get('notifications')
-# 	if notif is None:
-# 	    logging.error('Missing notifications from /checkins/add:')
-# 	    logging.error(jsn)
-# 	    return jsn
-# 
-# 	msg = None
-# 	msgs = find_notifs(notif, 'message')
-# 	if len(msgs) > 0:
-# 	    msg = msgs[0]['message']
-# 
-# 	renderpage(self, 'shout.htm',
-# 		{
-# 		    'userheader' : usrhdr,
-# 		    'msg' : msg,
-# 		    'debug_json' : debug_json_str(self, jsn),
-# 		})
 
 
 def venue_fmt(venue, lat, lon):
@@ -2380,7 +2325,6 @@ app = webapp.WSGIApplication([
     ('/badges', BadgesHandler),
     ('/mayor', MayorHandler),
     ('/friends', FriendsHandler),
-#     ('/shout', ShoutHandler),
     ('/venues', VenuesHandler),
     ('/coords', CoordsHandler),
     ('/setloc', SetlocHandler),

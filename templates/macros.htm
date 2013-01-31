@@ -1,4 +1,5 @@
 {% macro make_plural(count, what) -%}
+    {% set count = count|int %}
     {% if count == 0 %}
 	no {{ what }}
     {% elif count == 1 %}
@@ -206,8 +207,42 @@
     ({{ photo.createdAt|fuzzydelta }})<br>
 {%- endmacro %}
 
+{% macro comments_cmd(checkin) -%}
+    <span class="buttonbox">
+	<a class="vbutton" href="/comments?chkid={{ checkin.id|e }}">
+		{{ make_plural(checkin.comments.count, 'comment') }}, 
+		{{ make_plural(checkin.photos.count, 'photo') }}
+	</a>
+    </span>
+{%- endmacro %}
+
 {% macro history_checkin_fmt(checkin, lat, lon) -%}
     {% set venue = checkin.venue %}
+    {% if venue %}
+
+	{% if venue.id %}
+	    {% set location = venue.location %}
+	    {% set distcompass = { 'lat' : location.lat, 'lon' : location.lng } | distcompass(lat, lon) %}
+	    <a class="button" href="/venue?vid={{ venue.id|e }}"><b>{{ venue.name|e }}</b></a> {{ venue_cmds(venue, distcompass.dist) }}<br>{{ addr_fmt(venue) }}
+	    {{ '(%.1f mi %s)' | format(distcompass.dist|float, distcompass.compass|e) }}<br>
+	{% else %}
+	    {# Orphaned venues will be missing the id field. #}
+	    <b>{{ venue.name|e }}</b><br>
+	{% endif %}
+
+    {% else %}
+	{% if checkin.location %}
+	    <p>{{ checkin.location.name|e }} (venueless)<br>
+	{% endif %}
+    {% endif %}
+
+    {% if checkin.shout %}
+	"{{ checkin.shout|e }}"<br>
+    {% endif %}
+
+    {{ comments_cmd(checkin) }}<br>
+
+    {{ checkin.createdAt|fuzzydelta }}
 {%- endmacro %}
 
 {# vim:set ft=htmldjango tw=0: #}

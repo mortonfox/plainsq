@@ -1,9 +1,10 @@
+{% from 'macros.htm' import history_checkin_fmt %}
 {% extends 'base.htm' %}
 {% set title = 'History' %}
 {% block body %}
 <ul class="vlist">
-    {% for checkin in checkins %}
-	<li>{{ checkin }}</li>
+    {% for checkin in checkins['items'] %}
+	<li>{{ history_checkin_fmt(checkin, lat, lon) }}</li>
     {% else %}
 	<p>No check-ins?</p>
     {% endfor %}

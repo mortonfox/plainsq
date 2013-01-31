@@ -9,7 +9,7 @@
     {% if location.lat and location.lng %}
 	{% set gmap_str = map_image(location.lat, location.lng) %}
 	{% set distcompass = { 'lat' : location.lat, 'lon' : location.lng } | distcompass(lat, lon) %}
-	{% set dist_str = '(%.1f mi %s)<br>' | format(distcompass.dist|float, distcompass.compass|e) %}
+	{% set dist_str = '(%.1f mi %s)' | format(distcompass.dist|float, distcompass.compass|e) %}<br>
     {% endif %}
 
     <p>{{ venue.name|e }} {{ venue_cmds(venue, dist) }}
