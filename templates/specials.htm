@@ -1,11 +1,12 @@
+{% from 'macros.htm' import specials_fmt %}
 {% extends 'base.htm' %}
 {% set title = 'Specials' %}
 {% block body %}
-{% if specials.count == 0 %}
-    <p>No specials nearby.</p>
-{% else %}
-    {{ specials_html }}
-{% endif %}
+    {% if specials_jsn.count == 0 %}
+	<p>No specials nearby.</p>
+    {% else %}
+	{{ specials_fmt(specials_jsn['items']) }}
+    {% endif %}
 {% endblock %}
 
 {# vim:set ft=htmldjango tw=0: #}

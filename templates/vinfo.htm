@@ -1,7 +1,8 @@
+{% from 'macros.htm' import vinfo_fmt %}
 {% extends 'base.htm' %}
 {% set title = 'Venue Info' %}
 {% block body %}
-{{ vinfo }}
+{{ vinfo_fmt(venue, dist, compass) }}
 {% endblock %}
 
 {# vim:set ft=htmldjango tw=0: #}

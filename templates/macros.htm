@@ -8,12 +8,202 @@
     {% endif %}
 {%- endmacro %}
 
+{# Static Bing map #}
 {% macro map_image(lat, lon) -%}
     {% if lat and lon %}
 	{% set coords = (lat ~ ',' ~ lon) | urlencode %}
 	<p><img width="250" height="250" alt="[Bing Map]"
 	src="http://dev.virtualearth.net/REST/v1/Imagery/Map/Road/{{ coords }}/14?ms=250,250&pp={{ coords }};0&key=Aha1lOg_Dx1TU7quU-wNTgDN3K3fI9d4MYRgNGIIX1rQI7SBHs4iLB6LRnbKFN5c">
     {% endif %}
+{%- endmacro %}
+
+{# Show checkin/moveto links in venue header. #}
+{% macro venue_cmds(venue, dist) -%}
+    <div class="buttonbox">
+
+	{% if not dist %}
+	    {% set dist = 9999 %}
+	{% endif %}
+
+	<form style="margin:0; padding:0; display:inline !important;" action="/checkin" method="post">
+	    <input type="hidden" name="vid" value="{{ venue.id|e }}">
+	    <input type="hidden" name="dist" value="{{ dist|e }}">
+	    <input class="formbutton" type="submit" value="checkin">
+	</form>
+
+	<a class="vbutton" href="/checkin_long?{{
+	    { 
+		'vid' : venue.id, 
+		'vname' : venue.name,
+		'dist' : dist,
+	    } | urlparms
+	}}">checkin with options</a>
+
+	{% set location = venue.location %}
+	{% if location %}
+	    {% set lat = location.lat %}
+	    {% set lng = location.lng %}
+	    {% if lat and lng %}
+		<a class="vbutton" href="/coords?{{
+		    {
+			'geolat' : lat,
+			'geolong' : lng,
+		    } | urlparms
+		}}">move to</a>
+	    {% endif %}
+	{% endif %}
+
+	<a class="vbutton" href="http://foursquare.com/venue/{{ venue.id|e }}">web</a>
+    </div>
+{%- endmacro %}
+
+{# Format the address block of a venue. #}
+{% macro addr_fmt(venue) -%}
+
+    {% set location = venue.location %}
+    {% if location %}
+
+	{% if location.address %}
+	    {{ location.address|e }}<br>
+	{% endif %}
+
+	{% if location.crossStreet %}
+	    ({{ location.crossStreet|e }})<br>
+	{% endif %}
+
+	{% if location.city or location.state or location.postalCode or location.country %}
+	    {{ location.city|e }}, {{ location.state|e }} {{ location.postalCode|e }} {{ location.country|e }}<br>
+	{% endif %}
+
+    {% endif %}
+
+    {% set contact = venue.contact %}
+    {% if contact %}
+
+	{% set phone = contact.phone %}
+	{% set formattedPhone = contact.formattedPhone %}
+
+	{% if formattedPhone %}
+	    {% set phoneStr = formattedPhone %}
+	{% else %}
+	    {% set phoneStr = phone|phonefmt %}
+	{% endif %}
+	{% if phone and phoneStr %}
+	    <a href="tel:{{ phone|urlencode }}">{{ phoneStr|e }}</a><br>
+	{% endif %}
+
+	{% set twitter = contact.twitter|wordchars %}
+	{% if twitter %}
+	    <a href="http://mobile.twitter.com/{{ twitter|urlencode }}">@{{ twitter|e }}</a><br>
+	{% endif %}
+
+    {% endif %}
+
+{%- endmacro %}
+
+{% macro category_fmt(cat) -%}
+    <p><img src="{{ cat.icon }}" style="float:left">{{ cat.parents|join(' / ') ~ ' / ' ~ cat.name }}
+    <br style="clear:both">
+{%- endmacro %}
+
+{% macro name_fmt(user) -%}
+    {% if user %}
+	{{ user.firstName|e }} {{ user.lastName|e }}
+    {% endif %}
+{%- endmacro %}
+
+{% macro venue_checkin_fmt(checkin) -%}
+    <p><img src="{{ checkin.user.photo }}" class="usericon" alt="" style="float:left">{{ name_fmt(checkin.user) }} from {{ checkin.user.homeCity|e }}
+    {% if checkin.shout %}
+	<br>"{{ checkin.shout|e }}"
+    {% endif %}
+    <br>{{ checkin.createdAt | fuzzydelta }}
+    <br style="clear:both">
+{%- endmacro %}
+
+{% macro tips_fmt(tips) -%}
+    {% if tips.count > 0 %}
+	<p><b>Tips:</b>
+	{% for grp in tips.groups %}
+	    {% for tip in grp['items'] %} 
+		<p><img src="{{ tip.user.photo }}" class="usericon" alt="" style="float:left; margin-right: 1em">{{ name_fmt(tip.user) }} from {{ tip.user.homeCity|e }} says: 
+		{{ tip.text|e }}<br>
+		(Posted: {{ tip.createdAt | datefmt }})<br style="clear:both">
+	    {% endfor %}
+	{% endfor %}
+    {% endif %}
+{%- endmacro %}
+
+{% macro special_fmt(special) -%}
+    <table class="image" style="float:right">
+	<caption style="caption-side: bottom">
+	    {{ special.title | default('Special Offer') | e }}
+	</caption>
+	<tr>
+	    <td>
+		<img src="http://foursquare.com/img/specials/{{ special.icon | default('check-in') | urlencode }}.png" alt="">
+	    </td>
+	</tr>
+    </table>
+
+    {% set venue = special.venue %}
+    {% if venue %}
+	<p><a class="button" href="/venue?vid={{ venue.id|urlencode }}"><b>{{ venue.name|e }}</b></a>
+	<br>{{ addr_fmt(venue) }}
+    {% endif %}
+
+    {% if special.message %}
+	<br>Message: {{ special.message|e }}
+    {% endif %}
+
+    {% if special.description %}
+	<br>Description: {{ special.description|e }}
+    {% endif %}
+
+    {% if special.finePrint %}
+	<br>Fine print: {{ special.finePrint|e }}
+    {% endif %}
+
+    {% if special.unlocked %}
+	<br>Unlocked: {{ special.unlocked|e }}
+    {% endif %}
+
+    {% if special.state %}
+	<br>State: {{ special.state|e }}
+    {% endif %}
+
+    {% if special.progress %}
+	<br>Progress: {{ special.progress|e }} {{ special.progressDescription|e }} of {{ special.target|e }}
+    {% endif %}
+
+    {% if special.detail %}
+	<br>Detail: {{ special.detail|e }}
+    {% endif %}
+
+    <br style="clear:both">
+{%- endmacro %}
+
+{% macro specials_fmt(special_items, nearby=false) -%}
+    {% if special_items %}
+	<p><b>Specials{% if nearby %} nearby{% endif %}:</b>
+	<ul class="vlist">
+	    {% for special in special_items %}
+		<li>{{ special_fmt(special) }}</li>
+	    {% endfor %}
+	</ul>
+    {% endif %}
+{%- endmacro %}
+
+{% macro photo_fmt(photo, venue_id = none, checkin_id = none) -%}
+    {% set photoparms = { 'photoid' : photo.id } %}
+    {% if venue_id %}
+	{% do photoparms.update({ 'venid' : venue_id }) %}
+    {% else %}
+	{% do photoparms.update({ 'chkid' : checkin_id }) %}
+    {% endif %}
+    <p>{{ name_fmt(photo.user) }}:<br>
+    <a href="/photo?{{ photoparms|urlparms }}"><img src="{{ photo|photourl }}"></a><br>
+    ({{ photo.createdAt|fuzzydelta }})<br>
 {%- endmacro %}
 
 {% macro vinfo_fmt(venue, dist, compass) -%}
@@ -43,8 +233,8 @@
     <p>Tags: {{ venue.tags | join(', ') | e }}
 
     {% if venue.stats %}
-	<p>Checkins: {{ stats.checkinsCount|e }} 
-	<br>Users: {{ stats.usersCount|e }}
+	<p>Checkins: {{ venue.stats.checkinsCount|e }} 
+	<br>Users: {{ venue.stats.usersCount|e }}
     {% endif %}
 
     {% if venue.beenHere %}
@@ -59,7 +249,7 @@
     {% if mayor %}
 	{% set user = mayor.user %}
 	{% if user %}
-	    <p><img src="{{ user.photo|e }}" class="usericon" alt="" style="float:left">
+	    <p><img src="{{ user.photo|e }}" class="usericon" alt="" style="float:left; margin-right: 1em">
 	    {{ name_fmt(user) }} ({{ mayor.count|e }}x) from {{ mayor.homeCity|e }} is the mayor.
 	    <br style="clear:both"> 
 	{% else %}
@@ -72,7 +262,7 @@
 	{% if herenow.count > 0 %}
 	    <p><b>Checked in here:</b>
 	    {% for grp in herenow.groups %}
-		{% for item in grp.items %}
+		{% for item in grp['items'] %}
 		    {{ venue_checkin_fmt(item) }}
 		{% endfor %}
 	    {% endfor %}
@@ -88,8 +278,8 @@
     {% if count %}
 	{% for grp in photos.groups %}
 	    <p>-- {{ grp.name|e }}: {{ grp.count|e }} --
-	    {% for item in grp.items %}
-		{{ photo_fmt(item, venue.id) }}
+	    {% for item in grp['items'] %}
+		{{ photo_fmt(item, venue_id = venue.id) }}
 	    {% endfor %}
 	{% endfor %}
     {% else %}

@@ -43,7 +43,9 @@ import jinja2
 from markupsafe import Markup
 
 jinja_environment = jinja2.Environment(
-    loader = jinja2.FileSystemLoader(os.path.dirname(__file__) + '/templates'))
+    extensions = ['jinja2.ext.do'],
+    loader = jinja2.FileSystemLoader(os.path.dirname(__file__) + '/templates')
+)
 
 def urlencode_filter(s):
     if type(s) == 'Markup':
@@ -60,9 +62,14 @@ def urlparms_filter(parms):
 jinja_environment.filters['urlparms'] = urlparms_filter
 
 def wordchars_filter(s):
-    return re.sub(r'[^a-zA-Z0-9_]', '', s)
+    return re.sub(r'[^a-zA-Z0-9_]', '', str(s))
 
 jinja_environment.filters['wordchars'] = wordchars_filter
+
+def datefmt_filter(s):
+    return datetime.fromtimestamp(s).ctime()
+
+jinja_environment.filters['datefmt'] = datefmt_filter
 
 dt_now = datetime.utcnow()
 def fuzzydelta_filter(s):
@@ -70,6 +77,31 @@ def fuzzydelta_filter(s):
     return fuzzy_delta(dt_now - d1)
 
 jinja_environment.filters['fuzzydelta'] = fuzzydelta_filter
+
+def phonefmt_filter(phone):
+    phoneStr = ''
+    phone = str(phone)
+    if len(phone) > 6:
+	phoneStr = '(%s)%s-%s' % (phone[0:3], phone[3:6], phone[6:])
+    return phoneStr
+
+jinja_environment.filters['phonefmt'] = phonefmt_filter
+
+def photourl_filter(photo):
+    imgurl = photo['url']
+
+    # If multiple sizes are available, then pick the largest photo that is not
+    # greater than 150 pixels in width. If none fit, pick the smallest photo.
+    if photo['sizes']['count'] > 0:
+	_photos = filter(lambda p:p['width'] <= 150, photo['sizes']['items'])
+	if _photos:
+	    imgurl = max(_photos, key = lambda p:p['width'])['url']
+	else:
+	    imgurl = min(photo['sizes']['items'], key = lambda p:p['width'])['url']
+
+    return imgurl
+
+jinja_environment.filters['photourl'] = photourl_filter
 
 
 TOKEN_COOKIE = 'plainsq_token'
@@ -985,9 +1017,21 @@ class VInfoHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
+	dist = None
+	compass = None
+
+	location = venue.get('location', {})
+	vlat = location.get('lat')
+	vlon = location.get('lng')
+	if vlat is not None and vlon is not None:
+	    dist = distance(lat, lon, vlat, vlon)
+	    compass = bearing(lat, lon, vlat, vlon)
+
 	renderpage(self, 'vinfo.htm',
 		{
-		    'vinfo' : vinfo_fmt(venue, lat, lon),
+		    'venue' : venue,
+		    'dist' : dist,
+		    'compass' : compass,
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 
@@ -2287,8 +2331,7 @@ class SpecialsHandler(webapp.RequestHandler):
 
 	renderpage(self, 'specials.htm', 
 		{ 
-		    'specials' : specials,
-		    'specials_html' : specials_fmt(specials['items']),
+		    'specials_jsn' : specials,
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 
