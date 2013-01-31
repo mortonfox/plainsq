@@ -12,7 +12,7 @@ Version: 0.0.10
 Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a>)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: January 24, 2013
+Last updated: January 30, 2013
 </pre>
 """
 
@@ -58,7 +58,7 @@ dt_now = datetime.utcnow()
 
 def fuzzydelta_filter(s):
     d1 = datetime.fromtimestamp(s)
-    return fuzzy_delta(dnow - d1)
+    return fuzzy_delta(dt_now - d1)
 
 jinja_environment.filters['fuzzydelta'] = fuzzydelta_filter
 
@@ -78,7 +78,7 @@ DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
 
-USER_AGENT = 'plainsq:0.0.10 20130124'
+USER_AGENT = 'plainsq:0.0.10 20130130'
 
 # Send location parameters if distance is below MAX_MILES_LOC.
 MAX_MILES_LOC = 1.1
