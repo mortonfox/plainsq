@@ -209,11 +209,16 @@
 
 {% macro comments_cmd(checkin) -%}
     <span class="buttonbox">
-	<a class="vbutton" href="/comments?chkid={{ checkin.id|e }}">
+	<a class="vbutton" href="/comments?chkid={{ checkin.id|urlencode }}">
 		{{ make_plural(checkin.comments.count, 'comment') }}, 
 		{{ make_plural(checkin.photos.count, 'photo') }}
 	</a>
     </span>
+{%- endmacro %}
+
+{% macro comment_fmt(comment, checkin) -%}
+    <p>{{ name_fmt(comment.user) }}: {{ comment.text|e }} ({{ comment.createdAt|fuzzydelta }})<br>
+    <a class="vbutton" href="/delcomment?chkid={{ checkin.id|urlencode }}&commid={{ comment.id|urlencode }}">delete</a><br>
 {%- endmacro %}
 
 {% macro history_checkin_fmt(checkin, lat, lon) -%}

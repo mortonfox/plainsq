@@ -854,51 +854,6 @@ def comments_cmd(checkin):
     return '<span class="buttonbox"><a class="vbutton" href="/comments?chkid=%s">%s, %s</a></span>' % (
 	    checkin['id'], cstr, pstr)
 
-def history_checkin_fmt(checkin, dnow, lat, lon):
-    """
-    Format an item from the check-in history.
-    """
-    s = ''
-
-    venue = checkin.get('venue')
-    if venue is not None:
-	id = venue.get('id')
-	# Orphaned venues will be missing the id field.
-	if id is None:
-	    s += '<b>%s</b><br>' % escape(venue['name'])
-	else:
-	    location = venue.get('location', {})
-	    vlat = location.get('lat')
-	    vlon = location.get('lng')
-	    dist = None
-	    dist_str = ''
-	    if vlat is not None and vlon is not None:
-		dist = distance(lat, lon, vlat, vlon)
-		compass = bearing(lat, lon, vlat, vlon)
-		dist_str = '(%.1f mi %s)<br>' % (dist, compass)
-
-	    s += '<a class="button" href="/venue?vid=%s"><b>%s</b></a> %s<br>%s' % (
-		    id, escape(venue['name']), 
-		    venue_cmds(venue, dist),
-		    addr_fmt(venue))
-
-	    s += dist_str
-
-    else:
-	location = checkin.get('location')
-	if location is not None:
-	    s += '<p>%s (venueless)<br>' % location.get('name', '')
-
-    shout = checkin.get('shout')
-    if shout is not None:
-	s += '"%s"<br>' % escape(shout)
-
-    s += '%s<br>' % comments_cmd(checkin)
-
-    d1 = datetime.fromtimestamp(checkin['createdAt'])
-    s += fuzzy_delta(dnow - d1)
-
-    return s
 
 class HistoryHandler(webapp.RequestHandler):
     """
@@ -2255,51 +2210,11 @@ class CommentsHandler(webapp.RequestHandler):
 	dnow = datetime.utcnow()
 	renderpage(self, 'comments.htm', 
 		{
-		    'checkin_id' : checkin_id,
-		    'this_checkin' : history_checkin_fmt(checkin, dnow, lat, lon),
-		    'comments' : [comment_fmt(c, checkin, dnow) for c in checkin['comments']['items']],
-		    'photos' : [photo_fmt(c, dnow, checkin_id = checkin['id']) for c in checkin['photos']['items']],
+		    'lat' : lat,
+		    'lon' : lon,
+		    'checkin' : checkin,
 		    'debug_json' : debug_json_str(self, jsn),
 		})
-
-
-def comment_fmt(comment, checkin, dnow):
-    return '<p>%s: %s (%s)<br>%s<br>' % (
-	    name_fmt(comment['user']),
-	    comment['text'],
-	    fuzzy_delta(dnow - datetime.fromtimestamp(comment['createdAt'])),
-	    del_comment_cmd(checkin, comment),
-	    )
-
-def photo_fmt(photo, dnow, venue_id = None, checkin_id = None):
-    imgurl = photo['url']
-
-    # If multiple sizes are available, then pick the largest photo that is not
-    # greater than 150 pixels in width. If none fit, pick the smallest photo.
-    if photo['sizes']['count'] > 0:
-	_photos = filter(lambda p:p['width'] <= 150, photo['sizes']['items'])
-	if _photos:
-	    imgurl = max(_photos, key = lambda p:p['width'])['url']
-	else:
-	    imgurl = min(photo['sizes']['items'], key = lambda p:p['width'])['url']
-
-    photoparms = { 'photoid' : photo['id'] }
-    if venue_id is not None:
-	photoparms['venid'] = venue_id
-    else:
-	photoparms['chkid'] = checkin_id
-    photourl = '/photo?%s' % escape(urllib.urlencode(photoparms))
-
-    return '<p>%s:<br><a href="%s"><img src="%s"></a><br>(%s)<br>' % (
-	    name_fmt(photo['user']),
-	    photourl,
-	    imgurl,
-	    fuzzy_delta(dnow - datetime.fromtimestamp(photo['createdAt'])),
-	    )
-
-def del_comment_cmd(checkin, comment):
-    return '<a class="vbutton" href="/delcomment?chkid=%s&commid=%s">delete</a>' % (
-	    checkin['id'], comment['id'])
 
 
 class UnknownHandler(webapp.RequestHandler):

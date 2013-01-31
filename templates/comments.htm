@@ -1,27 +1,27 @@
-{% from 'macros.htm' import make_plural %}
+{% from 'macros.htm' import make_plural, history_checkin_fmt, comment_fmt, photo_fmt %}
 {% extends 'base.htm' %}
 {% set title = 'Checkin Comments' %}
 
 {% block body %}
 <br>
 
-{{ this_checkin }}
+{{ history_checkin_fmt(checkin, lat, lon) }}
 
-<p>-- {{ make_plural(comments|length, 'comment') }} --
+<p>-- {{ make_plural(checkin.comments.count, 'comment') }} --
 
-{% for comment in comments %}
-    {{ comment }}
+{% for comment in checkin.comments['items'] %}
+    {{ comment_fmt(comment, checkin) }}
 {% endfor %}
 
-<p>-- {{ make_plural(photos|length, 'photo') }} --
+<p>-- {{ make_plural(checkin.photos.count, 'photo') }} --
 
-{% for photo in photos %}
-    {{ photo }}
+{% for photo in checkin.photos['items'] %}
+    {{ photo_fmt(photo, checkin_id = checkin.id) }}
 {% endfor %}
 
 <form style="margin:0; padding:0;" action="/addcomment" method="post">
 <input class="inputbox" type="text" name="text" size="15"><br>
-<input type="hidden" value="{{ checkin_id|e }}" name="chkid">
+<input type="hidden" value="{{ checkin.id|e }}" name="chkid">
 <input class="formbutton" type="submit" value="Add comment"><br>
 </form>
 
@@ -29,7 +29,7 @@
 
 <form style="margin:0; padding:0;" enctype="multipart/form-data" action="/addphoto" method="post">
 <input class="inputbox" type="file" name="photo"><br>
-<input type="hidden" value="{{ checkin_id|e }}" name="chkid">
+<input type="hidden" value="{{ checkin.id|e }}" name="chkid">
 <input class="formbutton" type="submit" value="Add JPEG photo"><br>
 </form>
 {% endblock %}
