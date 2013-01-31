@@ -87,6 +87,18 @@ def phonefmt_filter(phone):
 
 jinja_environment.filters['phonefmt'] = phonefmt_filter
 
+def distcompass_filter(vcoords, lat, lon):
+    dist = None
+    compass = None
+    vlat = vcoords.get('lat')
+    vlon = vcoords.get('lon')
+    if vlat is not None and vlon is not None:
+	dist = distance(lat, lon, vlat, vlon)
+	compass = bearing(lat, lon, vlat, vlon)
+    return { 'dist' : dist, 'compass' : compass }
+
+jinja_environment.filters['distcompass'] = distcompass_filter
+
 def photourl_filter(photo):
     imgurl = photo['url']
 
@@ -805,21 +817,11 @@ class VInfoHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	dist = None
-	compass = None
-
-	location = venue.get('location', {})
-	vlat = location.get('lat')
-	vlon = location.get('lng')
-	if vlat is not None and vlon is not None:
-	    dist = distance(lat, lon, vlat, vlon)
-	    compass = bearing(lat, lon, vlat, vlon)
-
 	renderpage(self, 'vinfo.htm',
 		{
 		    'venue' : venue,
-		    'dist' : dist,
-		    'compass' : compass,
+		    'lat' : lat,
+		    'lon' : lon,
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 
