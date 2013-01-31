@@ -54,8 +54,17 @@ def urlencode_filter(s):
 
 jinja_environment.filters['urlencode'] = urlencode_filter
 
-dt_now = datetime.utcnow()
+def urlparms_filter(parms):
+    return urllib.urlencode( { k : str(v).encode('utf8') for k, v in parms.items() } )
 
+jinja_environment.filters['urlparms'] = urlparms_filter
+
+def wordchars_filter(s):
+    return re.sub(r'[^a-zA-Z0-9_]', '', s)
+
+jinja_environment.filters['wordchars'] = wordchars_filter
+
+dt_now = datetime.utcnow()
 def fuzzydelta_filter(s):
     d1 = datetime.fromtimestamp(s)
     return fuzzy_delta(dt_now - d1)
