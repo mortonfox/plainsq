@@ -1,9 +1,21 @@
 {% extends 'base.htm' %}
+{% from 'macros.htm' import name_fmt %}
 {% set title = 'Leaderboard' %}
+
+{% macro leader_fmt(leader) -%}
+    {% set user = leader.user %}
+    {% set scores = leader.scores %}
+    <img src="{{ user.photo|e }}" class="usericon" alt="" style="float:right"><b>{{ leader.rank|e }}: 
+	{{ name_fmt(user) }} from {{ user.homeCity|e }}</b><br>
+    Recent: {{ scores.recent|e }}<br>
+    Max: {{ scores.max|e }}<br>
+    Checkins: {{ scores.checkinsCount|e }}<br style="clear:both">
+{%- endmacro %}
+
 {% block body %}
 <ul class="vlist">
     {% for leader in leaders %}
-	<li>{{ leader }}</li>
+	<li>{{ leader_fmt(leader) }}</li>
     {% else %}
 	<p>Empty leaderboard?</p>
     {% endfor %}

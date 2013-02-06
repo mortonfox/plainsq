@@ -180,13 +180,6 @@ def pprint_to_str(obj):
     pp = pprint.pprint(obj, sb, 4)
     return sb.getvalue()
 
-def debug_json(self, jsn):
-    """
-    Pretty-print a JSON response.
-    """
-    if get_debug(self):
-	self.response.out.write('<pre>%s</pre>' % escape(pprint_to_str(jsn)))
-
 def debug_json_str(self, jsn):
     return pprint_to_str(jsn) if get_debug(self) else ''
 
@@ -977,23 +970,6 @@ class BadgesHandler(webapp.RequestHandler):
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 
-
-
-def leader_fmt(leader):
-    """
-    Format a user on the leaderboard page.
-    """
-    user = leader.get('user', {})
-    scores = leader.get('scores', {})
-    return '<img src="%s" class="usericon" alt="" style="float:right"><b>%d: %s from %s</b><br>Recent: %d<br>Max: %d<br>Checkins:%d<br style="clear:both">' % (
-	    user.get('photo', ''),
-	    leader.get('rank', 0),
-	    name_fmt(user),
-	    escape(user.get('homeCity', '')),
-	    scores.get('recent', 0),
-	    scores.get('max', 0),
-	    scores.get('checkinsCount', 0))
-
 def notif_fmt(notif):
     s = ''
     target = notif.get('target', {})
@@ -1107,40 +1083,12 @@ class LeaderHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	llist = [leader_fmt(x) for x in leaderboard.get('items', [])] if leaderboard.get('count') else []
 	renderpage(self, 'leaderboard.htm',
 		{
-		    'leaders' : llist,
+		    'leaders' : leaderboard.get('items', []),
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 
-
-def mayor_venue_fmt(venue, lat, lon):
-    s = ''
-    pcat = get_prim_category(venue.get('categories'))
-    if pcat:
-	s += '<table class="image" align="right"><caption align="bottom">%s</caption><tr><td><img src="%s"></td></tr></table>' % (
-		pcat.get('name', ''),
-		pcat.get('icon', ''),
-		)
-
-    location = venue.get('location', {})
-    vlat = location.get('lat')
-    vlon = location.get('lng')
-    dist = None
-    dist_str = ''
-    if vlat is not None and vlon is not None:
-	dist = distance(lat, lon, vlat, vlon)
-	compass = bearing(lat, lon, vlat, vlon)
-	dist_str = '(%.1f mi %s)<br>' % (dist, compass)
-
-    s += '<a class="button" href="/venue?vid=%s"><b>%s</b></a> %s<br>%s' % (
-	    venue['id'], escape(venue['name']), 
-	    venue_cmds(venue, dist),
-	    addr_fmt(venue))
-    s += dist_str
-    s += '<br style="clear:both">'
-    return s
 
 class MayorHandler(webapp.RequestHandler):
     """
@@ -1170,10 +1118,11 @@ class MayorHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	mlist = [mayor_venue_fmt(v.get('venue', {}), lat, lon) for v in mayorships.get('items', [])] if mayorships.get('count', 0) > 0 else []
 	renderpage(self, 'mayorships.htm',
 		{
-		    'venues' : mlist,
+		    'mayoritems' : mayorships.get('items', []),
+		    'lat' : lat,
+		    'lon' : lon,
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 

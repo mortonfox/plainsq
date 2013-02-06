@@ -228,7 +228,7 @@
 	{% if venue.id %}
 	    {% set location = venue.location %}
 	    {% set distcompass = { 'lat' : location.lat, 'lon' : location.lng } | distcompass(lat, lon) %}
-	    <a class="button" href="/venue?vid={{ venue.id|e }}"><b>{{ venue.name|e }}</b></a> {{ venue_cmds(venue, distcompass.dist) }}<br>{{ addr_fmt(venue) }}
+	    <a class="button" href="/venue?vid={{ venue.id|urlencode }}"><b>{{ venue.name|e }}</b></a> {{ venue_cmds(venue, distcompass.dist) }}<br>{{ addr_fmt(venue) }}
 	    {{ '(%.1f mi %s)' | format(distcompass.dist|float, distcompass.compass|e) }}<br>
 	{% else %}
 	    {# Orphaned venues will be missing the id field. #}
@@ -248,6 +248,14 @@
     {{ comments_cmd(checkin) }}<br>
 
     {{ checkin.createdAt|fuzzydelta }}
+{%- endmacro %}
+
+{% macro prim_category(venue) -%}
+    {% if venue.categories %}
+	{% for cat in venue.categories if cat.primary %}
+	    {{ caller(cat) }}
+	{% endfor %}
+    {% endif %}
 {%- endmacro %}
 
 {# vim:set ft=htmldjango tw=0: #}

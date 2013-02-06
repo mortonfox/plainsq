@@ -1,9 +1,24 @@
+{% from 'macros.htm' import prim_category, venue_cmds, addr_fmt %}
 {% extends 'base.htm' %}
 {% set title = 'Mayorships' %}
+
+{% macro mayor_venue_fmt(venue, lat, lon) -%}
+    {% call(cat) prim_category(venue) %}
+	<table class="image" align="right"><caption align="bottom">{{ cat.name|e }}</caption><tr><td><img src="{{ cat.icon|e }}"></td></tr></table>
+    {% endcall %}
+
+    {% set location = venue.location %}
+    {% set distcompass = { 'lat' : location.lat, 'lon' : location.lng } | distcompass(lat, lon) %}
+    <a class="button" href="/venue?vid={{ venue.id|urlencode }}"><b>{{ venue.name|e }}</b></a> 
+    {{ venue_cmds(venue, distcompass.dist) }}<br>{{ addr_fmt(venue) }}
+    {{ '(%.1f mi %s)' | format(distcompass.dist|float, distcompass.compass|e) }}<br>
+    <br style="clear:both">
+{%- endmacro %}
+
 {% block body %}
 <ol class="numseplist">
-    {% for venue in venues %}
-	<li>{{ venue }}</li>
+    {% for mayor in mayoritems %}
+	<li>{{ mayor_venue_fmt(mayor.venue, lat, lon) }}</li>
     {% else %}
 	<p>No mayorships yet.</p>
     {% endfor %}
