@@ -1,9 +1,41 @@
 {% extends 'base.htm' %}
 {% set title = 'Badges' %}
+
+{% macro unlockstr(badge) -%}
+    {% set unlocks = badge.unlocks %}
+    {% if unlocks %}
+	{% set checkins = unlocks[0].checkins %}
+	{% if checkins %}
+	    {% set venue = checkins[0].venue %}
+	    {% if venue %}
+		{% set location = venue.location %}
+		Unlocked at <a href="/venue?vid={{ venue.id|urlencode }}">{{ venue.name|e }}</a>
+		{% if location.city and location.state %}
+		    in {{ location.city|e }} {{ location.state|e }}
+		{% endif %}
+		on {{ checkins[0].createdAt|datefmt }}.
+	    {% endif %}
+	{% endif %}
+    {% endif %}
+{%- endmacro %}
+
+{% macro badge_fmt(badge) -%}
+    {% set iconurl = '' %}
+    {% set img = badge.image %}
+    {% if img %}
+	{% set iconurl = img.prefix ~ img.sizes[0] ~ img.name %}
+    {% endif %}
+
+    <img src="{{ iconurl|e }}" alt="" style="float:right; padding:3px;">
+    <b>{{ badge.name|e }}</b><br>
+    {{ badge.description|default(badge.hint)|e }}<br>
+    {{ unlockstr(badge) }}<br style="clear:both">
+{%- endmacro %}
+
 {% block body %}
 <ol class="numseplist">
     {% for badge in badges %}
-	<li>{{ badge }}</li>
+	<li>{{ badge_fmt(badge) }}</li>
     {% else %}
 	<p>No badges yet.</p>
     {% endfor %}

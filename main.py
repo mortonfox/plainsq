@@ -894,40 +894,6 @@ class DebugHandler(webapp.RequestHandler):
 	set_debug(self, (0 if debug else 1))
 	self.redirect('/')
 
-def badge_fmt(badge):
-    iconurl = ""
-    img = badge.get('image')
-    if img is not None:
-	iconurl = img['prefix'] + str(img['sizes'][0]) + img['name']
-
-    unlockstr = ''
-    unlocks = badge.get('unlocks')
-    if unlocks:
-	checkins = unlocks[0]['checkins']
-	if len(checkins) > 0:
-	    venue = checkins[0].get('venue')
-	    if venue is not None:
-		location = venue['location']
-		city = location.get('city', '')
-		state = location.get('state', '')
-		locstr = ''
-		if city != '' or state != '':
-		    locstr = ' in %s %s' % (city, state)
-		unlockstr = """
-Unlocked at <a href="/venue?vid=%s">%s</a>%s on %s.
-""" % (
-	escape(venue['id']), escape(venue['name']), locstr, 
-	datetime.fromtimestamp(checkins[0]['createdAt']).ctime())
-
-    desc = badge.get('description')
-    if desc is None:
-	desc = badge.get('hint', '')
-
-    text = '<b>%s</b><br>%s<br>%s<br style="clear:both">' % (badge.get('name', ''), desc, unlockstr)
-
-    return """
-<img src="%s" alt="" style="float:right; padding:3px;">%s
-""" % (iconurl, text)
 
 class BadgesHandler(webapp.RequestHandler):
     """
@@ -961,8 +927,7 @@ class BadgesHandler(webapp.RequestHandler):
 	if len(badges) > 0:
 	    # Sort badges by reverse unlock order.
 	    # Retain only unlocked badges.
-	    keys = filter(lambda k: badges[k].get('unlocks'), sorted(badges.keys(), reverse=True))
-	    blist = [badge_fmt(badges[k]) for k in keys]
+	    blist = [badges[k] for k in sorted(badges.keys(), reverse=True) if badges[k].get('unlocks')]
 
 	renderpage(self, 'badges.htm',
 		{
