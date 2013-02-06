@@ -1,9 +1,59 @@
+{% from 'macros.htm' import name_fmt, comments_cmd, addr_fmt %}
 {% extends 'base.htm' %}
 {% set title = 'Find Friends' %}
+
+{% macro friend_checkin_fmt(checkin, lat, lon) -%}
+    {% set user_shown = false %}
+    {% set venue = checkin.venue %}
+    {% set user = checkin.user %}
+
+    {% if venue %}
+	{% set location = venue.location %}
+	<a class="button" href="/venue?vid={{ venue.id|urlencode }}"><b>{{ name_fmt(user) }}</b> @ {{ venue.name|e }}</a><br>
+	{% set user_shown = true %}
+    {% else %}
+	{% set location = checkin.location %}
+	{% set name = location.name %}
+	{% if name %}
+	    <b>{{ name_fmt(user) }}</b> @ {{ name|e }}<br>
+	    {% set user_shown = true %}
+	{% endif %}
+    {% endif %}
+
+    {% if checkin.shout %}
+	{% if not user_shown %}
+	    <b>{{ name_fmt(user) }}</b>
+	{% endif %}
+	"{{ checkin.shout|e }}"<br>
+    {% endif %}
+
+    {{ comments_cmd(checkin) }}<br>
+
+    {% if user.photo %}
+	<img src="{{ user.photo|e }}" class="usericon" alt="" style="float:right; padding:3px;">
+    {% endif %}
+
+    {% if venue %}
+	{{ addr_fmt(venue) }}
+    {% endif %}
+
+    {% set distcompass = { 'lat' : location.lat, 'lon' : location.lng } | distcompass(lat, lon) %}
+    {{ '(%.1f mi %s)' | format(distcompass.dist|float, distcompass.compass|e) }}<br>
+
+    {{ checkin.createdAt|fuzzydelta }}
+
+    {% set source = checkin.source %}
+    {% if source %}
+	<br>via <a href="{{ source.url|e }}">{{ source.name|e }}</a>
+    {% endif %}
+
+    <br style="clear:both">
+{%- endmacro %}
+
 {% block body %}
 <ul class="vlist">
     {% for friend in friends %}
-	<li>{{ friend }}</li>
+	<li>{{ friend_checkin_fmt(friend, lat, lon) }}</li>
     {% else %}
 	<p>No friends?</p>
     {% endfor %}

@@ -712,15 +712,6 @@ def fuzzy_delta(delta):
 		else:
 		    return 'now'
 
-def name_fmt(user):
-    if user is None:
-	return ''
-    return escape('%s %s' % (
-	    user.get('firstName', ''),
-	    user.get('lastName', ''))
-	    )
-
-
 
 def get_prim_category(cats):
     if cats is not None:
@@ -824,34 +815,6 @@ class VInfoHandler(webapp.RequestHandler):
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 
-def pluralize(count, what):
-    if count == 0:
-	s = 'no %ss' % what
-    elif count == 1:
-	s = '1 %s' % what
-    else:
-	s = '%d %ss' % (count, what)
-    return s
-
-def comments_cmd(checkin):
-    comments = checkin.get('comments')
-    if comments is None:
-	count = 0
-    else:
-	count = comments.get('count', 0)
-
-    cstr = pluralize(count, 'comment')
-
-    photos = checkin.get('photos')
-    if photos is None:
-	count = 0
-    else:
-	count = photos.get('count', 0)
-
-    pstr = pluralize(count, 'photo')
-
-    return '<span class="buttonbox"><a class="vbutton" href="/comments?chkid=%s">%s, %s</a></span>' % (
-	    checkin['id'], cstr, pstr)
 
 
 class HistoryHandler(webapp.RequestHandler):
@@ -1106,78 +1069,6 @@ def distance(lat, lon, vlat, vlon):
 
     return d
 
-def friend_checkin_fmt(checkin, lat, lon, dnow):
-    """
-    Format checkin record from one friend.
-    """
-    s = ''
-
-    venue = checkin.get('venue')
-    user = checkin.get('user')
-
-    user_shown = False
-
-    if venue is not None:
-	s += '<a class="button" href="/venue?vid=%s"><b>%s</b> @ %s</a><br>' % (
-		venue.get('id'),
-		name_fmt(user),
-		venue.get('name', ''),
-		)
-	user_shown = True
-    else:
-	location = checkin.get('location', {})
-	name = location.get('name')
-	if name is not None:
-	    s += '<b>%s</b> @ %s<br>' % (name_fmt(user), name)
-	    user_shown = True
-
-    shout = checkin.get('shout')
-    if shout is not None:
-	if not user_shown:
-	    s += '<b>' + name_fmt(user) + '</b> '
-	s += '"%s"<br>' % escape(shout)
-
-    s += '%s<br>' % comments_cmd(checkin)
-
-    if user:
-	photo = user.get('photo')
-	if photo:
-	    s += '<img src="%s" class="usericon" alt="" style="float:right; padding:3px;">' % photo
-
-    dist = checkin.get('distance')
-    if dist is not None:
-	dist = float(dist) / METERS_PER_MILE
-
-    if venue is not None:
-	s += addr_fmt(venue)
-	location = venue.get('location', {})
-    else:
-	location = checkin.get('location', {})
-
-    vlat = location.get('lat')
-    vlon = location.get('lng')
-	
-    compass = ''
-    if vlat is not None and vlon is not None:
-	compass = ' ' + bearing(lat, lon, vlat, vlon)
-	if dist is None:
-	    dist = distance(lat, lon, vlat, vlon)
-
-    if dist is not None:
-	s += '(%.1f mi%s)<br>' % (dist, compass)
-
-    d1 = datetime.fromtimestamp(checkin['createdAt'])
-    s += fuzzy_delta(dnow - d1)
-
-    source = checkin.get('source')
-    if source:
-	s += '<br>via <a href="%s">%s</a>' % (
-		source.get('url', ''), 
-		source.get('name', ''))
-    
-    s += '<br style="clear:both">'
-
-    return s
 
 class FriendsHandler(webapp.RequestHandler):
     """
@@ -1208,16 +1099,15 @@ class FriendsHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	dnow = datetime.utcnow()
-
 	# Sort checkins by distance. If distance is missing,
 	# use a very large value.
 	recent.sort(key = lambda v: v.get('distance', '1000000'))
 
-	flist = [friend_checkin_fmt(c, lat, lon, dnow) for c in recent] if len(recent) > 0 else []
 	renderpage(self, 'friends.htm',
 		{
-		    'friends' : flist,
+		    'friends' : recent,
+		    'lat' : lat,
+		    'lon' : lon,
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 
@@ -2079,7 +1969,6 @@ class CommentsHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	dnow = datetime.utcnow()
 	renderpage(self, 'comments.htm', 
 		{
 		    'lat' : lat,

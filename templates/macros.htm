@@ -208,10 +208,12 @@
 {%- endmacro %}
 
 {% macro comments_cmd(checkin) -%}
+    {% set comments = checkin.comments|default({ 'count' : 0 }) %}
+    {% set photos = checkin.photos|default({ 'count' : 0 }) %}
     <span class="buttonbox">
 	<a class="vbutton" href="/comments?chkid={{ checkin.id|urlencode }}">
-		{{ make_plural(checkin.comments.count, 'comment') }}, 
-		{{ make_plural(checkin.photos.count, 'photo') }}
+		{{ make_plural(comments.count, 'comment') }}, 
+		{{ make_plural(photos.count, 'photo') }}
 	</a>
     </span>
 {%- endmacro %}
