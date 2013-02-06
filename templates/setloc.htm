@@ -1,10 +1,27 @@
+{% from 'macros.htm' import map_image %}
 {% extends 'base.htm' %}
 {% set title = 'Set Location' %}
+
+{% macro geocode_result_fmt(result) -%}
+    {% set geometry = result.geometry %}
+    {% set location = geometry.location %}
+
+    <a class="button" href="/coords?{{ 
+	{
+	    'geolat' : location.lat,
+	    'geolong' : location.lng,
+	} | urlparms
+    }}">{{ result.formatted_address|e }}</a>
+
+    <br>{{ [ location.lat, location.lng ] | convcoords }}
+    {{ map_image(location.lat, location.lng) }}
+{%- endmacro %}
+
 {% block body %}
 <p>Did you mean?
 <ul class="vlist">
     {% for result in results %}
-	<li>{{ result }}</li>
+	<li>{{ geocode_result_fmt(result) }}</li>
     {% else %}
 	<p>No search results.</p>
     {% endfor %}

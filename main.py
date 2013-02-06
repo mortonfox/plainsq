@@ -61,6 +61,11 @@ def urlparms_filter(parms):
 
 jinja_environment.filters['urlparms'] = urlparms_filter
 
+def convcoords_filter(coords):
+    return convcoords(coords[0], coords[1])
+
+jinja_environment.filters['convcoords'] = convcoords_filter
+
 def wordchars_filter(s):
     return re.sub(r'[^a-zA-Z0-9_]', '', str(s))
 
@@ -406,7 +411,7 @@ def errorpage(self, msg, errcode=503):
     self.error(errcode)
     renderpage(self, 'error.htm', { 'msg' : msg })
 
-def userheader(self, client, lat, lon):
+def userheader(self, client):
     """ 
     Display the logged-in user's icon, name, and position.
     """
@@ -442,7 +447,6 @@ def userheader(self, client, lat, lon):
     return {
 	    'firstname' : firstname,
 	    'venueName' : venueName,
-	    'coords' : convcoords(lat, lon),
 	    'photo' : photo,
 	    'jsn' : jsn,
 	    }
@@ -478,7 +482,7 @@ class MainHandler(webapp.RequestHandler):
 	# Unread notifications count should be in the notification tray in
 	# the user query.
 	unreadcount = -1
-	usrhdr = userheader(self, client, lat, lon)
+	usrhdr = userheader(self, client)
 	jsn = None
 	if usrhdr is not None:
 	    jsn = usrhdr.get('jsn', {})
@@ -490,6 +494,8 @@ class MainHandler(webapp.RequestHandler):
 	renderpage(self, 'main.htm',
 		{
 		    'userheader' : usrhdr,
+		    'lat' : lat,
+		    'lon' : lon,
 		    'unreadcount' : unreadcount,
 		    'debugmode' : get_debug(self),
 		    'debug_json' : debug_json_str(self, jsn),
@@ -1495,32 +1501,12 @@ class SetlocHandler(webapp.RequestHandler):
 		    'Error from Google Geocoding API: %s' % status)
 	    return
 
-	results = jsn.get('results')
-	georesults = [ geocode_result_fmt(res) for res in results ] if results else []
-
 	renderpage(self, 'setloc.htm',
 		{
-		    'results' : georesults,
+		    'results' : jsn.get('results'),
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 
-
-def geocode_result_fmt(result):
-    addr = result.get('formatted_address', '')
-    geometry = result.get('geometry', {})
-    location = geometry.get('location', {})
-    lat = location.get('lat', 0)
-    lng = location.get('lng', 0)
-
-    s = '<a class="button" href="/coords?%s">%s</a>' % (
-	    escape(urllib.urlencode({
-		'geolat' : lat,
-		'geolong' : lng,
-		})),
-	    escape(addr))
-    s += '<br>%s' % convcoords(lat, lng)
-    s +=  map_image(lat, lng)
-    return s
 
 class CoordsHandler(webapp.RequestHandler):
     """
@@ -1661,7 +1647,7 @@ def do_checkin(self, client, vid, useloc = False, broadcast = 'public', shout = 
     if jsn is None:
 	return
 
-    usrhdr = userheader(self, client, lat, lon)
+    usrhdr = userheader(self, client)
 
     response = jsn.get('response')
     if response is None:
@@ -1685,6 +1671,8 @@ def do_checkin(self, client, vid, useloc = False, broadcast = 'public', shout = 
 	    { 
 		'checkin_html' : checkin_fmt(checkin, notif),
 		'userheader' : usrhdr,
+		'lat' : lat,
+		'lon' : lon,
 		'debug_json' : debug_json_str(self, jsn),
 	    })
 
@@ -1865,7 +1853,7 @@ class CheckinLongHandler(webapp.RequestHandler):
 	if jsn is None:
 	    return
 
-	usrhdr = userheader(self, client, lat, lon)
+	usrhdr = userheader(self, client)
 
 	response = jsn.get('response')
 	if response is None:
@@ -1891,6 +1879,8 @@ class CheckinLongHandler(webapp.RequestHandler):
 	renderpage(self, 'checkin_long.htm',
 		{
 		    'userheader' : usrhdr,
+		    'lat' : lat,
+		    'lon' : lon,
 		    'debug_json' : debug_json_str(self, jsn),
 		    'vname' : vname,
 		    'vid' : vid,

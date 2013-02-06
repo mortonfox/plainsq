@@ -35,7 +35,7 @@ if (isandroid) {
     {% if userheader %}
     <p><img src="{{ userheader.photo|e }}" class="usericon" alt="" style="float:left">
     {{ userheader.firstname|e }} @ {{ userheader.venueName|e }}
-    <br>Loc: {{ userheader.coords|e }}
+    <br>Loc: {{ [lat, lon] | convcoords }}
     <br style="clear:both">
     {% endif %}
 
