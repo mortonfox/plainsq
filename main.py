@@ -941,34 +941,6 @@ class BadgesHandler(webapp.RequestHandler):
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 
-def notif_fmt(notif):
-    s = ''
-    target = notif.get('target', {})
-    targetType = target.get('type', '')
-    venue = None
-    checkin = None
-
-    if targetType == 'tip':
-	venue = target.get('object', {}).get('venue', {})
-    elif targetType == 'checkin':
-	checkin = target.get('object', {})
-    elif targetType == 'venue':
-	venue = target.get('object', {})
-
-    if venue:
-	s = '<a class="button" href="/venue?vid=%s">%s</a>' % (
-		venue.get('id', ''), escape(venue.get('name', '')))
-
-    if checkin:
-	s = '<a class="button" href="/comments?chkid=%s">%s</a>' % (
-		checkin.get('id', ''), escape(checkin.get('venue', {}).get('name', '')))
-
-    return '<img src="%s" class="usericon" alt="" style="float:right"><i>%s</i><br>%s<br>%s<br style="clear:both">' % (
-	    notif.get('image', {}).get('fullPath', ''),
-	    datetime.fromtimestamp(notif.get('createdAt', 0)).ctime(),
-	    escape(notif.get('text', '')),
-	    s,
-	    )
 
 class NotifHandler(webapp.RequestHandler):
     """
@@ -1000,14 +972,10 @@ class NotifHandler(webapp.RequestHandler):
 
 	jsn2 = None
 
-	nlist = []
 	hwmark = None
+	items = notifs.get('items', [])
 
 	if notifs.get('count'):
-	    items = notifs.get('items', [])
-
-	    nlist = [notif_fmt(n) for n in items]
-
 	    hwmark = 0
 	    if items:
 		hwmark = items[0].get('createdAt', 0)	    
@@ -1019,7 +987,7 @@ class NotifHandler(webapp.RequestHandler):
 
 	renderpage(self, 'notifs.htm',
 		{
-		    'notifs' : nlist,
+		    'notifs' : items,
 		    'hwmark' : hwmark,
 		    'debugmode' : get_debug(self),
 		    'debug_json' : debug_json_str(self, jsn) + debug_json_str(self, jsn2),

@@ -1,9 +1,39 @@
 {% extends 'base.htm' %}
 {% set title = 'Notifications' %}
+
+{% macro notif_fmt(notif) -%}
+    {% set target = notif.target %}
+    {% set targettype = target.type|lower %}
+    {% set venue = none %}
+    {% set checkin = none %}
+
+    {% if targettype == 'tip' %}
+	{% set venue = target.object.venue %}
+    {% elif targettype == 'checkin' %}
+	{% set checkin = target.object %}
+    {% elif targettype == 'venue' %}
+	{% set venue = target.object %}
+    {% endif %}
+
+    <img src="{{ notif.image.fullPath|e }}" class="usericon" alt="" style="float:right">
+    <i>{{ notif.createdAt | datefmt }}</i><br>
+    {{ notif.text|e }}<br>
+
+    {% if venue %}
+	<a class="button" href="/venue?vid={{ venue.id|urlencode }}">{{ venue.name|e }}</a>
+    {% endif %}
+
+    {% if checkin %}
+	<a class="button" href="/comments?chkid={{ checkin.id|urlencode }}">{{ checkin.venue.name|e }}</a>
+    {% endif %}
+
+    <br style="clear:both">
+{%- endmacro %}
+
 {% block body %}
 <ol class="numseplist">
     {% for notif in notifs %}
-	<li>{{ notif }}</li>
+	<li>{{ notif_fmt(notif) }}</li>
     {% else %}
 	<p>No notifications yet.</p>
     {% endfor %}
