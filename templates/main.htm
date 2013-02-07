@@ -1,5 +1,21 @@
 {% extends 'base.htm' %}
 {% set title = 'Main' %}
+
+{# Unread notifications count can be found in the notification
+   tray in the user query. #}
+{% macro unreadcount() -%}
+    {% set unread = -1 %}
+    {% if userheader %}
+	{% set jsn = userheader.jsn %}
+	{% call(notif) find_notifs(jsn.notifications, 'notificationTray') %}
+	    {% if notif.item %}
+		{% set unread = notif.item.unreadCount|default(-1) %}
+	    {% endif %}
+	{% endcall %}
+    {% endif %}
+    {{ unread|e }}
+{%- endmacro %}
+
 {% block body %}
 <script type="text/javascript" src="geocode.js"></script>
 <ol class="menulist">
@@ -30,7 +46,7 @@ Shout: <input class="inputbox" type="text" name="message" size="16" accesskey="7
 
 <li><a class="widebutton" href="/specials" accesskey="8">Specials</a></li>
 
-<li><a class="widebutton" href="/notif" accesskey="9">Notifications ({{ unreadcount|e }})</a></li>
+<li><a class="widebutton" href="/notif" accesskey="9">Notifications ({{ unreadcount() }})</a></li>
 
 <li><a class="widebutton" href="/badges" accesskey="0">Badges</a></li>
 

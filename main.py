@@ -480,24 +480,16 @@ class MainHandler(webapp.RequestHandler):
 	if client is None:
 	    return
 
-	# Unread notifications count should be in the notification tray in
-	# the user query.
-	unreadcount = -1
 	usrhdr = userheader(self, client)
 	jsn = None
 	if usrhdr is not None:
 	    jsn = usrhdr.get('jsn', {})
-	    notifs = jsn.get('notifications', [])
-	    for notif in notifs:
-		if notif.get('type', '') == 'notificationTray':
-		    unreadcount = notif.get('item', {}).get('unreadCount', {})
 
 	renderpage(self, 'main.htm',
 		{
 		    'userheader' : usrhdr,
 		    'lat' : lat,
 		    'lon' : lon,
-		    'unreadcount' : unreadcount,
 		    'debugmode' : get_debug(self),
 		    'debug_json' : debug_json_str(self, jsn),
 		})

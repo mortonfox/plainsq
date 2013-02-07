@@ -1,12 +1,6 @@
-{% from 'macros.htm' import addr_fmt, special_fmt, map_image, prim_category, category_fmt %}
+{% from 'macros.htm' import find_notifs, addr_fmt, special_fmt, map_image, prim_category, category_fmt %}
 {% extends 'base.htm' %}
 {% set title = 'Checked In' %}
-
-{% macro find_notifs(notif, ntype) -%}
-    {% for n in notif if n.type|lower == ntype|lower %}	
-	{{ caller(n.item) }}
-    {% endfor %}
-{%- endmacro %}
 
 {% block body %}
     {% call(msg) find_notifs(notif, 'message') %}

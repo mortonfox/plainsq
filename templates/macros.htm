@@ -260,4 +260,10 @@
     {% endif %}
 {%- endmacro %}
 
+{% macro find_notifs(notif, ntype) -%}
+    {% for n in notif if n.type|lower == ntype|lower %}	
+	{{ caller(n.item) }}
+    {% endfor %}
+{%- endmacro %}
+
 {# vim:set ft=htmldjango tw=0: #}
