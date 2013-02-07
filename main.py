@@ -57,7 +57,7 @@ def encode_any(s):
 	return unicode(s).encode('utf8')
 
 def urlencode_filter(s):
-    if type(s) == 'Markup':
+    if isinstance(s, Markup):
         s = s.unescape()
     s = urllib.quote_plus(encode_any(s))
     return Markup(s)
