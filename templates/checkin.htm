@@ -1,7 +1,75 @@
+{% from 'macros.htm' import addr_fmt, special_fmt, map_image, prim_category, category_fmt %}
 {% extends 'base.htm' %}
 {% set title = 'Checked In' %}
+
+{% macro find_notifs(notif, ntype) -%}
+    {% for n in notif if n.type|lower == ntype|lower %}	
+	{{ caller(n.item) }}
+    {% endfor %}
+{%- endmacro %}
+
 {% block body %}
-{{ checkin_html }}
+    {% call(msg) find_notifs(notif, 'message') %}
+	<p>{{ msg.message|e }}
+    {% endcall %}
+
+    {% set venue = checkin.venue %}
+    {% if venue %}
+	<p><a class="button" href="/venue?vid={{ venue.id|urlencode }}">{{ venue.name|e }}</a><br>{{ addr_fmt(venue) }}
+	{% set location = venue.location %}
+	{% if location.lat and location.lng %}
+	    {{ map_image(location.lat, location.lng) }}
+	{% endif %}
+
+	{% call(cat) prim_category(venue) %}
+	    {{ category_fmt(cat) }}
+	{% endcall %}
+    {% endif %}
+
+    {% call(mayor) find_notifs(notif, 'mayorship') %}
+	{% set user = mayor.user %}
+	{% if user %}
+	    <p><img src="{{ user.photo|e }}" class="usericon" alt="" style="float:left">{{ mayor.message|e }}
+	    <br style="clear:both">
+	{% else %}
+	    <p>{{ mayor.message|e }}
+	{% endif %}
+    {% endcall %}
+
+    {% call(badge) find_notifs(notif, 'badge') %}
+	{% for b in badge.itervalues() %}
+	    {% set iconurl = '' %}
+	    {% set img = b.image %}
+	    {% if img %}
+		{% set iconurl = img.prefix ~ img.sizes[0] ~ img.name %}
+	    {% endif %}
+	    <p><img src="{{ iconurl|e }}" style="float:left">
+	    You've unlocked the {{ b.name|e }} badge: {{ b.description|e }}
+	    <br style="clear:both">
+	{% endfor %}
+    {% endcall %}
+
+    {% call(score) find_notifs(notif, 'score') %}
+	{% for s in score.scores %}
+	    <p><img src="{{ s.icon|e }}" style="float:left">
+	    {{ s.points|e }} points: {{ s.message|e }}
+	    <br style="clear:both">
+	{% endfor %}
+    {% endcall %}
+
+    {% call(special) find_notifs(notif, 'special') %}
+	<p>{{ special_fmt(special.special) }}
+    {% endcall %}
+
+    {% call(leaderboard) find_notifs(notif, 'leaderboard') %}
+	{% for leader in leaderboard.leaderboard %}
+	    {% set user = leader.user %}
+	    {% set scores = leader.scores %}
+	    <p><img src="{{ user.photo|e }}" class="usericon" alt="" style="float:left"> #{{ leader.rank|e }}: {{ user.firstName|e }} {{ user.lastName|e }} from {{ user.homeCity|e }}<br>
+	    {{ scores.recent|e }} points, {{ scores.checkinsCount|e }} checkins, {{ scores.max|e }} max<br style="clear:both">
+	{% endfor %}
+	<p>{{ leaderboard.message|e }}
+    {% endcall %}
 {% endblock %}
 
 {# vim:set ft=htmldjango tw=0: #}

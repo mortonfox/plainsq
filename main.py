@@ -566,86 +566,6 @@ class LogoutHandler(webapp.RequestHandler):
 	renderpage(self, 'logout.htm')
 
 
-def addr_fmt(venue):
-    """
-    Format the address block of a venue.
-    """
-    location = venue.get('location', {})
-    contact = venue.get('contact', {})
-    return addr_fmt_2(location, contact)
-
-def addr_fmt_2(location, contact):
-    """
-    Format an address block from location and contact records.
-    """
-    s = ''
-
-    if location is not None:
-	addr = location.get('address', '')
-	if addr != '':
-	    s += escape(addr) + '<br>'
-
-	cross = location.get('crossStreet', '')
-	if cross != '':
-	    s += '(%s)<br>' % escape(cross)
-
-	city = location.get('city', '')
-	state = location.get('state', '')
-	zip = location.get('postalCode', '')
-	country = location.get('country', '')
-	if city != '' or state != '' or zip != '' or country != '':
-	    s += '%s, %s %s %s<br>' % (
-		    escape(city), escape(state), escape(zip), escape(country))
-
-    if contact is not None:
-	phone = contact.get('phone', '')
-	formattedPhone = contact.get('formattedPhone')
-	if formattedPhone:
-	    phoneStr = formattedPhone
-	elif len(phone) > 6:
-	    phoneStr = '(%s)%s-%s' % (phone[0:3], phone[3:6], phone[6:])
-	if phone and phoneStr:
-	    s += '<a href="tel:%s">%s</a><br>' % (phone, phoneStr)
-
-	twitter = contact.get('twitter', '')
-
-	# Discard invalid characters.
-	twitter = re.sub(r'[^a-zA-Z0-9_]', '', twitter)
-
-	if len(twitter) > 0:
-	    s += '<a href="http://mobile.twitter.com/%s">@%s</a><br>' % (
-		    urllib.quote(twitter), escape(twitter))
-
-    return s
-
-def category_fmt(cat):
-    path = ' / '.join(cat['parents'] + [ cat['name'] ])
-    return """
-<p><img src="%s" style="float:left">%s
-<br style="clear:both">
-""" % (cat['icon'], path)
-
-def map_image(lat, lon):
-    """
-    Static Google Map / Bing Map.
-    """
-    coords = escape(urllib.quote_plus('%s,%s' % (lat, lon)))
-    return """
-<p><img width="250" height="250" alt="[Bing Map]"
-src="http://dev.virtualearth.net/REST/v1/Imagery/Map/Road/%s/14?ms=250,250&pp=%s;0&key=Aha1lOg_Dx1TU7quU-wNTgDN3K3fI9d4MYRgNGIIX1rQI7SBHs4iLB6LRnbKFN5c">
-""" % (coords, coords)
-
-#     return """
-# <p><img width="250" height="250" alt="[Google Map]"
-# src="http://maps.google.com/maps/api/staticmap?%s">
-# """ % escape(urllib.urlencode( {
-#     'size' : '250x250', 
-#     'format' : 'gif',
-#     'sensor' : 'false',
-#     'zoom' : '14',
-#     'markers' : 'size:mid|color:blue|%s,%s' % (lat, lon),
-#     } ))
-
 def fuzzy_delta(delta):
     """
     Returns a user-friendly version of timedelta.
@@ -676,66 +596,6 @@ def fuzzy_delta(delta):
 		else:
 		    return 'now'
 
-
-def get_prim_category(cats):
-    if cats is not None:
-	for c in cats:
-	    if c.get('primary', False):
-		return c
-    return None
-
-def special_fmt(special):
-    """
-    Format a venue special.
-    """
-    s = ''
-    venue = special.get('venue', {})
-
-    s += '<table class="image" style="float:right"><caption style="caption-side: bottom">%s</caption><tr><td><img src="http://foursquare.com/img/specials/%s.png" alt=""></td></tr></table>' % (
-	    special.get('title', 'Special Offer'),
-	    special.get('icon', 'check-in'),
-	    )
-
-    if venue:
-	s += '<p><a class="button" href="/venue?vid=%s"><b>%s</b></a><br>%s' % (
-		escape(venue.get('id', '')),
-		escape(venue.get('name', '')), 
-		addr_fmt(venue))
-
-    message = special.get('message')
-    if message:
-	s += '<br>Message: %s' % escape(message)
-
-    desc = special.get('description')
-    if desc:
-	s += '<br>Description: %s' % escape(desc)
-
-    fineprint = special.get('finePrint')
-    if fineprint:
-	s += '<br>Fine print: %s' % escape(fineprint)
-
-    unlocked = special.get('unlocked')
-    if unlocked:
-	s += '<br>Unlocked: %s' % unlocked
-
-    state = special.get('state')
-    if state:
-	s += '<br>State: %s' % escape(state)
-
-    progress = special.get('progress')
-    if progress:
-	s += '<br>Progress: %d %s of %d' % (
-		progress,
-		special.get('progressDescription', ''),
-		special.get('target', 0))
-
-    detail = special.get('detail')
-    if detail:
-	s += '<br>Detail: %d' % detail
-
-    s += '<br style="clear:both">'
-
-    return s
 
 
 class VInfoHandler(webapp.RequestHandler):
@@ -1314,107 +1174,6 @@ class CoordsHandler(webapp.RequestHandler):
 	    self.redirect('/')
 
 
-def checkin_badge_fmt(badge):
-    iconurl = ""
-    img = badge.get('image')
-    if img is not None:
-	iconurl = img['prefix'] + str(img['sizes'][0]) + img['name']
-
-    return """
-<p><img src="%s" style="float:left">
-You've unlocked the %s badge: 
-%s<br style="clear:both">
-""" % (iconurl, badge.get('name', ''), badge.get('description', ''))
-
-def checkin_score_fmt(score):
-    return """
-<p><img src="%s" style="float:left">
-%s points: %s<br style="clear:both">
-""" % (score['icon'], score['points'], score['message'])
-
-def find_notifs(notif, ntype):
-    return [n['item'] for n in notif if n['type'] == ntype]
-
-def checkin_fmt(checkin, notif):
-    """
-    Format checkin messages.
-    """
-    msgs = find_notifs(notif, 'message')
-    if len(msgs) > 0:
-	s = '<p>%s' % escape(msgs[0]['message'])
-
-    venue = checkin.get('venue')
-    if venue is not None:
-	s += '<p><a class="button" href="/venue?vid=%s">%s</a><br>%s' % ( 
-		venue['id'], escape(venue['name']), addr_fmt(venue))
-
-	location = venue.get('location')
-	if location is not None:
-	    lat = location.get('lat')
-	    lng = location.get('lng')
-	    if lat is not None and lng is not None:
-		# Add static map image to the page.
-		s += map_image(lat, lng)
-
-	pcat = get_prim_category(venue.get('categories'))
-	if pcat is not None:
-	    s += category_fmt(pcat)
-
-    mayor = None
-    mayors = find_notifs(notif, 'mayorship')
-    if len(mayors) > 0:
-	mayor = mayors[0]
-
-    if mayor is not None:
-	user = mayor.get('user')
-	msg = escape(mayor['message'])
-	s += '<p>%s' % msg if user is None else """
-<p><img src="%s" class="usericon" alt="" style="float:left">%s<br style="clear:both">
-""" % (user['photo'], msg)
-    
-    badges = find_notifs(notif, 'badge')
-    if len(badges) > 0:
-	s += ''.join([checkin_badge_fmt(b) for b in badges[0].values()])
-
-    scores = find_notifs(notif, 'score')
-    if len(scores) > 0:
-	s += ''.join([checkin_score_fmt(score) 
-	    for score in scores[0]['scores']])
-
-    specials = find_notifs(notif, 'special')
-    if len(specials) > 0:
-	s += ''.join(['<p>' + special_fmt(item.get('special', {}))
-	    for item in specials])
-
-    leaderboard = find_notifs(notif, 'leaderboard')
-    if len(leaderboard) > 0:
-	s += checkin_ldr_fmt(leaderboard[0])
-    
-    return s
-
-def checkin_ldr_row_fmt(leader):
-    user = leader.get('user', {})
-    scores = leader.get('scores', {})
-    return """
-<p><img src="%s" class="usericon" alt="" style="float:left"> #%d: %s %s from %s<br>
-%d points, %d checkins, %d max<br style="clear:both">
-""" % (user.get('photo', ''),
-	leader.get('rank', 0),
-	user.get('firstName', ''),
-	user.get('lastName', ''),
-	user.get('homeCity', ''),
-	scores.get('recent', 0),
-	scores.get('checkinsCount', 0),
-	scores.get('max', 0))
-
-def checkin_ldr_fmt(leaderboard):
-    s = ''
-
-    leaders = leaderboard.get('leaderboard', [])
-    s += ''.join([checkin_ldr_row_fmt(l) for l in leaders])
-
-    s += '<p>%s' % leaderboard.get('message', '')
-    return s
 
 def do_checkin(self, client, vid, useloc = False, broadcast = 'public', shout = None):
     (lat, lon) = coords(self)
@@ -1453,7 +1212,8 @@ def do_checkin(self, client, vid, useloc = False, broadcast = 'public', shout = 
 
     renderpage(self, 'checkin.htm', 
 	    { 
-		'checkin_html' : checkin_fmt(checkin, notif),
+		'checkin' : checkin,
+		'notif' : notif,
 		'userheader' : usrhdr,
 		'lat' : lat,
 		'lon' : lon,
