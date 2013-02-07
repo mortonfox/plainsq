@@ -8,13 +8,15 @@
 <p>PlainSquare uses OAuth version 2 to log in to Foursquare to avoid having to store user passwords. PlainSquare supports version 2 of the Foursquare API. It is written in Python and designed for hosting on Google App Engine. 
 
 <pre>
-Version: 0.0.10
+Version: 0.0.11
 Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a>)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: January 30, 2013
+Last updated: February 6, 2013
 </pre>
 """
+
+USER_AGENT = 'plainsq:0.0.11 20130206'
 
 
 from google.appengine.ext import webapp
@@ -136,8 +138,6 @@ DEFAULT_LON = '-75.6'
 DEBUG_COOKIE = 'plainsq_debug'
 
 METERS_PER_MILE = 1609.344
-
-USER_AGENT = 'plainsq:0.0.10 20130130'
 
 # Send location parameters if distance is below MAX_MILES_LOC.
 MAX_MILES_LOC = 1.1
