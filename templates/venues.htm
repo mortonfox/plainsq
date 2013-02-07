@@ -1,12 +1,25 @@
+{% from 'macros.htm' import addr_fmt, venue_cmds %}
 {% extends 'base.htm' %}
 {% set title = 'Venue Search' %}
+
+{# Format a venue in the venue search page. #}
+{% macro venue_fmt(venue, lat, lon) -%}
+    {% set location = venue.location %}
+    {% set distcompass = { 'lat' : location.lat, 'lon' : location.lng } | distcompass(lat, lon) %}
+
+    <a class="button" href="/venue?vid={{ venue.id|urlencode }}"><b>{{ venue.name|e }}</b></a>
+    {{ venue_cmds(venue, distcompass.dist) }}<br>
+    {{ addr_fmt(venue) }}
+    {{ '(%.1f mi %s)' | format(distcompass.dist|float, distcompass.compass|e) }}<br>
+{%- endmacro %}
+
 {% block body %}
 <form class="formbox" action="/venues" method="get">
 Search Venues: <input class="inputbox" type="text" name="query" size="8"><input class="submitbutton" type="submit" value="Search"></form>
 
 <ul class="vlist">
     {% for venue in venues %}
-	<li>{{ venue }}</li>
+	<li>{{ venue_fmt(venue, lat, lon) }}</li>
     {% else %}
 	<p>No venues?</p>
     {% endfor %}

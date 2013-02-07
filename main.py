@@ -25,6 +25,7 @@ from google.appengine.ext import db
 from google.appengine.datastore import entity_pb
 from google.appengine.api import memcache
 
+import itertools
 import json
 import oauth2
 import uuid
@@ -564,43 +565,6 @@ class LogoutHandler(webapp.RequestHandler):
 	self.del_cookie(DEBUG_COOKIE)
 	renderpage(self, 'logout.htm')
 
-def venue_cmds(venue, dist):
-    """
-    Show checkin/moveto links in venue header.
-    """
-    if dist is None:
-	dist = 9999
-
-    s = ''
-
-    s += """<form style="margin:0; padding:0; display:inline !important;" action="/checkin" method="post">
-<input type="hidden" name="vid" value="%s">
-<input type="hidden" name="dist" value="%f">
-<input class="formbutton" type="submit" value="checkin">
-</form>""" % (venue['id'], dist)
-
-    s += ' <a class="vbutton" href="/checkin_long?%s">checkin with options</a>' % \
-	    escape(urllib.urlencode( { 
-		'vid' : venue['id'], 
-		'vname' : venue['name'].encode('utf-8'),
-		'dist' : dist,
-		} ))
-
-    location = venue.get('location')
-    if location is not None:
-	lat = location.get('lat')
-	lng = location.get('lng')
-	if lat is not None and lng is not None:
-	    s += ' <a class="vbutton" href="/coords?%s">move to</a>' % \
-		    escape(urllib.urlencode( {
-			'geolat' : lat,
-			'geolong' : lng,
-			} ))
-
-    # Link to venue page on Foursquare regular website.
-    s += ' <a class="vbutton" href="http://foursquare.com/venue/%s">web</a>' % venue['id']
-
-    return '<div class="buttonbox">%s</div>' % s
 
 def addr_fmt(venue):
     """
@@ -1112,33 +1076,9 @@ class FriendsHandler(webapp.RequestHandler):
 		})
 
 
-
-def venue_fmt(venue, lat, lon):
+def venues_list(jsn):
     """
-    Format a venue in the venue search page.
-    """
-    dist = None
-    dist_str = ''
-    location = venue.get('location', {})
-    vlat = location.get('lat')
-    vlon = location.get('lng')
-    if vlat is not None and vlon is not None:
-	dist = distance(lat, lon, vlat, vlon)
-	compass = bearing(lat, lon, vlat, vlon)
-	dist_str = '(%.1f mi %s)<br>' % (dist, compass)
-
-    s = ''
-    s += '<a class="button" href="/venue?vid=%s"><b>%s</b></a> %s<br>%s' % (
-	    escape(venue['id']), escape(venue['name']), 
-	    venue_cmds(venue, dist), 
-	    addr_fmt(venue))
-    s += dist_str
-
-    return s
-
-def venues_list(jsn, lat, lon):
-    """
-    Format a list of venues in the venue search page.
+    Get a list of venues for the venue search page.
     """
 
     groups = jsn.get('groups')
@@ -1146,30 +1086,15 @@ def venues_list(jsn, lat, lon):
 	venues = jsn.get('venues', [])
     else:
 	# Venues may be split across groups so collect them all in one list.
-	venues = []
-	for group in groups:
-	    venues.extend(group['items'])
+	venues = itertools.chain.from_iterable([ group.get('items', []) for group in groups ])
 
-    venues = remove_dup_vids(venues)
+    # Remove duplicated venue IDs.
+    venues = { v.get('id') : v for v in venues }.values()
 
-    # Sort venues ascending by distance. If distance field is missing,
-    # use a very large value.
-    venues.sort(key = lambda v: v['location'].get('distance', '1000000'))
+    # Sort venues ascending by distance. If distance field is missing, use a
+    # very large value.
+    return sorted(venues, key = lambda v: v['location'].get('distance', '1000000'))
 
-    return [venue_fmt(v, lat, lon) for v in venues]
-
-def remove_dup_vids(venues):
-    """
-    Return a new list of venues with all duplicate entries removed.
-    """
-    vids = []
-    newvenues = []
-    for v in venues:
-	id = v['id']
-	if id not in vids:
-	    vids.append(id)
-	    newvenues.append(v)
-    return newvenues
 
 class VenuesHandler(webapp.RequestHandler):
     """
@@ -1205,10 +1130,11 @@ class VenuesHandler(webapp.RequestHandler):
 	    logging.error(jsn)
 	    return jsn
 
-	vlist = venues_list(response, lat, lon)
 	renderpage(self, 'venues.htm',
 		{
-		    'venues' : vlist,
+		    'venues' : venues_list(response),
+		    'lat' : lat,
+		    'lon' : lon,
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 
@@ -1985,7 +1911,7 @@ class UnknownHandler(webapp.RequestHandler):
     def get(self, unknown_path):
 	errorpage(self, 'Unknown URL: /%s' % escape(unknown_path), 404)
 
-    # logging.getLogger().setLevel(logging.DEBUG)
+# logging.getLogger().setLevel(logging.DEBUG)
 app = webapp.WSGIApplication([
     ('/', MainHandler),
     ('/setlochelp', SetlocHelpHandler),
@@ -2020,10 +1946,6 @@ app = webapp.WSGIApplication([
     ('/photo', PhotoHandler),
     ('/(.*)', UnknownHandler),
     ], debug=True)
-# util.run_wsgi_app(application)
 
-
-# if __name__ == '__main__':
-#     main()
 
 # vim:set tw=0:
