@@ -12,11 +12,11 @@ Version: 0.0.11
 Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a>)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: February 6, 2013
+Last updated: February 7, 2013
 </pre>
 """
 
-USER_AGENT = 'plainsq:0.0.11 20130206'
+USER_AGENT = 'plainsq:0.0.11 20130207'
 
 
 from google.appengine.ext import webapp
@@ -50,17 +50,23 @@ jinja_environment = jinja2.Environment(
     loader = jinja2.FileSystemLoader(os.path.dirname(__file__) + '/templates')
 )
 
+def encode_any(s):
+    if isinstance(s, unicode):
+	s = s.encode('utf8')
+    elif not isinstance(s, str):
+	s = str(s)
+    return s
+
 def urlencode_filter(s):
     if type(s) == 'Markup':
         s = s.unescape()
-    s = s.encode('utf8')
-    s = urllib.quote_plus(s)
+    s = urllib.quote_plus(encode_any(s))
     return Markup(s)
 
 jinja_environment.filters['urlencode'] = urlencode_filter
 
 def urlparms_filter(parms):
-    return urllib.urlencode( { k : str(v).encode('utf8') for k, v in parms.items() } )
+    return urllib.urlencode( { k : encode_any(v) for k, v in parms.items() } )
 
 jinja_environment.filters['urlparms'] = urlparms_filter
 
@@ -70,7 +76,7 @@ def convcoords_filter(coords):
 jinja_environment.filters['convcoords'] = convcoords_filter
 
 def wordchars_filter(s):
-    return re.sub(r'[^a-zA-Z0-9_]', '', str(s))
+    return re.sub(r'[^a-zA-Z0-9_]', '', encode_any(s))
 
 jinja_environment.filters['wordchars'] = wordchars_filter
 
@@ -88,7 +94,7 @@ jinja_environment.filters['fuzzydelta'] = fuzzydelta_filter
 
 def phonefmt_filter(phone):
     phoneStr = ''
-    phone = str(phone)
+    phone = encode_any(phone)
     if len(phone) > 6:
 	phoneStr = '(%s)%s-%s' % (phone[0:3], phone[3:6], phone[6:])
     return phoneStr
