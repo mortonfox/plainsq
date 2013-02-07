@@ -438,24 +438,7 @@ def userheader(self, client):
 	logging.error(jsn)
 	return jsn
 
-    firstname = user.get('firstName', '')
-    photo = user.get('photo', '')
-
-    venueName = ''
-    checkins = user.get('checkins')
-    if checkins is not None:
-	items = checkins.get('items')
-	if items is not None and len(items) > 0:
-	    venue = items[0].get('venue')
-	    if venue is not None:
-		venueName = venue.get('name', '')
-
-    return {
-	    'firstname' : firstname,
-	    'venueName' : venueName,
-	    'photo' : photo,
-	    'jsn' : jsn,
-	    }
+    return { 'user' : user, 'jsn' : jsn }
 
 
 class LoginHandler(webapp.RequestHandler):
