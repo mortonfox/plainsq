@@ -51,11 +51,10 @@ jinja_environment = jinja2.Environment(
 )
 
 def encode_any(s):
-    if isinstance(s, unicode):
-	s = s.encode('utf8')
-    elif not isinstance(s, str):
-	s = str(s)
-    return s
+    try:
+	return str(s)
+    except UnicodeEncodeError:
+	return unicode(s).encode('utf8')
 
 def urlencode_filter(s):
     if type(s) == 'Markup':
