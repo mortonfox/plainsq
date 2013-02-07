@@ -28,7 +28,7 @@
 
     <img src="{{ iconurl|e }}" alt="" style="float:right; padding:3px;">
     <b>{{ badge.name|e }}</b><br>
-    {{ badge.description|default(badge.hint)|e }}<br>
+    {{ badge.description|d(badge.hint)|e }}<br>
     {{ unlockstr(badge) }}<br style="clear:both">
 {%- endmacro %}
 

@@ -1,19 +1,18 @@
+{% from 'macros.htm' import find_notifs %}
 {% extends 'base.htm' %}
 {% set title = 'Main' %}
 
 {# Unread notifications count can be found in the notification
    tray in the user query. #}
 {% macro unreadcount() -%}
-    {% set unread = -1 %}
-    {% if userheader %}
-	{% set jsn = userheader.jsn %}
-	{% call(notif) find_notifs(jsn.notifications, 'notificationTray') %}
-	    {% if notif.item %}
-		{% set unread = notif.item.unreadCount|default(-1) %}
-	    {% endif %}
-	{% endcall %}
-    {% endif %}
-    {{ unread|e }}
+    {%- set unread = [-1] %}
+    {%- if userheader %}
+	{%- set jsn = userheader.jsn %}
+	{%- call(notif) find_notifs(jsn.notifications, 'notificationTray') %}
+	    {%- do unread.insert(0, notif.unreadCount|d(-1)) %}
+	{%- endcall %}
+    {%- endif -%}
+    {{ unread[0]|e }}
 {%- endmacro %}
 
 {% block body %}

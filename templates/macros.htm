@@ -138,11 +138,11 @@
 {% macro special_fmt(special) -%}
     <table class="image" style="float:right">
 	<caption style="caption-side: bottom">
-	    {{ special.title | default('Special Offer') | e }}
+	    {{ special.title | d('Special Offer') | e }}
 	</caption>
 	<tr>
 	    <td>
-		<img src="http://foursquare.com/img/specials/{{ special.icon | default('check-in') | urlencode }}.png" alt="">
+		<img src="http://foursquare.com/img/specials/{{ special.icon | d('check-in') | urlencode }}.png" alt="">
 	    </td>
 	</tr>
     </table>
@@ -208,8 +208,8 @@
 {%- endmacro %}
 
 {% macro comments_cmd(checkin) -%}
-    {% set comments = checkin.comments|default({ 'count' : 0 }) %}
-    {% set photos = checkin.photos|default({ 'count' : 0 }) %}
+    {% set comments = checkin.comments|d({ 'count' : 0 }) %}
+    {% set photos = checkin.photos|d({ 'count' : 0 }) %}
     <span class="buttonbox">
 	<a class="vbutton" href="/comments?chkid={{ checkin.id|urlencode }}">
 		{{ make_plural(comments.count, 'comment') }}, 
@@ -261,9 +261,9 @@
 {%- endmacro %}
 
 {% macro find_notifs(notif, ntype) -%}
-    {% for n in notif if n.type|lower == ntype|lower %}	
+    {%- for n in notif if n.type|lower == ntype|lower -%}
 	{{ caller(n.item) }}
-    {% endfor %}
+    {%- endfor %}
 {%- endmacro %}
 
 {# vim:set ft=htmldjango tw=0: #}
