@@ -402,6 +402,16 @@ def call4sq(self, client, method, path, params = {}):
 		'Error %d from Foursquare API call to %s:<br>%s' % (e.code, e.geturl(), errormsg))
 	return
 
+    except Exception:
+	cla, exc, _ = sys.exc_info()
+	excName = cla.__name__
+	try:
+	    excArgs = exc.__dict__["args"]
+	except KeyError:
+	    excArgs = "<no args>"
+	errorpage(self, '%s: %s' % excName, excArgs)
+	return 
+
 def renderpage(self, template_file, params={}):
     """
     Render a page using Jinja2.
