@@ -93,13 +93,16 @@
 	    <a href="tel:{{ phone|urlencode }}">{{ phoneStr|e }}</a><br>
 	{% endif %}
 
-	{% set twitter = contact.twitter|wordchars %}
-	{% if twitter %}
-	    <a href="http://mobile.twitter.com/{{ twitter|urlencode }}">@{{ twitter|e }}</a><br>
-	{% endif %}
-
+	{{ twitter_fmt(contact.twitter) }}
     {% endif %}
 
+{%- endmacro %}
+
+{% macro twitter_fmt(username) -%}
+    {% set twitter = username|wordchars %}
+    {% if twitter %}
+	<a href="http://mobile.twitter.com/{{ twitter|urlencode }}">@{{ twitter|e }}</a><br>
+    {% endif %}
 {%- endmacro %}
 
 {% macro category_fmt(cat) -%}
@@ -108,9 +111,9 @@
 {%- endmacro %}
 
 {% macro name_fmt(user) -%}
-    {% if user %}
-	{{ user.firstName|e }} {{ user.lastName|e }}
-    {% endif %}
+    {%- if user -%}
+	<a class="button" href="/user?userid={{ user.id|urlencode }}">{{ user.firstName|e }} {{ user.lastName|e }}</a>
+    {%- endif %}
 {%- endmacro %}
 
 {% macro venue_checkin_fmt(checkin) -%}

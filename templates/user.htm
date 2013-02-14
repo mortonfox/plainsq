@@ -1,28 +1,28 @@
-{% from 'macros.htm' import venue_checkin_fmt, map_image, venue_cmds, addr_fmt, category_fmt, tips_fmt, specials_fmt, photo_fmt, name_fmt %}
+{% from 'macros.htm' import name_fmt, twitter_fmt %}
 {% extends 'base.htm' %}
 {% set title = 'User Profile' %}
 
 {% block body %}
 
-<p><img src="{{ user.photo|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user) }}
+<p><img src="{{ user.photo|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user) }}<br>
 {% set contact = user.contact %}
 {% if contact %}
     {% if contact.homeCity %}
-	<br>{{ contact.homeCity|e }}
+	{{ contact.homeCity|e }}<br>
     {% endif %}
     {% if contact.homeCity %}
-	<br>{{ contact.homeCity|e }}
+	{{ contact.homeCity|e }}<br>
     {% endif %}
     {% if contact.email %}
-	<br><a href="mailto:{{ contact.email|urlencode }}">{{ contact.email|e }}</a>
+	<a href="mailto:{{ contact.email|urlencode }}">{{ contact.email|e }}</a><br>
     {% endif %}
     {% if contact.phone %}
 	{% set phoneStr = contact.phone|phonefmt %}
-	<br><a href="tel:{{ contact.phone|urlencode }}">{{ phoneStr|e }}</a>
+	<a href="tel:{{ contact.phone|urlencode }}">{{ phoneStr|e }}</a><br>
     {% endif %}
-    {% set twitter = contact.twitter|wordchars %}
-    {% if twitter %}
-	<br><a href="http://mobile.twitter.com/{{ twitter|urlencode }}">@{{ twitter|e }}</a><br>
+    {{ twitter_fmt(contact.twitter) }}
+    {% if contact.facebook %}
+    	<a href="http://www.facebook.com/{{ contact.facebook|urlencode }}">Facebook</a>
     {% endif %}
 {% endif %}
 
