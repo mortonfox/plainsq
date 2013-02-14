@@ -39,7 +39,7 @@ if (isandroid) {
 	    {% set venue = user.checkins['items'][0].venue %}
 	    {% set venueName = venue.name if venue %}
 	{% endif %}
-	<p><img src="{{ user.photo|e }}" class="usericon" alt="" style="float:left">
+	<p><img src="{{ user.photo|e }}" class="usericon, lefticon" alt="">
 	{{ user.firstName|e }} @ {{ venueName|e }}
 	<br>Loc: {{ [lat, lon] | convcoords }}
 	<br style="clear:both">

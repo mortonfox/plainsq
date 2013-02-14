@@ -46,7 +46,7 @@
     {% if mayor %}
 	{% set user = mayor.user %}
 	{% if user %}
-	    <p><img src="{{ user.photo|e }}" class="usericon" alt="" style="float:left; margin-right: 1em">
+	    <p><img src="{{ user.photo|e }}" class="usericon, lefticon" alt="">
 	    {{ name_fmt(user) }} ({{ mayor.count|e }}x) from {{ mayor.homeCity|e }} is the mayor.
 	    <br style="clear:both"> 
 	{% else %}

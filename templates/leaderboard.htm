@@ -5,7 +5,7 @@
 {% macro leader_fmt(leader) -%}
     {% set user = leader.user %}
     {% set scores = leader.scores %}
-    <img src="{{ user.photo|e }}" class="usericon" alt="" style="float:right"><b>{{ leader.rank|e }}: 
+    <img src="{{ user.photo|e }}" class="usericon, righticon" alt=""><b>{{ leader.rank|e }}: 
 	{{ name_fmt(user) }} from {{ user.homeCity|e }}</b><br>
     Recent: {{ scores.recent|e }}<br>
     Max: {{ scores.max|e }}<br>

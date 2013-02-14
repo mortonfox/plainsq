@@ -23,7 +23,7 @@
     {% call(mayor) find_notifs(notif, 'mayorship') %}
 	{% set user = mayor.user %}
 	{% if user %}
-	    <p><img src="{{ user.photo|e }}" class="usericon" alt="" style="float:left">{{ mayor.message|e }}
+	    <p><img src="{{ user.photo|e }}" class="usericon, lefticon" alt="">{{ mayor.message|e }}
 	    <br style="clear:both">
 	{% else %}
 	    <p>{{ mayor.message|e }}
@@ -37,7 +37,7 @@
 	    {% if img %}
 		{% set iconurl = img.prefix ~ img.sizes[0] ~ img.name %}
 	    {% endif %}
-	    <p><img src="{{ iconurl|e }}" style="float:left">
+	    <p><img src="{{ iconurl|e }}" class="lefticon">
 	    You've unlocked the {{ b.name|e }} badge: {{ b.description|e }}
 	    <br style="clear:both">
 	{% endfor %}
@@ -45,7 +45,7 @@
 
     {% call(score) find_notifs(notif, 'score') %}
 	{% for s in score.scores %}
-	    <p><img src="{{ s.icon|e }}" style="float:left">
+	    <p><img src="{{ s.icon|e }}" class="lefticon">
 	    {{ s.points|e }} points: {{ s.message|e }}
 	    <br style="clear:both">
 	{% endfor %}
@@ -59,7 +59,7 @@
 	{% for leader in leaderboard.leaderboard %}
 	    {% set user = leader.user %}
 	    {% set scores = leader.scores %}
-	    <p><img src="{{ user.photo|e }}" class="usericon" alt="" style="float:left"> #{{ leader.rank|e }}: {{ user.firstName|e }} {{ user.lastName|e }} from {{ user.homeCity|e }}<br>
+	    <p><img src="{{ user.photo|e }}" class="usericon, lefticon" alt=""> #{{ leader.rank|e }}: {{ user.firstName|e }} {{ user.lastName|e }} from {{ user.homeCity|e }}<br>
 	    {{ scores.recent|e }} points, {{ scores.checkinsCount|e }} checkins, {{ scores.max|e }} max<br style="clear:both">
 	{% endfor %}
 	<p>{{ leaderboard.message|e }}

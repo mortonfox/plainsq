@@ -26,7 +26,7 @@
 	{% set iconurl = img.prefix ~ img.sizes[0] ~ img.name %}
     {% endif %}
 
-    <img src="{{ iconurl|e }}" alt="" style="float:right; padding:3px;">
+    <img src="{{ iconurl|e }}" alt="" class="righticon">
     <b>{{ badge.name|e }}</b><br>
     {{ badge.description|d(badge.hint)|e }}<br>
     {{ unlockstr(badge) }}<br style="clear:both">

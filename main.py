@@ -586,6 +586,46 @@ def fuzzy_delta(delta):
 		else:
 		    return 'now'
 
+class UserHandler(webapp.RequestHandler):
+    """
+    This handler displays info on one user.
+    """
+    def get(self):
+	no_cache(self)
+
+	(lat, lon) = coords(self)
+	client = getclient(self)
+	if client is None:
+	    return
+
+	userid = self.request.get('userid')
+	if userid == '':
+	    self.redirect('/')
+	    return
+
+	jsn = call4sq(self, client, 'get', path='/users/%s' % userid)
+	if jsn is None:
+	    return
+
+	resp = jsn.get('response')
+	if resp is None:
+	    logging.error('Missing response from /users:')
+	    logging.error(jsn)
+	    return jsn
+
+	user = resp.get('user')
+	if user is None:
+	    logging.error('Missing user from /users:')
+	    logging.error(jsn)
+	    return jsn
+
+	renderpage(self, 'user.htm',
+		{
+		    'user' : user,
+		    'lat' : lat,
+		    'lon' : lon,
+		    'debug_json' : debug_json_str(self, jsn),
+		})
 
 
 class VInfoHandler(webapp.RequestHandler):
@@ -1670,6 +1710,7 @@ app = webapp.WSGIApplication([
     ('/oauth', OAuthHandler),
     ('/logout', LogoutHandler),
     ('/venue', VInfoHandler),
+    ('/user', UserHandler),
     ('/history', HistoryHandler),
     ('/debug', DebugHandler),
     ('/notif', NotifHandler),

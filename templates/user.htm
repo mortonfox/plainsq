@@ -1,0 +1,33 @@
+{% from 'macros.htm' import venue_checkin_fmt, map_image, venue_cmds, addr_fmt, category_fmt, tips_fmt, specials_fmt, photo_fmt, name_fmt %}
+{% extends 'base.htm' %}
+{% set title = 'User Profile' %}
+
+{% block body %}
+
+<p><img src="{{ user.photo|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user) }}
+{% set contact = user.contact %}
+{% if contact %}
+    {% if contact.homeCity %}
+	<br>{{ contact.homeCity|e }}
+    {% endif %}
+    {% if contact.homeCity %}
+	<br>{{ contact.homeCity|e }}
+    {% endif %}
+    {% if contact.email %}
+	<br><a href="mailto:{{ contact.email|urlencode }}">{{ contact.email|e }}</a>
+    {% endif %}
+    {% if contact.phone %}
+	{% set phoneStr = contact.phone|phonefmt %}
+	<br><a href="tel:{{ contact.phone|urlencode }}">{{ phoneStr|e }}</a>
+    {% endif %}
+    {% set twitter = contact.twitter|wordchars %}
+    {% if twitter %}
+	<br><a href="http://mobile.twitter.com/{{ twitter|urlencode }}">@{{ twitter|e }}</a><br>
+    {% endif %}
+{% endif %}
+
+<br style="clear:both">
+
+{% endblock %}
+
+{# vim:set ft=htmldjango tw=0: #}

@@ -30,7 +30,7 @@
     {{ comments_cmd(checkin) }}<br>
 
     {% if user.photo %}
-	<img src="{{ user.photo|e }}" class="usericon" alt="" style="float:right; padding:3px;">
+	<img src="{{ user.photo|e }}" class="usericon, righticon" alt="">
     {% endif %}
 
     {% if venue %}

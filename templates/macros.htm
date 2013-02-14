@@ -103,7 +103,7 @@
 {%- endmacro %}
 
 {% macro category_fmt(cat) -%}
-    <p><img src="{{ cat.icon }}" style="float:left">{{ cat.parents|join(' / ') ~ ' / ' ~ cat.name }}
+    <p><img src="{{ cat.icon }}" class="lefticon">{{ cat.parents|join(' / ') ~ ' / ' ~ cat.name }}
     <br style="clear:both">
 {%- endmacro %}
 
@@ -114,7 +114,7 @@
 {%- endmacro %}
 
 {% macro venue_checkin_fmt(checkin) -%}
-    <p><img src="{{ checkin.user.photo }}" class="usericon" alt="" style="float:left">{{ name_fmt(checkin.user) }} from {{ checkin.user.homeCity|e }}
+    <p><img src="{{ checkin.user.photo }}" class="usericon, lefticon" alt="">{{ name_fmt(checkin.user) }} from {{ checkin.user.homeCity|e }}
     {% if checkin.shout %}
 	<br>"{{ checkin.shout|e }}"
     {% endif %}
@@ -127,7 +127,7 @@
 	<p><b>Tips:</b>
 	{% for grp in tips.groups %}
 	    {% for tip in grp['items'] %} 
-		<p><img src="{{ tip.user.photo }}" class="usericon" alt="" style="float:left; margin-right: 1em">{{ name_fmt(tip.user) }} from {{ tip.user.homeCity|e }} says: 
+		<p><img src="{{ tip.user.photo }}" class="usericon, lefticon" alt="">{{ name_fmt(tip.user) }} from {{ tip.user.homeCity|e }} says: 
 		{{ tip.text|e }}<br>
 		(Posted: {{ tip.createdAt | datefmt }})<br style="clear:both">
 	    {% endfor %}
@@ -136,7 +136,7 @@
 {%- endmacro %}
 
 {% macro special_fmt(special) -%}
-    <table class="image" style="float:right">
+    <table class="image, righticon">
 	<caption style="caption-side: bottom">
 	    {{ special.title | d('Special Offer') | e }}
 	</caption>

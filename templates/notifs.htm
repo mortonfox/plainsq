@@ -15,7 +15,7 @@
 	{% set venue = target.object %}
     {% endif %}
 
-    <img src="{{ notif.image.fullPath|e }}" class="usericon" alt="" style="float:right">
+    <img src="{{ notif.image.fullPath|e }}" class="usericon, righticon" alt="">
     <i>{{ notif.createdAt | datefmt }}</i><br>
     {{ notif.text|e }}<br>
 

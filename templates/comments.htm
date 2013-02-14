@@ -8,7 +8,7 @@
 {{ venue_fmt(checkin.venue, lat, lon) }}
 
 <hr>
-<p><img src="{{ checkin.user.photo }}" class="usericon" alt="" style="float:left">{{ name_fmt(checkin.user) }} from {{ checkin.user.homeCity|e }} checked in
+<p><img src="{{ checkin.user.photo }}" class="usericon, lefticon" alt="">{{ name_fmt(checkin.user) }} from {{ checkin.user.homeCity|e }} checked in
 {{ checkin.createdAt|fuzzydelta }}
 
 {% set source = checkin.source %}
@@ -24,7 +24,7 @@
 {% set score = checkin.score %}
 {% if score %}
     {% for s in score.scores %}
-	<p><img src="{{ s.icon|e }}" style="float:left">
+	<p><img src="{{ s.icon|e }}" class="lefticon">
 	{{ s.points|e }} points: {{ s.message|e }}
 	<br style="clear:both">
     {% endfor %}
