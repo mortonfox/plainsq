@@ -9,7 +9,7 @@
 
     {% if venue %}
 	{% set location = venue.location %}
-	<a class="button" href="/venue?vid={{ venue.id|urlencode }}"><b>{{ name_fmt(user) }}</b> @ {{ venue.name|e }}</a><br>
+	<b>{{ name_fmt(user) }}</b> @ <a class="button" href="/venue?vid={{ venue.id|urlencode }}">{{ venue.name|e }}</a><br>
 	{% set user_shown = true %}
     {% else %}
 	{% set location = checkin.location %}
