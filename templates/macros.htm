@@ -198,7 +198,7 @@
     {% endif %}
 {%- endmacro %}
 
-{% macro photo_fmt(photo, venue_id = none, checkin_id = none) -%}
+{% macro photo_fmt(photo, venue_id = none, checkin_id = none, post = none) -%}
     {% set photoparms = { 'photoid' : photo.id } %}
     {% if venue_id %}
 	{% do photoparms.update({ 'venid' : venue_id }) %}
@@ -207,6 +207,16 @@
     {% endif %}
     <p>{{ name_fmt(photo.user) }}:<br>
     <a href="/photo?{{ photoparms|urlparms }}"><img src="{{ photo|photourl }}"></a><br>
+
+    {% if post %}
+	{% if post.text %}
+	    "{{ post.text|e }}"<br>
+	{% endif %}
+	{% if post.source %}
+	    via <a href="{{ post.url|e }}">{{ post.source.name|e }}</a> <img src="{{ post.source.icon|e }}"><br>
+	{% endif %}
+    {% endif %}
+
     ({{ photo.createdAt|fuzzydelta }})<br>
 {%- endmacro %}
 
@@ -283,6 +293,14 @@
     {%- for n in notif if n.type|lower == ntype|lower -%}
 	{{ caller(n.item) }}
     {%- endfor %}
+{%- endmacro %}
+
+{% macro find_post(posts, photoid) -%}
+    {% for post in posts if post.photoId == photoid %}
+	{{ caller(post) }}
+    {% else %}
+	{{ caller(none) }}
+    {% endfor %}
 {%- endmacro %}
 
 {# vim:set ft=htmldjango tw=0: #}

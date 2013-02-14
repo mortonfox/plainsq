@@ -12,11 +12,11 @@ Version: 0.0.11
 Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a>)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: February 12, 2013
+Last updated: February 14, 2013
 </pre>
 """
 
-USER_AGENT = 'plainsq:0.0.11 20130212'
+USER_AGENT = 'plainsq:0.0.11 20130214'
 
 
 from google.appengine.ext import webapp
