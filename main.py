@@ -409,7 +409,7 @@ def call4sq(self, client, method, path, params = {}):
 	    excArgs = exc.__dict__["args"]
 	except KeyError:
 	    excArgs = "<no args>"
-	errorpage(self, '%s: %s' % excName, excArgs)
+	errorpage(self, '%s: %s' % (excName, excArgs))
 	return 
 
 def renderpage(self, template_file, params={}):
