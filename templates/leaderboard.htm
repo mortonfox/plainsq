@@ -6,7 +6,7 @@
     {% set user = leader.user %}
     {% set scores = leader.scores %}
     <img src="{{ user.photo.prefix|e ~ '36x36' ~ user.photo.suffix|e }}" class="usericon, righticon" alt=""><b>{{ leader.rank|e }}: 
-	{{ name_fmt(user) }} from {{ user.homeCity|e }}</b><br>
+	{{ name_fmt(user) }}</b><br>
     Recent: {{ scores.recent|e }}<br>
     Max: {{ scores.max|e }}<br>
     Checkins: {{ scores.checkinsCount|e }}<br style="clear:both">

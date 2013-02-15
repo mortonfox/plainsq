@@ -24,6 +24,8 @@ if (isandroid) {
 </script>
 </head>
 
+{% from 'macros.htm' import name_fmt %}
+
 <body>
     <div class="header"><a class="button" href="/">Home</a>
 	{% if not nolocate %}
@@ -35,7 +37,7 @@ if (isandroid) {
     {% if userheader %}
 	{% set user = userheader.user %}
 	<p><img src="{{ user.photo.prefix|e ~ '36x36' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">
-	{{ user.firstName|e }}
+	{{ name_fmt(user) }}
 	{% set venueName = '' %}
 	{% if user.checkins and user.checkins['items'] is iterable %}
 	    {% set venue = user.checkins['items'][0].venue %}
