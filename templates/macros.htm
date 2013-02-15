@@ -106,7 +106,7 @@
 {%- endmacro %}
 
 {% macro category_fmt(cat) -%}
-    <p><img src="{{ cat.icon }}" class="lefticon">{{ cat.parents|join(' / ') ~ ' / ' ~ cat.name }}
+    <p><img src="{{ cat.icon.prefix|e ~ 'bg_32' ~ cat.icon.suffix|e }}" class="lefticon">{{ cat.name|e }}
     <br style="clear:both">
 {%- endmacro %}
 
@@ -117,7 +117,8 @@
 {%- endmacro %}
 
 {% macro venue_checkin_fmt(checkin) -%}
-    <p><img src="{{ checkin.user.photo }}" class="usericon, lefticon" alt="">{{ name_fmt(checkin.user) }} from {{ checkin.user.homeCity|e }}
+    {% set user = checkin.user %}
+    <p><img src="{{ user.photo.prefix|e ~ '32x32' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user) }} from {{ user.homeCity|e }}
     {% if checkin.shout %}
 	<br>"{{ checkin.shout|e }}"
     {% endif %}
@@ -130,7 +131,8 @@
 	<p><b>Tips:</b>
 	{% for grp in tips.groups %}
 	    {% for tip in grp['items'] %} 
-		<p><img src="{{ tip.user.photo }}" class="usericon, lefticon" alt="">{{ name_fmt(tip.user) }} from {{ tip.user.homeCity|e }} says: 
+		{% set user = tip.user %}
+		<p><img src="{{ user.photo.prefix|e ~ '32x32' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user) }} from {{ user.homeCity|e }} says: 
 		{{ tip.text|e }}<br>
 		(Posted: {{ tip.createdAt | datefmt }})<br style="clear:both">
 	    {% endfor %}
@@ -188,10 +190,10 @@
 {%- endmacro %}
 
 {% macro specials_fmt(special_items, nearby=false) -%}
-    {% if special_items %}
+    {% if special_items and special_items['items'] %}
 	<p><b>Specials{% if nearby %} nearby{% endif %}:</b>
 	<ul class="vlist">
-	    {% for special in special_items %}
+	    {% for special in special_items['items'] %}
 		<li>{{ special_fmt(special) }}</li>
 	    {% endfor %}
 	</ul>
@@ -206,7 +208,7 @@
 	{% do photoparms.update({ 'chkid' : checkin_id }) %}
     {% endif %}
     <p>{{ name_fmt(photo.user) }}:<br>
-    <a href="/photo?{{ photoparms|urlparms }}"><img src="{{ photo|photourl }}"></a><br>
+    <a href="/photo?{{ photoparms|urlparms }}"><img src="{{ photo.prefix|e ~ '100x100' ~ photo.suffix|e }}"></a><br>
 
     {% if post %}
 	{% if post.text %}
@@ -239,7 +241,7 @@
 {# Format a venue in the venue search page. #}
 {% macro venue_fmt(venue, lat, lon) -%}
     {% call(cat) prim_category(venue) %}
-	<table class="image" align="right"><caption align="bottom">{{ cat.name|e }}</caption><tr><td><img src="{{ cat.icon|e }}"></td></tr></table>
+	<img class="righticon" src="{{ cat.icon.prefix|e ~ 'bg_32' ~ cat.icon.suffix|e }}">
     {% endcall %}
 
     {% set location = venue.location %}
@@ -255,6 +257,9 @@
 {% macro history_checkin_fmt(checkin, lat, lon) -%}
     {% set venue = checkin.venue %}
     {% if venue %}
+	{% call(cat) prim_category(venue) %}
+	    <img class="righticon" src="{{ cat.icon.prefix|e ~ 'bg_32' ~ cat.icon.suffix|e }}">
+	{% endcall %}
 
 	{% if venue.id %}
 	    {% set location = venue.location %}

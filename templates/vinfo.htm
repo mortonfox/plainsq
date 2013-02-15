@@ -27,7 +27,9 @@
 	{{ category_fmt(cat) }}
     {% endfor %}
 
-    <p>Tags: {{ venue.tags | join(', ') | e }}
+    {% if venue.tags %}
+	<p>Tags: {{ venue.tags | join(', ') | e }}
+    {% endif %}
 
     {% if venue.stats %}
 	<p>Checkins: {{ venue.stats.checkinsCount|e }} 
@@ -46,12 +48,19 @@
     {% if mayor %}
 	{% set user = mayor.user %}
 	{% if user %}
-	    <p><img src="{{ user.photo|e }}" class="usericon, lefticon" alt="">
+	    <p><img src="{{ user.photo.prefix|e ~ '36x36' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">
 	    {{ name_fmt(user) }} ({{ mayor.count|e }}x) from {{ mayor.homeCity|e }} is the mayor.
 	    <br style="clear:both"> 
 	{% else %}
 	    <p>No mayor.
 	{% endif %}
+    {% endif %}
+
+    {% set reasons = venue.reasons %}
+    {% if reasons and reasons['items'] %}
+	{% for reason in reasons['items'] %}
+	    <p>{{ reason.message|e }}
+	{% endfor %}
     {% endif %}
 
     {% set herenow = venue.hereNow %}

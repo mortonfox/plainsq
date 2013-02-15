@@ -5,7 +5,7 @@
     {% if specials_jsn.count == 0 %}
 	<p>No specials nearby.</p>
     {% else %}
-	{{ specials_fmt(specials_jsn['items']) }}
+	{{ specials_fmt(specials_jsn) }}
     {% endif %}
 {% endblock %}
 

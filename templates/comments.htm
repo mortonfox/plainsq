@@ -8,7 +8,8 @@
 {{ venue_fmt(checkin.venue, lat, lon) }}
 
 <hr>
-<p><img src="{{ checkin.user.photo }}" class="usericon, lefticon" alt="">{{ name_fmt(checkin.user) }} from {{ checkin.user.homeCity|e }} checked in
+{% set user = checkin.user %}
+<p><img src="{{ user.photo.prefix|e ~ '36x36' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user) }} from {{ user.homeCity|e }} checked in
 {{ checkin.createdAt|fuzzydelta }}
 
 {% set source = checkin.source %}

@@ -6,7 +6,13 @@
 {% else %}
     {% set backurl = '/comments?chkid=' ~ checkin_id|urlencode %}
 {% endif %}
-<p><a href="{{ backurl }}"><img src="{{ photourl|e }}"></a></p>
+<p><a href="{{ backurl }}"><img src="{{ photo.prefix|e ~ '500x500' ~ photo.suffix|e }}"></a></p>
+{{ photo.createdAt|fuzzydelta }}
+
+{% set source = photo.source %}
+{% if source %}
+    <br>via <a href="{{ source.url|e }}">{{ source.name|e }}</a>
+{% endif %}
 {% endblock %}
 
 {# vim:set ft=htmldjango tw=0: #}

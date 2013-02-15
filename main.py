@@ -365,7 +365,7 @@ def call4sq(self, client, method, path, params = {}):
     try:
 	# Supply a default version.
 	if 'v' not in params:
-	    params['v'] = '20110615'
+	    params['v'] = '20130214'
 
 	if method == 'post':
 	    result = client.post(path, params)
@@ -431,8 +431,7 @@ def userheader(self, client):
     """ 
     Display the logged-in user's icon, name, and position.
     """
-    jsn = call4sq(self, client, 'get', '/users/self',
-	    params = { 'v' : '20110914' })
+    jsn = call4sq(self, client, 'get', '/users/self')
     if jsn is None:
 	return
 
@@ -1005,7 +1004,7 @@ class VenuesHandler(webapp.RequestHandler):
 	# then just do a nearest venues search.
 	query = self.request.get('query')
 
-	parms = { "ll" : '%s,%s' % (lat, lon), "limit" : 50, 'v' : '20110615' }
+	parms = { "ll" : '%s,%s' % (lat, lon), "limit" : 50 }
 	if query != '':
 	    parms['query'] = query
 
@@ -1647,7 +1646,7 @@ class PhotoHandler(webapp.RequestHandler):
 		{
 		    'venue_id' : venue_id,
 		    'checkin_id' : checkin_id,
-		    'photourl' : photo['url'],
+		    'photo' : photo,
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 

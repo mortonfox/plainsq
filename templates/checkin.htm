@@ -23,7 +23,7 @@
     {% call(mayor) find_notifs(notif, 'mayorship') %}
 	{% set user = mayor.user %}
 	{% if user %}
-	    <p><img src="{{ user.photo|e }}" class="usericon, lefticon" alt="">{{ mayor.message|e }}
+	    <p><img src="{{ user.photo.prefix|e ~ '36x36' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">{{ mayor.message|e }}
 	    <br style="clear:both">
 	{% else %}
 	    <p>{{ mayor.message|e }}
@@ -59,7 +59,7 @@
 	{% for leader in leaderboard.leaderboard %}
 	    {% set user = leader.user %}
 	    {% set scores = leader.scores %}
-	    <p><img src="{{ user.photo|e }}" class="usericon, lefticon" alt=""> #{{ leader.rank|e }}: {{ name_fmt(user, button=false) }} from {{ user.homeCity|e }}<br>
+	    <p><img src="{{ user.photo.prefix|e ~ '36x36' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt=""> #{{ leader.rank|e }}: {{ name_fmt(user, button=false) }} from {{ user.homeCity|e }}<br>
 	    {{ scores.recent|e }} points, {{ scores.checkinsCount|e }} checkins, {{ scores.max|e }} max<br style="clear:both">
 	{% endfor %}
 	<p>{{ leaderboard.message|e }}
