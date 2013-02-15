@@ -1,6 +1,22 @@
-{% from 'macros.htm' import name_fmt, twitter_fmt, make_plural %}
+{% from 'macros.htm' import name_fmt, twitter_fmt, make_plural, history_checkin_fmt %}
 {% extends 'base.htm' %}
 {% set title = 'User Profile' %}
+
+{% macro userlist(ulist) -%}
+    {% set first = true %}
+    {% for group in ulist.groups %}
+	{% if group['items'] is iterable and group['items']|length > 0 %}
+	    {% if first %}
+		<hr>
+		{% set first = false %}
+	    {% endif %}
+	    <p><b>{{ group.name }}:</b><br>
+	    {% for user in group['items'] %}
+		<a href="/user?userid={{ user.id|urlencode }}"><img class="usericon" src="{{ user.photo.prefix|e ~ '32x32' ~ user.photo.suffix|e }}"></a>
+	    {% endfor %}
+	{% endif %}
+    {% endfor %}
+{%- endmacro %}
 
 {% block body %}
 
@@ -32,6 +48,18 @@
     {{ user.bio|e }}<br>
 {% endif %}
 
+{% set pageinfo = user.pageInfo %}
+{% if pageinfo %}
+    <p>
+    <img src="{{ pageinfo.banner|e }}"><br>
+    {{ pageinfo.description|e }}<br>
+    {% if pageinfo.links and pageinfo.links['items'] is iterable %}
+	{% for link in pageinfo.links['items'] %}
+	    <a href="{{ link.url|e }}">{{ link.url|e }}</a><br>
+	{% endfor %}
+    {% endif %}
+{% endif %}
+
 {% if user.scores %}
     <p><b>Recent Stats</b><br>
     Points: {{ user.scores.recent|e }}<br>
@@ -60,6 +88,39 @@
 {% endif %}
 {% if user.tips %}
     {{ make_plural(user.tips.count, 'tip') }}<br>
+{% endif %}
+
+{% if user.checkins and user.checkins['items'] is iterable %}
+    <hr>
+    <p><b>Recent checkin:</b><br>
+    {% for checkin in user.checkins['items'] %}
+	{{ history_checkin_fmt(checkin, lat, lon) }}<br>
+    {% endfor %}
+{% endif %}
+
+{% if user.friends and user.friends.groups is iterable %}
+    {{ userlist(user.friends) }}
+{% endif %}
+
+{% if user.following and user.following.groups is iterable %}
+    {{ userlist(user.following) }}
+{% endif %}
+
+{% if user.followers and user.followers.groups is iterable %}
+    {{ userlist(user.followers) }}
+{% endif %}
+
+{% if user.photos and user.photos['items'] is iterable and user.photos['items']|length > 0 %}
+    <hr><p><b>Recent Photos:</b><br>
+    {% for photo in user.photos['items'] %}
+	{% set photoparms = { 'photoid' : photo.id } %}
+	{% if photo.checkin %}
+	    {% do photoparms.update({ 'chkid' : photo.checkin.id }) %}
+	{% elif photo.venue %}
+	    {% do photoparms.update({ 'venid' : photo.venue.id }) %}
+	{% endif %}
+	<a href="/photo?{{ photoparms|urlparms }}"><img src="{{ photo.prefix|e ~ '100x100' ~ photo.suffix|e }}"></a>
+    {% endfor %}
 {% endif %}
 
 {% endblock %}
