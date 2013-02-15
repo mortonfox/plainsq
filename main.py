@@ -84,7 +84,7 @@ def datefmt_filter(s):
 
 jinja_environment.filters['datefmt'] = datefmt_filter
 
-dt_now = datetime.utcnow()
+dt_now = datetime.now()
 def fuzzydelta_filter(s):
     d1 = datetime.fromtimestamp(s)
     return fuzzy_delta(dt_now - d1)
