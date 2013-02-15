@@ -1,3 +1,4 @@
+{% from 'macros.htm' import name_fmt %}
 {% extends 'base.htm' %}
 {% set title = 'Notifications' %}
 
@@ -13,6 +14,8 @@
 	{% set checkin = target.object %}
     {% elif targettype == 'venue' %}
 	{% set venue = target.object %}
+    {% elif targettype == 'user' %}
+	{% set user = target.object %}
     {% endif %}
 
     <img src="{{ notif.image.fullPath|e }}" class="usericon, righticon" alt="">
@@ -25,6 +28,10 @@
 
     {% if checkin %}
 	<a class="button" href="/comments?chkid={{ checkin.id|urlencode }}">{{ checkin.venue.name|e }}</a>
+    {% endif %}
+
+    {% if user %}
+	{{ name_fmt(user) }}
     {% endif %}
 
     <br style="clear:both">

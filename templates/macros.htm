@@ -110,9 +110,9 @@
     <br style="clear:both">
 {%- endmacro %}
 
-{% macro name_fmt(user) -%}
+{% macro name_fmt(user, button=true) -%}
     {%- if user -%}
-	<a class="button" href="/user?userid={{ user.id|urlencode }}">{{ user.firstName|e }} {{ user.lastName|e }}</a>
+	<a {% if button %}class="button"{% endif %} href="/user?userid={{ user.id|urlencode }}">{{ user.firstName|e }} {{ user.lastName|e }}</a>
     {%- endif %}
 {%- endmacro %}
 

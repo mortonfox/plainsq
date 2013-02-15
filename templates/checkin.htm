@@ -1,4 +1,4 @@
-{% from 'macros.htm' import find_notifs, addr_fmt, special_fmt, map_image, prim_category, category_fmt %}
+{% from 'macros.htm' import name_fmt, find_notifs, addr_fmt, special_fmt, map_image, prim_category, category_fmt %}
 {% extends 'base.htm' %}
 {% set title = 'Checked In' %}
 
@@ -59,7 +59,7 @@
 	{% for leader in leaderboard.leaderboard %}
 	    {% set user = leader.user %}
 	    {% set scores = leader.scores %}
-	    <p><img src="{{ user.photo|e }}" class="usericon, lefticon" alt=""> #{{ leader.rank|e }}: {{ user.firstName|e }} {{ user.lastName|e }} from {{ user.homeCity|e }}<br>
+	    <p><img src="{{ user.photo|e }}" class="usericon, lefticon" alt=""> #{{ leader.rank|e }}: {{ name_fmt(user, button=false) }} from {{ user.homeCity|e }}<br>
 	    {{ scores.recent|e }} points, {{ scores.checkinsCount|e }} checkins, {{ scores.max|e }} max<br style="clear:both">
 	{% endfor %}
 	<p>{{ leaderboard.message|e }}
