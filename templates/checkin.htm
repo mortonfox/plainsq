@@ -1,4 +1,4 @@
-{% from 'macros.htm' import name_fmt, find_notifs, addr_fmt, special_fmt, map_image, prim_category, category_fmt %}
+{% from 'macros.htm' import name_fmt, find_notifs, addr_fmt, make_plural, special_fmt, map_image, prim_category, category_fmt %}
 {% extends 'base.htm' %}
 {% set title = 'Checked In' %}
 
@@ -9,7 +9,8 @@
 
     {% set venue = checkin.venue %}
     {% if venue %}
-	<p><a class="button" href="/venue?vid={{ venue.id|urlencode }}">{{ venue.name|e }}</a><br>{{ addr_fmt(venue) }}
+	<p><a class="button" href="/venue?vid={{ venue.id|urlencode }}">{{ venue.name|e }}</a><br>
+	{{ addr_fmt(venue) }}
 	{% set location = venue.location %}
 	{% if location.lat and location.lng %}
 	    {{ map_image(location.lat, location.lng) }}
@@ -43,13 +44,14 @@
 	{% endfor %}
     {% endcall %}
 
-    {% call(score) find_notifs(notif, 'score') %}
+    {% set score = checkin.score %}
+    {% if score and score.scores %}
 	{% for s in score.scores %}
 	    <p><img src="{{ s.icon|e }}" class="lefticon">
-	    {{ s.points|e }} points: {{ s.message|e }}
+	    {{ make_plural(s.points, 'point') }}: {{ s.message|e }}
 	    <br style="clear:both">
 	{% endfor %}
-    {% endcall %}
+    {% endif %}
 
     {% call(special) find_notifs(notif, 'special') %}
 	<p>{{ special_fmt(special.special) }}

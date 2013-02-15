@@ -12,11 +12,11 @@ Version: 0.0.11
 Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a>)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: February 14, 2013
+Last updated: February 15, 2013
 </pre>
 """
 
-USER_AGENT = 'plainsq:0.0.11 20130214'
+USER_AGENT = 'plainsq:0.0.11 20130215'
 
 
 from google.appengine.ext import webapp
@@ -1233,7 +1233,7 @@ def do_checkin(self, client, vid, useloc = False, broadcast = 'public', shout = 
 	logging.error(jsn)
 	return jsn
 
-    notif = jsn.get('notifications')
+    notif = response.get('notifications')
     if notif is None:
 	logging.error('Missing notifications from /checkins/add:')
 	logging.error(jsn)
@@ -1248,6 +1248,47 @@ def do_checkin(self, client, vid, useloc = False, broadcast = 'public', shout = 
 		'lon' : lon,
 		'debug_json' : debug_json_str(self, jsn),
 	    })
+
+
+class CheckinTestHandler(webapp.RequestHandler):
+    def get(self):
+	no_cache(self)
+
+	client = getclient(self)
+	if client is None:
+	    return
+
+	(lat, lon) = coords(self)
+
+	jsn = {}
+
+	response = jsn.get('response')
+	if response is None:
+	    logging.error('Missing response from /checkins/add:')
+	    logging.error(jsn)
+	    return jsn
+
+	checkin = response.get('checkin')
+	if checkin is None:
+	    logging.error('Missing checkin from /checkins/add:')
+	    logging.error(jsn)
+	    return jsn
+
+	notif = response.get('notifications')
+	if notif is None:
+	    logging.error('Missing notifications from /checkins/add:')
+	    logging.error(jsn)
+	    return jsn
+
+	renderpage(self, 'checkin.htm', 
+		{ 
+		    'checkin' : checkin,
+		    'notif' : notif,
+		    'lat' : lat,
+		    'lon' : lon,
+		    'debug_json' : debug_json_str(self, jsn),
+		})
+
 
 
 class CheckinHandler(webapp.RequestHandler):
@@ -1722,6 +1763,7 @@ app = webapp.WSGIApplication([
     ('/setloc', SetlocHandler),
     ('/setlocjs', SetlocJSHandler),
     ('/checkin', CheckinHandler),
+    ('/checkintest', CheckinTestHandler),
     ('/addvenue', AddVenueHandler),
     ('/about', AboutHandler),
     ('/geoloc', GeoLocHandler),
