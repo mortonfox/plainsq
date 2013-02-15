@@ -1251,6 +1251,9 @@ def do_checkin(self, client, vid, useloc = False, broadcast = 'public', shout = 
 
 
 class CheckinTestHandler(webapp.RequestHandler):
+    """
+    Test harness for processing a checkin response.
+    """
     def get(self):
 	no_cache(self)
 
@@ -1260,7 +1263,7 @@ class CheckinTestHandler(webapp.RequestHandler):
 
 	(lat, lon) = coords(self)
 
-	jsn = {}
+	jsn = { }
 
 	response = jsn.get('response')
 	if response is None:

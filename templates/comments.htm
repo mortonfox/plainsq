@@ -1,4 +1,4 @@
-{% from 'macros.htm' import find_post, make_plural, venue_fmt, name_fmt, comment_fmt, photo_fmt %}
+{% from 'macros.htm' import find_post, make_plural, venue_fmt, name_fmt, comment_fmt, photo_fmt, checkin_badge_fmt %}
 {% extends 'base.htm' %}
 {% set title = 'Checkin Details' %}
 
@@ -9,7 +9,8 @@
 
 <hr>
 {% set user = checkin.user %}
-<p><img src="{{ user.photo.prefix|e ~ '36x36' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user) }} from {{ user.homeCity|e }} checked in
+<p><img src="{{ user.photo.prefix|e ~ '36x36' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user) }} from {{ user.homeCity|e }} 
+<a href="http://foursquare.com/user/{{ user.id|e }}/checkin/{{ checkin.id|e }}">checked in</a>
 {{ checkin.createdAt|fuzzydelta }}
 
 {% set source = checkin.source %}
@@ -20,8 +21,10 @@
 {% if checkin.shout %}
     <br>"{{ checkin.shout|e }}"
 {% endif %}
-
 <br style="clear:both">
+
+{{ checkin_badge_fmt(checkin) }}
+
 {% set score = checkin.score %}
 {% if score %}
     {% for s in score.scores %}

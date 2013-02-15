@@ -54,7 +54,7 @@
 	    {% endif %}
 	{% endif %}
 
-	<a class="vbutton" href="http://foursquare.com/venue/{{ venue.id|e }}">web</a>
+	<a class="vbutton" href="{{ venue.canonicalUrl|e }}">web</a>
     </div>
 {%- endmacro %}
 
@@ -306,6 +306,20 @@
     {% else %}
 	{{ caller(none) }}
     {% endfor %}
+{%- endmacro %}
+
+{% macro checkin_badge_fmt(checkin) -%}
+    {% set badges = checkin.badges %}
+    {% if badges and badges['items'] is iterable %}
+	{% for b in badges['items'] %}
+	    {% set iconurl = '' %}
+	    {% set iconurl = b.image.prefix ~ b.image.sizes[0] ~ b.image.name if b.image and b.image.sizes is iterable %}
+	    <p><img src="{{ iconurl|e }}" class="lefticon">
+	    {{ b.unlockMessage|e }}<br>
+	    {{ b.description|e }}
+	    <br style="clear:both">
+	{% endfor %}
+    {% endif %}
 {%- endmacro %}
 
 {# vim:set ft=htmldjango tw=0: #}
