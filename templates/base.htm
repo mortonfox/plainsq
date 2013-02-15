@@ -34,13 +34,15 @@ if (isandroid) {
 
     {% if userheader %}
 	{% set user = userheader.user %}
-	{% set venueName = '' %}
-	{% if user.checkins and user.checkins['items'] and user.checkins['items']|length > 0 %}
-	    {% set venue = user.checkins['items'][0].venue %}
-	    {% set venueName = venue.name if venue %}
-	{% endif %}
 	<p><img src="{{ user.photo.prefix|e ~ '36x36' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">
-	{{ user.firstName|e }} @ {{ venueName|e }}
+	{{ user.firstName|e }}
+	{% set venueName = '' %}
+	{% if user.checkins and user.checkins['items'] is iterable %}
+	    {% set venue = user.checkins['items'][0].venue %}
+	    {% if venue %}
+		@ {{ venue.name|e }}
+	    {% endif %}
+	{% endif %}
 	<br>Loc: {{ [lat, lon] | convcoords }}
 	<br style="clear:both">
     {% endif %}

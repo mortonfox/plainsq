@@ -31,18 +31,17 @@
 	{% endif %}
     {% endcall %}
 
-    {% call(badge) find_notifs(notif, 'badge') %}
-	{% for b in badge.itervalues() %}
+    {% set badges = checkin.badges %}
+    {% if badges and badges['items'] is iterable %}
+	{% for b in badges['items'] %}
 	    {% set iconurl = '' %}
-	    {% set img = b.image %}
-	    {% if img %}
-		{% set iconurl = img.prefix ~ img.sizes[0] ~ img.name %}
-	    {% endif %}
+	    {% set iconurl = b.image.prefix ~ b.image.sizes[0] ~ b.image.name if b.image and b.image.sizes is iterable %}
 	    <p><img src="{{ iconurl|e }}" class="lefticon">
-	    You've unlocked the {{ b.name|e }} badge: {{ b.description|e }}
+	    {{ b.unlockMessage|e }}<br>
+	    {{ b.description|e }}
 	    <br style="clear:both">
 	{% endfor %}
-    {% endcall %}
+    {% endif %}
 
     {% set score = checkin.score %}
     {% if score and score.scores %}
