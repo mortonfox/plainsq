@@ -1,4 +1,4 @@
-{% from 'macros.htm' import name_fmt, twitter_fmt %}
+{% from 'macros.htm' import name_fmt, twitter_fmt, make_plural %}
 {% extends 'base.htm' %}
 {% set title = 'User Profile' %}
 
@@ -27,6 +27,40 @@
 {% endif %}
 
 <br style="clear:both">
+
+{% if user.bio %}
+    {{ user.bio|e }}<br>
+{% endif %}
+
+{% if user.scores %}
+    <p><b>Recent Stats</b><br>
+    Points: {{ user.scores.recent|e }}<br>
+    Max: {{ user.scores.max|e }}<br>
+    Checkins: {{ user.scores.checkinsCount|e }}<br>
+{% endif %}
+
+<p>
+{% if user.checkins %}
+    {{ make_plural(user.checkins.count, 'checkin') }}<br>
+{% endif %}
+{% if user.photos %}
+    {{ make_plural(user.photos.count, 'photo') }}<br>
+{% endif %}
+{% if user.friends %}
+    {{ make_plural(user.friends.count, 'friend') }}<br>
+{% endif %}
+{% if user.following %}
+    {{ make_plural(user.following.count, 'following') }}<br>
+{% endif %}
+{% if user.mayorships %}
+    <a class="button" href="/mayor?userid={{ user.id|urlencode }}">{{ make_plural(user.mayorships.count, 'mayorship') }}</a><br>
+{% endif %}
+{% if user.badges %}
+    <a class="button" href="/badges?userid={{ user.id|urlencode }}">{{ make_plural(user.badges.count, 'badge') }}</a><br>
+{% endif %}
+{% if user.tips %}
+    {{ make_plural(user.tips.count, 'tip') }}<br>
+{% endif %}
 
 {% endblock %}
 

@@ -682,7 +682,11 @@ class HistoryHandler(webapp.RequestHandler):
 	if client is None:
 	    return
 
-	jsn = call4sq(self, client, 'get', path='/users/self/checkins',
+	userid = self.request.get('userid')
+	if userid == '':
+	    userid = 'self'
+
+	jsn = call4sq(self, client, 'get', path='/users/%s/checkins' % userid,
 		params = { 'limit' : '50' })
 	if jsn is None:
 	    return
@@ -729,7 +733,11 @@ class BadgesHandler(webapp.RequestHandler):
 	if client is None:
 	    return
 
-	jsn = call4sq(self, client, 'get', path='/users/self/badges')
+	userid = self.request.get('userid')
+	if userid == '':
+	    userid = 'self'
+
+	jsn = call4sq(self, client, 'get', path='/users/%s/badges' % userid)
 	if jsn is None:
 	    return
 
@@ -857,7 +865,11 @@ class MayorHandler(webapp.RequestHandler):
 	if client is None:
 	    return
 
-	jsn = call4sq(self, client, 'get', path='/users/self/mayorships')
+	userid = self.request.get('userid')
+	if userid == '':
+	    userid = 'self'
+
+	jsn = call4sq(self, client, 'get', path='/users/%s/mayorships' % userid)
 	if jsn is None:
 	    return
 
