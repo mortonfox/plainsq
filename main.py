@@ -84,9 +84,9 @@ def datefmt_filter(s):
 
 jinja_environment.filters['datefmt'] = datefmt_filter
 
-dt_now = datetime.utcnow()
 def fuzzydelta_filter(s):
     d1 = datetime.fromtimestamp(s)
+    dt_now = datetime.utcnow()
     return fuzzy_delta(dt_now - d1)
 
 jinja_environment.filters['fuzzydelta'] = fuzzydelta_filter
@@ -1748,6 +1748,18 @@ class CommentsHandler(webapp.RequestHandler):
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 
+class TimeTestHandler(webapp.RequestHandler):
+    """
+    Display current time.
+    """
+    def get(self):
+	dt_now = datetime.utcnow()
+	self.response.out.write("""<!DOCTYPE html>
+<html>
+<body>
+Current time: %s (%.2f)
+</body>
+</html>""" % (str(dt_now), (dt_now - datetime(1970, 1, 1)).total_seconds()))
 
 class UnknownHandler(webapp.RequestHandler):
     """
@@ -1779,6 +1791,7 @@ app = webapp.WSGIApplication([
     ('/setlocjs', SetlocJSHandler),
     ('/checkin', CheckinHandler),
     ('/checkintest', CheckinTestHandler),
+    ('/timetest', TimeTestHandler),
     ('/addvenue', AddVenueHandler),
     ('/about', AboutHandler),
     ('/geoloc', GeoLocHandler),
