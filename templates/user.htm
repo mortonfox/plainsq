@@ -20,7 +20,7 @@
 
 {% block body %}
 
-<p><img src="{{ user.photo.prefix|e ~ '36x36' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user) }}<br>
+<p><img src="{{ user.photo.prefix|e ~ '36x36' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user, button=false) }}<br>
 {% set contact = user.contact %}
 {% if contact %}
     {% if contact.homeCity %}

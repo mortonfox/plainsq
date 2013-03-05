@@ -37,7 +37,7 @@ if (isandroid) {
     {% if userheader %}
 	{% set user = userheader.user %}
 	<p><img src="{{ user.photo.prefix|e ~ '36x36' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">
-	{{ name_fmt(user) }}
+	{{ name_fmt(user, button=false) }}
 	{% set venueName = '' %}
 	{% if user.checkins and user.checkins['items'] is iterable %}
 	    {% set venue = user.checkins['items'][0].venue %}

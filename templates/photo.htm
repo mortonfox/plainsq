@@ -20,7 +20,7 @@ Posted
 
 {% set user = photo.user %}
 {% if user %}
-    <br>by <a href="/user?userid={{ user.id|urlencode }}">{{ user.firstName|e }}{% if user.lastName %} {{ user.lastName|e }}{% endif %}</a>
+    <br>by {{ name_fmt(user, button=false) }}
 {% endif %}
 
 {% set venue = photo.venue %}
