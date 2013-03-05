@@ -113,12 +113,7 @@
 {% if user.photos and user.photos['items'] is iterable and user.photos['items']|length > 0 %}
     <hr><p><b>Recent Photos:</b><br>
     {% for photo in user.photos['items'] %}
-	{% set photoparms = { 'photoid' : photo.id } %}
-	{% if photo.checkin %}
-	    {% do photoparms.update({ 'chkid' : photo.checkin.id }) %}
-	{% elif photo.venue %}
-	    {% do photoparms.update({ 'venid' : photo.venue.id }) %}
-	{% endif %}
+	{% set photoparms = { 'photoid' : photo.id, 'userid' : user.id } %}
 	<a href="/photo?{{ photoparms|urlparms }}"><img src="{{ photo.prefix|e ~ '100x100' ~ photo.suffix|e }}"></a>
     {% endfor %}
 {% endif %}

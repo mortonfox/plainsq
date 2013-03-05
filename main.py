@@ -12,11 +12,11 @@ Version: 0.0.11
 Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a>)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: February 15, 2013
+Last updated: March 5, 2013
 </pre>
 """
 
-USER_AGENT = 'plainsq:0.0.11 20130215'
+USER_AGENT = 'plainsq:0.0.11 20130305'
 
 
 from google.appengine.ext import webapp
@@ -1677,6 +1677,7 @@ class PhotoHandler(webapp.RequestHandler):
 
 	checkin_id = self.request.get('chkid')
 	venue_id = self.request.get('venid')
+	user_id = self.request.get('userid')
 	photo_id = self.request.get('photoid')
 	if photo_id == '':
 	    self.redirect('/')
@@ -1701,6 +1702,7 @@ class PhotoHandler(webapp.RequestHandler):
 	renderpage(self, 'photo.htm',
 		{
 		    'venue_id' : venue_id,
+		    'user_id' : user_id,
 		    'checkin_id' : checkin_id,
 		    'photo' : photo,
 		    'debug_json' : debug_json_str(self, jsn),
