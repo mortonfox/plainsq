@@ -9,7 +9,7 @@
 
 <hr>
 {% set user = checkin.user %}
-<p><img src="{{ user.photo.prefix|e ~ '36x36' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user) }} from {{ user.homeCity|e }} 
+<p><img src="{{ user.photo.prefix|e ~ '36x36' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user, button=false) }} from {{ user.homeCity|e }} 
 <a href="http://foursquare.com/user/{{ user.id|e }}/checkin/{{ checkin.id|e }}">checked in</a>
 {{ checkin.createdAt|fuzzydelta }}
 
