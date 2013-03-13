@@ -21,14 +21,11 @@
 {% block body %}
 
 <p><img src="{{ user.photo.prefix|e ~ '36x36' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user, button=false) }}<br>
+{% if user.homeCity %}
+    {{ user.homeCity|e }}<br>
+{% endif %}
 {% set contact = user.contact %}
 {% if contact %}
-    {% if contact.homeCity %}
-	{{ contact.homeCity|e }}<br>
-    {% endif %}
-    {% if contact.homeCity %}
-	{{ contact.homeCity|e }}<br>
-    {% endif %}
     {% if contact.email %}
 	<a href="mailto:{{ contact.email|urlencode }}">{{ contact.email|e }}</a><br>
     {% endif %}

@@ -118,7 +118,7 @@
 
 {% macro venue_checkin_fmt(checkin) -%}
     {% set user = checkin.user %}
-    <p><img src="{{ user.photo.prefix|e ~ '32x32' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user, button=false) }} from {{ user.homeCity|e }}
+    <p><img src="{{ user.photo.prefix|e ~ '32x32' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user, button=false) }}
     {% if checkin.shout %}
 	<br>"{{ checkin.shout|e }}"
     {% endif %}
@@ -132,7 +132,7 @@
 	{% for grp in tips.groups %}
 	    {% for tip in grp['items'] %} 
 		{% set user = tip.user %}
-		<p><img src="{{ user.photo.prefix|e ~ '32x32' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user, button=false) }} from {{ user.homeCity|e }} says: 
+		<p><img src="{{ user.photo.prefix|e ~ '32x32' ~ user.photo.suffix|e }}" class="usericon, lefticon" alt="">{{ name_fmt(user, button=false) }} says: 
 		{{ tip.text|e }}<br>
 		(Posted: {{ tip.createdAt | datefmt }})<br style="clear:both">
 	    {% endfor %}
