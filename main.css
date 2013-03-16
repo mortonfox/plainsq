@@ -13,6 +13,10 @@ body {
     color: #000000;
 }
 
+img {
+    border-style: none;
+}
+
 .vlist { 
     list-style-type: none; 
     padding: 0; 
