@@ -95,7 +95,7 @@ def debug_json_str(self, jsn):
 
 def set_debug(self, debug):
     """
-    Set the debug option.
+    Set the debug option in session.
     """
     self.session['debug'] = bool(debug)
 
@@ -105,6 +105,22 @@ def get_debug(self):
     is turned off.
     """
     return bool(self.session.get('debug'))
+
+def get_map_provider(self):
+    """
+    Get map provider option from session. Currently, we support Google Maps and Bing Maps.
+    """
+    vendor = str(self.session.get('map_provider')).lower()
+    if vendor == 'bing':
+	return 'bing'
+    else:
+	return 'google'
+
+def set_map_provider(self, vendor):
+    """
+    Set map provider option in session. Currently, we support Google Maps and Bing Maps.
+    """
+    self.session['map_provider'] = str(vendor).lower()    
 
 def no_cache(self):
     """
@@ -402,6 +418,7 @@ class MainHandler(MyHandler):
 		    'lon' : lon,
 		    'debugmode' : get_debug(self),
 		    'debug_json' : debug_json_str(self, jsn),
+		    'map_provider' : get_map_provider(self),
 		})
 
 
@@ -599,6 +616,16 @@ class DebugHandler(MyHandler):
     """
     def get(self):
 	set_debug(self, not get_debug(self))
+	self.redirect('/')
+
+class MapProvHandler(MyHandler):
+    """
+    Handler for changing map provider.
+    """
+    def get(self):
+	vendor = get_map_provider(self)
+	new_vendor = 'google' if vendor == 'bing' else 'bing'
+	set_map_provider(self, new_vendor)
 	self.redirect('/')
 
 class BadgesHandler(MyHandler):
@@ -1626,6 +1653,7 @@ app = webapp2.WSGIApplication([
     ('/user', UserHandler),
     ('/history', HistoryHandler),
     ('/debug', DebugHandler),
+    ('/mapprov', MapProvHandler),
     ('/notif', NotifHandler),
     ('/leader', LeaderHandler),
     ('/badges', BadgesHandler),
