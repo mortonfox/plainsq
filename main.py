@@ -52,8 +52,8 @@ AUTH_URL = 'https://foursquare.com/oauth2/authenticate'
 ACCESS_URL = 'https://foursquare.com/oauth2/access_token'
 API_URL = 'https://api.foursquare.com/v2'
 
-DEFAULT_LAT = '39.7'
-DEFAULT_LON = '-75.6'
+DEFAULT_LAT = 39.7
+DEFAULT_LON = -75.6
 
 # Send location parameters if distance is below MAX_MILES_LOC.
 MAX_MILES_LOC = 1.1
@@ -68,18 +68,11 @@ class AccessToken(db.Model):
     """
     token = db.StringProperty(required=True)
 
-class Coords(db.Model):
-    """
-    Coordinates entity.
-    """
-    coords = db.StringProperty(required=True)
-
 class User(db.Model):
     """
     User login entity.
     """
     access_token = db.ReferenceProperty(AccessToken)
-    coords = db.ReferenceProperty(Coords)
     created = db.DateTimeProperty(auto_now_add=True)
 
 def pprint_to_str(obj):
@@ -131,83 +124,29 @@ def no_cache(self):
     self.response.headers['User-Agent'] = USER_AGENT
 
 
-@db.transactional
-def _set_coords(uuid_str, coord_str):
-    user = User.get_by_key_name(uuid_str)
-    if user is None:
-	user = User(key_name = uuid_str)
-	user.put()
-
-    coords = user.coords
-    if coords is None:
-	coords = Coords(coords = coord_str, parent = user)
-	coords.put()
-	user.coords = coords
-	user.put()
-    else:
-	coords.coords = coord_str
-	coords.put()
-
 def set_coords(self, lat, lon):
     """
-    Store the coordinates in our table.
+    Store coordinates in session.
     """
-    coord_str = "%s,%s" % (lat, lon)
+    self.session['coords_lat'] = float(lat)
+    self.session['coords_lon'] = float(lon)
 
-    uuid = self.request.cookies.get(TOKEN_COOKIE)
-    if uuid is not None:
-	_set_coords(uuid, coord_str)
-
-	# Update memcache.
-	memcache.set(COORD_PREFIX + uuid, coord_str)
-
-
-def get_coord_str(self):
-    """
-    Given the token cookie, get coordinates either from
-    memcache or datastore.
-    """
-
-    # Try to get coordinates from memcache first.
-    uuid = self.request.cookies.get(TOKEN_COOKIE)
-    if uuid is not None:
-	coord_key = COORD_PREFIX + uuid
-
-	coord_str = memcache.get(coord_key)
-	if coord_str is not None:
-	    return coord_str
-
-	# If not in memcache, try the datastore.
-	result = User.get_or_insert(uuid).coords
-	if result is not None:
-	    coord_str = result.coords
-	    memcache.set(coord_key, coord_str)
-	    return coord_str
-
-    return None
 
 def coords(self):
     """
     Get user's coordinates from coords table. If not found in table,
     use default coordinates.
     """
-    lat = None
-    lon = None
-
-    coord_str = get_coord_str(self)
-
-    if coord_str is not None:
-	try:
-	    (lat, lon) = coord_str.split(',')
-	except ValueError:
-	    pass
+    lat = self.session.get('coords_lat')
+    lon = self.session.get('coords_lon')
 
     if lat is None or lon is None:
 	lat = DEFAULT_LAT
 	lon = DEFAULT_LON
 	set_coords(self, lat, lon)
 
-    return (lat, lon)
+    return (float(lat), float(lon))
+
 
 def get_api_keys():
     yaml_file = os.path.dirname(__file__) + '/apikeys.yml' 
@@ -1267,14 +1206,11 @@ class GeoLocHandler(MyHandler):
 
 class PurgeHandler(MyHandler):
     """
-    Purge old database entries from CoordsTable and AuthToken.
+    Purge old database entries from AuthToken.
     """
     @db.transactional
     def purge_user(self, user):
 	for tmp in AccessToken.all().ancestor(user):
-	    tmp.delete()
-
-	for tmp in Coords.all().ancestor(user):
 	    tmp.delete()
 
 	user.delete()
