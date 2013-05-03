@@ -8,7 +8,7 @@
 <p>PlainSquare uses OAuth version 2 to log in to Foursquare to avoid having to store user passwords. PlainSquare supports version 2 of the Foursquare API. It is written in Python and designed for hosting on Google App Engine. 
 
 <pre>
-Version: 0.0.11
+Version: 0.0.12
 Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a>)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
@@ -16,7 +16,7 @@ Last updated: May 3, 2013
 </pre>
 """
 
-USER_AGENT = 'plainsq:0.0.11 20130503'
+USER_AGENT = 'plainsq:0.0.12 20130503'
 
 import itertools
 import json
