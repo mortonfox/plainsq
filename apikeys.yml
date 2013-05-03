@@ -1,0 +1,13 @@
+# Install your Foursquare API keys here. You can have different keys for
+# development and production environments.
+
+development:
+    callback_url: http://localhost:8081/oauth
+    client_id: 313XKCMSSWSWHW2PRZX231LBRIGB4OFCESREW5T1E2Z5MBPR
+    client_secret: P4AFGZNDXIU5MCBWMOUTZLHCHYWDC5RFOEYP3I2EZAP3SNIO
+
+production:
+    callback_url: https://plainsq.appspot.com/oauth
+    client_id: A4JHSA3P1CL1YTMOFSERA3AESLHBCZBT4BAJQOL1NLFZYADH
+    client_secret: WI1EHJFHV5L3NJGEN054W0UTA43MXC3DYNXJSNKYKBJTFWAM
+

@@ -12,11 +12,11 @@ Version: 0.0.11
 Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a>)
 Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
 Created: January 28, 2011
-Last updated: March 5, 2013
+Last updated: May 3, 2013
 </pre>
 """
 
-USER_AGENT = 'plainsq:0.0.11 20130305'
+USER_AGENT = 'plainsq:0.0.11 20130503'
 
 
 from google.appengine.ext import webapp
@@ -44,6 +44,7 @@ import urllib
 import urllib2
 import jinja2
 from markupsafe import Markup
+import yaml
 
 jinja_environment = jinja2.Environment(
     extensions = ['jinja2.ext.do'],
@@ -147,18 +148,6 @@ METERS_PER_MILE = 1609.344
 # Send location parameters if distance is below MAX_MILES_LOC.
 MAX_MILES_LOC = 1.1
 
-if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
-    # In development environment, use local callback.
-    # Also need to use a different consumer because Foursquare
-    # checks the callback URL.
-    CALLBACK_URL = 'http://localhost:8081/oauth'
-    CLIENT_ID = '313XKCMSSWSWHW2PRZX231LBRIGB4OFCESREW5T1E2Z5MBPR'
-    CLIENT_SECRET = 'P4AFGZNDXIU5MCBWMOUTZLHCHYWDC5RFOEYP3I2EZAP3SNIO'
-else:
-    # Production environment.
-    CALLBACK_URL = 'https://plainsq.appspot.com/oauth'
-    CLIENT_ID = 'A4JHSA3P1CL1YTMOFSERA3AESLHBCZBT4BAJQOL1NLFZYADH'
-    CLIENT_SECRET = 'WI1EHJFHV5L3NJGEN054W0UTA43MXC3DYNXJSNKYKBJTFWAM'
 
 def escape(s):
     return cgi.escape(s, quote = True)
@@ -297,17 +286,33 @@ def coords(self):
 
     return (lat, lon)
 
+def get_api_keys():
+    yaml_file = os.path.dirname(__file__) + '/apikeys.yml' 
+    with open(yaml_file, 'r') as fh:
+	env_name = 'development' if os.environ.get('SERVER_SOFTWARE','').startswith('Devel') else 'production'
+	api_keys = yaml.load(fh)
+
+	# Do some error checking.
+	if env_name not in api_keys:
+	    raise Exception('No API keys for %s environment in %s' % (env_name, yaml_file))
+	for field in ('client_id', 'client_secret', 'callback_url'):
+	    if field not in api_keys[env_name]:
+		raise Exception('No %s for %s environment in %s' % (field, env_name, yaml_file))
+
+	return api_keys[env_name]
+
 def newclient():
     """
     Create a new oauth2 client.
     """
     return oauth2.Client(
-	    client_id = CLIENT_ID,
-	    client_secret = CLIENT_SECRET,
-	    callback_url = CALLBACK_URL,
+	    client_id = newclient.api_keys['client_id'],
+	    client_secret = newclient.api_keys['client_secret'],
+	    callback_url = newclient.api_keys['callback_url'],
 	    auth_url = AUTH_URL,
 	    access_url = ACCESS_URL,
 	    api_url = API_URL)
+newclient.api_keys = get_api_keys()
 
 def getclient(self):
     """
