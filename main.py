@@ -18,11 +18,6 @@ Last updated: May 3, 2013
 
 USER_AGENT = 'plainsq:0.0.11 20130503'
 
-from google.appengine.api.urlfetch import DownloadError 
-from google.appengine.api import images
-from google.appengine.ext import db
-from google.appengine.api import memcache
-
 import itertools
 import json
 import uuid
@@ -33,11 +28,17 @@ import sys
 import StringIO
 import os
 import cgi
-from datetime import (datetime, date, timedelta)
 import urllib
 import urllib2
 import webapp2
 import yaml
+
+from google.appengine.api.urlfetch import DownloadError 
+from google.appengine.api import images
+from google.appengine.ext import db
+from google.appengine.api import memcache
+from datetime import (datetime, date, timedelta)
+from webapp2_extras import sessions
 
 import oauth2
 import jinjawrap
@@ -346,8 +347,27 @@ def userheader(self, client):
 
     return { 'user' : user, 'jsn' : jsn }
 
+# Add session store to RequestHandler.
+# Taken from the webapp2 extra session example.
+class MyHandler(webapp2.RequestHandler):              
+    def dispatch(self):                                 # override dispatch
+        # Get a session store for this request.
+        self.session_store = sessions.get_store(request = self.request)
 
-class LoginHandler(webapp2.RequestHandler):
+        try:
+            # Dispatch the request.
+            webapp2.RequestHandler.dispatch(self)       # dispatch the main handler
+        finally:
+            # Save all sessions.
+            self.session_store.save_sessions(self.response)
+
+    @webapp2.cached_property
+    def session(self):
+        # Returns a session using the default cookie key.
+        return self.session_store.get_session()
+
+
+class LoginHandler(MyHandler):
     """
     Page that we show if the user is not logged in.
     """
@@ -355,7 +375,7 @@ class LoginHandler(webapp2.RequestHandler):
 	# This page should be cached. So omit the no_cache() call.
 	renderpage(self, 'login.htm')
 
-class LoginHandler2(webapp2.RequestHandler):
+class LoginHandler2(MyHandler):
     """
     Second part of login handler. This does the actual login and redirection to
     Foursquare.
@@ -365,7 +385,7 @@ class LoginHandler2(webapp2.RequestHandler):
 	client = newclient()
 	self.redirect(client.requestAuth())
 
-class MainHandler(webapp2.RequestHandler):
+class MainHandler(MyHandler):
     def get(self):
 	no_cache(self)
 	(lat, lon) = coords(self)
@@ -389,7 +409,7 @@ class MainHandler(webapp2.RequestHandler):
 		})
 
 
-class SetlocHelpHandler(webapp2.RequestHandler):
+class SetlocHelpHandler(MyHandler):
     """
     Handler for 'Set location' help info.
     """
@@ -397,7 +417,7 @@ class SetlocHelpHandler(webapp2.RequestHandler):
 	# This page should be cached. So omit the no_cache() call.
 	renderpage(self, 'setlochelp.htm')
 
-class OAuthHandler(webapp2.RequestHandler):
+class OAuthHandler(MyHandler):
     """
     This handler is the callback for the OAuth handshake. It stores the access
     token and secret in cookies and redirects to the main page.
@@ -435,7 +455,7 @@ class OAuthHandler(webapp2.RequestHandler):
 
 	self.redirect('/')
 
-class LogoutHandler(webapp2.RequestHandler):
+class LogoutHandler(MyHandler):
     """
     Handler for user logout command.
     """
@@ -452,7 +472,7 @@ class LogoutHandler(webapp2.RequestHandler):
 	renderpage(self, 'logout.htm')
 
 
-class UserHandler(webapp2.RequestHandler):
+class UserHandler(MyHandler):
     """
     This handler displays info on one user.
     """
@@ -494,7 +514,7 @@ class UserHandler(webapp2.RequestHandler):
 		})
 
 
-class VInfoHandler(webapp2.RequestHandler):
+class VInfoHandler(MyHandler):
     """
     This handler displays info on one venue.
     """
@@ -537,7 +557,7 @@ class VInfoHandler(webapp2.RequestHandler):
 
 
 
-class HistoryHandler(webapp2.RequestHandler):
+class HistoryHandler(MyHandler):
     """
     Handler for history command.
     """
@@ -578,7 +598,7 @@ class HistoryHandler(webapp2.RequestHandler):
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 
-class DebugHandler(webapp2.RequestHandler):
+class DebugHandler(MyHandler):
     """
     Handler for Debug command. Toggle debug mode.
     """
@@ -588,7 +608,7 @@ class DebugHandler(webapp2.RequestHandler):
 	self.redirect('/')
 
 
-class BadgesHandler(webapp2.RequestHandler):
+class BadgesHandler(MyHandler):
     """
     Handler for badges command.
     """
@@ -633,7 +653,7 @@ class BadgesHandler(webapp2.RequestHandler):
 		})
 
 
-class NotifHandler(webapp2.RequestHandler):
+class NotifHandler(MyHandler):
     """
     Handler for notifications command.
     """
@@ -685,7 +705,7 @@ class NotifHandler(webapp2.RequestHandler):
 		})
 
 
-class LeaderHandler(webapp2.RequestHandler):
+class LeaderHandler(MyHandler):
     """
     Handler for leaderboard command.
     """
@@ -720,7 +740,7 @@ class LeaderHandler(webapp2.RequestHandler):
 		})
 
 
-class MayorHandler(webapp2.RequestHandler):
+class MayorHandler(MyHandler):
     """
     Handler for mayor command.
     """
@@ -761,7 +781,7 @@ class MayorHandler(webapp2.RequestHandler):
 		})
 
 
-class FriendsHandler(webapp2.RequestHandler):
+class FriendsHandler(MyHandler):
     """
     Handler for Find Friends command.
     """
@@ -823,7 +843,7 @@ def venues_list(jsn):
     return sorted(venues, key = lambda v: v['location'].get('distance', '1000000'))
 
 
-class VenuesHandler(webapp2.RequestHandler):
+class VenuesHandler(MyHandler):
     """
     Handler for venue search.
     """
@@ -939,7 +959,7 @@ def isFloat(s):
     except ValueError:
 	return False
 
-class SetlocJSHandler(webapp2.RequestHandler):
+class SetlocJSHandler(MyHandler):
     """
     Client-side version of SetlocHandler. If Javascript is enabled, use this to
     avoid hitting Geocoding API quotas.
@@ -961,7 +981,7 @@ class SetlocJSHandler(webapp2.RequestHandler):
 
 	renderpage(self, 'setlocjs.htm', { 'newloc' : newloc })
 
-class SetlocHandler(webapp2.RequestHandler):
+class SetlocHandler(MyHandler):
     """
     This handles the 'set location' input box if Javascript is disabled. If the
     locations string is six or more digits, it will be parsed as user-input
@@ -1019,7 +1039,7 @@ class SetlocHandler(webapp2.RequestHandler):
 		})
 
 
-class CoordsHandler(webapp2.RequestHandler):
+class CoordsHandler(MyHandler):
     """
     This handles user-input coordinates. Sets the location to 
     those coordinates and brings up the venue search page.
@@ -1088,7 +1108,7 @@ def do_checkin(self, client, vid, useloc = False, broadcast = 'public', shout = 
 	    })
 
 
-class CheckinTestHandler(webapp2.RequestHandler):
+class CheckinTestHandler(MyHandler):
     """
     Test harness for processing a checkin response.
     """
@@ -1132,7 +1152,7 @@ class CheckinTestHandler(webapp2.RequestHandler):
 
 
 
-class CheckinHandler(webapp2.RequestHandler):
+class CheckinHandler(MyHandler):
     """
     This handles user checkins by venue ID.
     """
@@ -1157,7 +1177,7 @@ class CheckinHandler(webapp2.RequestHandler):
 
 	do_checkin(self, client, vid, useloc)
 
-class AddVenueHandler(webapp2.RequestHandler):
+class AddVenueHandler(MyHandler):
     """
     Add a venue at the current coordinates with no address information.
     """
@@ -1197,7 +1217,7 @@ class AddVenueHandler(webapp2.RequestHandler):
 
 	do_checkin(self, client, venue['id'], True)
 
-class AboutHandler(webapp2.RequestHandler):
+class AboutHandler(MyHandler):
     """
     Handler for About command.
     """
@@ -1205,7 +1225,7 @@ class AboutHandler(webapp2.RequestHandler):
 	# This page should be cached. So omit the no_cache() call.
 	renderpage(self, 'about.htm', { 'about' : __doc__ })
 
-class GeoLocHandler(webapp2.RequestHandler):
+class GeoLocHandler(MyHandler):
     """
     Geolocation Handler with GPS monitoring and refresh.
     Uses HTML5 Geolocation API.
@@ -1214,7 +1234,7 @@ class GeoLocHandler(webapp2.RequestHandler):
 	# This page should be cached. So omit the no_cache() call.
 	renderpage(self, 'geoloc.htm')
 
-class PurgeHandler(webapp2.RequestHandler):
+class PurgeHandler(MyHandler):
     """
     Purge old database entries from CoordsTable and AuthToken.
     """
@@ -1246,7 +1266,7 @@ class PurgeHandler(webapp2.RequestHandler):
 	renderpage(self, 'purge.htm', { 'count' : count })
 
 
-class CheckinLong2Handler(webapp2.RequestHandler):
+class CheckinLong2Handler(MyHandler):
     """
     Continuation of CheckinLongHandler after the user submits the
     checkin form with options.
@@ -1288,7 +1308,7 @@ class CheckinLong2Handler(webapp2.RequestHandler):
 	do_checkin(self, client, vid, useloc, ','.join(broadstrs), shout)
 
 
-class CheckinLongHandler(webapp2.RequestHandler):
+class CheckinLongHandler(MyHandler):
     """
     This handles user checkin with options.
     """
@@ -1346,7 +1366,7 @@ class CheckinLongHandler(webapp2.RequestHandler):
 		})
 
 
-class SpecialsHandler(webapp2.RequestHandler):
+class SpecialsHandler(MyHandler):
     """
     Retrieves a list of nearby specials.
     """
@@ -1385,7 +1405,7 @@ class SpecialsHandler(webapp2.RequestHandler):
 		})
 
 
-class DelCommentHandler(webapp2.RequestHandler):
+class DelCommentHandler(MyHandler):
     """
     Delete a comment from a check-in.
     """
@@ -1415,7 +1435,7 @@ class DelCommentHandler(webapp2.RequestHandler):
 
 	self.redirect('/comments?chkid=%s' % escape(checkin_id))
 
-class AddCommentHandler(webapp2.RequestHandler):
+class AddCommentHandler(MyHandler):
     """
     Add a comment to a check-in.
     """
@@ -1446,7 +1466,7 @@ class AddCommentHandler(webapp2.RequestHandler):
 
 	self.redirect('/comments?chkid=%s' % escape(checkin_id))
 
-class AddPhotoHandler(webapp2.RequestHandler):
+class AddPhotoHandler(MyHandler):
     """
     Add a photo to a check-in.
     """
@@ -1489,7 +1509,7 @@ class AddPhotoHandler(webapp2.RequestHandler):
 	    self.redirect('/comments?chkid=%s' % escape(checkin_id))
 
 	    
-class PhotoHandler(webapp2.RequestHandler):
+class PhotoHandler(MyHandler):
     """
     View full-size version of a photo.
     """
@@ -1535,7 +1555,7 @@ class PhotoHandler(webapp2.RequestHandler):
 		})
 
 
-class CommentsHandler(webapp2.RequestHandler):
+class CommentsHandler(MyHandler):
     """
     View comments on a check-in.
     """
@@ -1576,7 +1596,7 @@ class CommentsHandler(webapp2.RequestHandler):
 		    'debug_json' : debug_json_str(self, jsn),
 		})
 
-class TimeTestHandler(webapp2.RequestHandler):
+class TimeTestHandler(MyHandler):
     """
     Display current time.
     """
@@ -1589,12 +1609,17 @@ Current time: %s (%.2f)
 </body>
 </html>""" % (str(dt_now), (dt_now - datetime(1970, 1, 1)).total_seconds()))
 
-class UnknownHandler(webapp2.RequestHandler):
+class UnknownHandler(MyHandler):
     """
     Handle bad URLs.
     """
     def get(self, unknown_path):
 	errorpage(self, 'Unknown URL: /%s' % escape(unknown_path), 404)
+
+config = {}
+config['webapp2_extras.sessions'] = {
+    'secret_key': 'sekrit-key',
+}
 
 # logging.getLogger().setLevel(logging.DEBUG)
 app = webapp2.WSGIApplication([
@@ -1633,7 +1658,7 @@ app = webapp2.WSGIApplication([
     ('/addphoto', AddPhotoHandler),
     ('/photo', PhotoHandler),
     ('/(.*)', UnknownHandler),
-    ], debug=True)
+    ], debug = True, config = config)
 
 
 # vim:set tw=0:
