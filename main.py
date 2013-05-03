@@ -54,7 +54,6 @@ API_URL = 'https://api.foursquare.com/v2'
 
 DEFAULT_LAT = '39.7'
 DEFAULT_LON = '-75.6'
-DEBUG_COOKIE = 'plainsq_debug'
 
 # Send location parameters if distance is below MAX_MILES_LOC.
 MAX_MILES_LOC = 1.1
@@ -96,19 +95,16 @@ def debug_json_str(self, jsn):
 
 def set_debug(self, debug):
     """
-    Set the debug option cookie.
+    Set the debug option.
     """
-    self.response.set_cookie(DEBUG_COOKIE, str(debug), max_age = 60*60*24*365)
+    self.session['debug'] = bool(debug)
 
 def get_debug(self):
     """
-    Get the debug setting from cookie. If cookie is not found,
-    assume we are not in debug mode.
+    Get the debug option from session. If it is not set, then assume debugging
+    is turned off.
     """
-    debug = self.request.cookies.get(DEBUG_COOKIE)
-    if debug is None:
-	return 0
-    return int(debug)
+    return bool(self.session.get('debug'))
 
 def no_cache(self):
     """
@@ -468,7 +464,6 @@ class LogoutHandler(MyHandler):
     def get(self):
 	# This page should be cached. So omit the no_cache() call.
 	self.del_cookie(TOKEN_COOKIE)
-	self.del_cookie(DEBUG_COOKIE)
 	renderpage(self, 'logout.htm')
 
 
@@ -603,10 +598,8 @@ class DebugHandler(MyHandler):
     Handler for Debug command. Toggle debug mode.
     """
     def get(self):
-	debug = get_debug(self)
-	set_debug(self, (0 if debug else 1))
+	set_debug(self, not get_debug(self))
 	self.redirect('/')
-
 
 class BadgesHandler(MyHandler):
     """
