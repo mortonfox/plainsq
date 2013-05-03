@@ -26,21 +26,28 @@ function map_size() {
 }
 
 function map_image(lat, lon) {
-    var coords, mapdim;
+    var coords, mapdim, maphtml;
     coords = encodeURIComponent(lat) + ',' + encodeURIComponent(lon);
     mapdim = map_size();
-    return '<img id="gmap" width="' + mapdim + '" height="' + mapdim + '" alt="[Bing Map]" '+
-	'src="http://dev.virtualearth.net/REST/v1/Imagery/Map/Road/' + 
-	coords + '/14?ms=' + mapdim + ',' + mapdim + '&pp=' + coords + 
-	';0&key=Aha1lOg_Dx1TU7quU-wNTgDN3K3fI9d4MYRgNGIIX1rQI7SBHs4iLB6LRnbKFN5c">';
 
-    /*
-    return '<img id="gmap" width="250" height="250" alt="[Google Map]" '+
-	'src="http://maps.google.com/maps/api/staticmap?' +
-	'size=250x250&format=gif&sensor=true&zoom=14&' +
-	'markers=size:mid|color:blue|' + encodeURIComponent(lat) + ',' +
-	encodeURIComponent(lon) + '">';
-	*/
+    switch (window.map_provider) {
+
+    case 'bing':
+	maphtml = '<img id="gmap" width="' + mapdim + '" height="' + mapdim + '" alt="[Bing Map]" '+
+	    'src="http://dev.virtualearth.net/REST/v1/Imagery/Map/Road/' + 
+	    coords + '/14?ms=' + mapdim + ',' + mapdim + '&pp=' + coords + 
+	    ';0&key=Aha1lOg_Dx1TU7quU-wNTgDN3K3fI9d4MYRgNGIIX1rQI7SBHs4iLB6LRnbKFN5c">';
+	break
+
+    default:
+	maphtml = '<img id="gmap" width="' + mapdim + '" height="' + mapdim + '" alt="[Google Map]" '+
+	    'src="http://maps.google.com/maps/api/staticmap?' +
+	    'size=' + mapdim + 'x' + mapdim + '&format=gif&sensor=true&zoom=14&' +
+	    'markers=size:mid|color:blue|' + coords + '">';
+	break;
+    }
+
+    return maphtml;
 }
 
 function conv_coord(coord, nsew) {

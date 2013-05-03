@@ -9,12 +9,17 @@
     {% endif %}
 {%- endmacro %}
 
-{# Static Bing map #}
-{% macro map_image(lat, lon) -%}
+{# Static Bing or Google map #}
+{% macro map_image(vendor, lat, lon) -%}
     {% if lat and lon %}
 	{% set coords = (lat ~ ',' ~ lon) | urlencode %}
-	<p><img width="250" height="250" alt="[Bing Map]"
-	src="http://dev.virtualearth.net/REST/v1/Imagery/Map/Road/{{ coords }}/14?ms=250,250&pp={{ coords }};0&key=Aha1lOg_Dx1TU7quU-wNTgDN3K3fI9d4MYRgNGIIX1rQI7SBHs4iLB6LRnbKFN5c">
+	{% if vendor == 'bing' %}
+	    <p><img width="250" height="250" alt="[Bing Map]"
+	    src="http://dev.virtualearth.net/REST/v1/Imagery/Map/Road/{{ coords }}/14?ms=250,250&pp={{ coords }};0&key=Aha1lOg_Dx1TU7quU-wNTgDN3K3fI9d4MYRgNGIIX1rQI7SBHs4iLB6LRnbKFN5c">
+	{% else %}
+	    <p><img width="250" height="250" alt="[Google Map]"
+	    src="http://maps.google.com/maps/api/staticmap?size=250x250&format=gif&sensor=true&zoom=14&markers=size:mid|color:blue|{{ coords }}">
+	{% endif %}
     {% endif %}
 {%- endmacro %}
 

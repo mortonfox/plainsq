@@ -13,7 +13,7 @@
 	{{ addr_fmt(venue) }}
 	{% set location = venue.location %}
 	{% if location.lat and location.lng %}
-	    {{ map_image(location.lat, location.lng) }}
+	    {{ map_image(map_provider, location.lat, location.lng) }}
 	{% endif %}
 
 	{% call(cat) prim_category(venue) %}

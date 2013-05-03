@@ -565,6 +565,7 @@ class VInfoHandler(MyHandler):
 		    'lat' : lat,
 		    'lon' : lon,
 		    'debug_json' : debug_json_str(self, jsn),
+		    'map_provider' : get_map_provider(self),
 		})
 
 
@@ -999,7 +1000,11 @@ class SetlocJSHandler(MyHandler):
 	    self.redirect('/venues')
 	    return
 
-	renderpage(self, 'setlocjs.htm', { 'newloc' : newloc })
+	renderpage(self, 'setlocjs.htm', 
+		{ 
+		    'newloc' : newloc,
+		    'map_provider' : get_map_provider(self),
+		})
 
 class SetlocHandler(MyHandler):
     """
@@ -1056,6 +1061,7 @@ class SetlocHandler(MyHandler):
 		{
 		    'results' : jsn.get('results'),
 		    'debug_json' : debug_json_str(self, jsn),
+		    'map_provider' : get_map_provider(self),
 		})
 
 
@@ -1125,6 +1131,7 @@ def do_checkin(self, client, vid, useloc = False, broadcast = 'public', shout = 
 		'lat' : lat,
 		'lon' : lon,
 		'debug_json' : debug_json_str(self, jsn),
+		'map_provider' : get_map_provider(self),
 	    })
 
 
@@ -1168,6 +1175,7 @@ class CheckinTestHandler(MyHandler):
 		    'lat' : lat,
 		    'lon' : lon,
 		    'debug_json' : debug_json_str(self, jsn),
+		    'map_provider' : get_map_provider(self),
 		})
 
 
@@ -1252,7 +1260,10 @@ class GeoLocHandler(MyHandler):
     """
     def get(self):
 	# This page should be cached. So omit the no_cache() call.
-	renderpage(self, 'geoloc.htm')
+	renderpage(self, 'geoloc.htm',
+		{
+		    'map_provider' : get_map_provider(self),
+		})
 
 class PurgeHandler(MyHandler):
     """

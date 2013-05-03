@@ -14,7 +14,7 @@
     }}">{{ result.formatted_address|e }}</a>
 
     <br>{{ [ location.lat, location.lng ] | convcoords }}
-    {{ map_image(location.lat, location.lng) }}
+    {{ map_image(map_provider, location.lat, location.lng) }}
 {%- endmacro %}
 
 {% block body %}

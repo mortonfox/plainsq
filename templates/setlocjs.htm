@@ -12,6 +12,7 @@ size="16"><input class="submitbutton" type="submit" value="Go"></form>
 <script type="text/javascript" src="lib.js"></script>
 <script type="text/javascript" src="geocode.js"></script>
 <script type="text/javascript">
+    window.map_provider = '{{ map_provider|e }}';
     window.onload = do_geocode('{{ newloc|e }}');
 </script>
 {% endblock %}

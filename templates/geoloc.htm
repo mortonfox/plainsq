@@ -8,6 +8,9 @@
 <p><span id="map">&nbsp;</span>
 <script type="text/javascript" src="lib.js"></script>
 <script type="text/javascript" src="geoloc.js"></script>
+<script type="text/javascript">
+    window.map_provider = '{{ map_provider|e }}';
+</script>
 {% endblock %}
 
 {# vim:set ft=htmldjango tw=0: #}
