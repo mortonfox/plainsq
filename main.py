@@ -20,7 +20,6 @@ USER_AGENT = 'plainsq:0.0.12 20130503'
 
 import itertools
 import json
-import uuid
 import logging
 import pprint
 import re
