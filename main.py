@@ -35,18 +35,12 @@ import yaml
 
 from google.appengine.api.urlfetch import DownloadError 
 from google.appengine.api import images
-from google.appengine.ext import db
-from google.appengine.api import memcache
 from datetime import (datetime, date, timedelta)
 from webapp2_extras import sessions
 
 import oauth2
 import jinjawrap
 
-TOKEN_COOKIE = 'plainsq_token'
-TOKEN_PREFIX = 'token_plainsq_'
-
-COORD_PREFIX = 'coord_plainsq_'
 
 AUTH_URL = 'https://foursquare.com/oauth2/authenticate'
 ACCESS_URL = 'https://foursquare.com/oauth2/access_token'
@@ -62,18 +56,6 @@ MAX_MILES_LOC = 1.1
 def escape(s):
     return cgi.escape(s, quote = True)
 
-class AccessToken(db.Model):
-    """
-    Access token entity.
-    """
-    token = db.StringProperty(required=True)
-
-class User(db.Model):
-    """
-    User login entity.
-    """
-    access_token = db.ReferenceProperty(AccessToken)
-    created = db.DateTimeProperty(auto_now_add=True)
 
 def pprint_to_str(obj):
     """
@@ -178,26 +160,11 @@ newclient.api_keys = get_api_keys()
 
 def getclient(self):
     """
-    Check if login cookie is available. If it is, use the access token from
-    the database. Otherwise, do the OAuth handshake.
+    Check if access token is available. If not, do the OAuth handshake.
     """
-    uuid = self.request.cookies.get(TOKEN_COOKIE)
-    access_token = None
-
-    if uuid is not None:
-	uuid_key = TOKEN_PREFIX + uuid
-
-	# Try to get access token from memcache first.
-	access_token = memcache.get(uuid_key)
-	if access_token is None:
-
-	    access = User.get_or_insert(uuid).access_token
-	    if access is not None:
-		access_token = access.token
-		memcache.set(uuid_key, access_token)
-
     client = newclient()
 
+    access_token = self.session.get('access_token')
     if access_token is not None:
 	# We have an access token. Use it.
 	client.setAccessToken(access_token)
@@ -371,24 +338,9 @@ class SetlocHelpHandler(MyHandler):
 
 class OAuthHandler(MyHandler):
     """
-    This handler is the callback for the OAuth handshake. It stores the access
-    token and secret in cookies and redirects to the main page.
+    This handler is the callback for the OAuth handshake. It saves the access
+    token in the session and returns to the main page.
     """
-    @db.transactional
-    def add_access_token(self, uuid_str, access_token):
-	# Add the access token to the database.
-	# user = User.get_or_insert(uuid_str)
-	user = User.get_by_key_name(uuid_str)
-	if user is None:
-	    user = User(key_name = uuid_str)
-	    user.put()
-
-	acc = AccessToken(token = access_token, parent = user)
-	acc.put()
-
-	user.access_token = acc
-	user.put()
-
     def get(self):
 	no_cache(self)
 
@@ -396,30 +348,16 @@ class OAuthHandler(MyHandler):
 	client = newclient()
 	client.requestSession(auth_code)
 
-	access_token = client.getAccessToken()
-
-	uuid_str = str(uuid.uuid1())
-
-	# Set the login cookie.
-	self.response.set_cookie(TOKEN_COOKIE, uuid_str, max_age = 60*60*24*365)
-
-	self.add_access_token(uuid_str, access_token)
-
+	self.session['access_token'] = client.getAccessToken()
 	self.redirect('/')
 
 class LogoutHandler(MyHandler):
     """
     Handler for user logout command.
     """
-    def del_cookie(self, cookie):
-	""" 
-	Delete cookies by setting expiration to a past date.
-	"""
-	self.response.delete_cookie(cookie)
-
     def get(self):
 	# This page should be cached. So omit the no_cache() call.
-	self.del_cookie(TOKEN_COOKIE)
+	self.session['access_token'] = None
 	renderpage(self, 'logout.htm')
 
 
@@ -1204,34 +1142,6 @@ class GeoLocHandler(MyHandler):
 		    'map_provider' : get_map_provider(self),
 		})
 
-class PurgeHandler(MyHandler):
-    """
-    Purge old database entries from AuthToken.
-    """
-    @db.transactional
-    def purge_user(self, user):
-	for tmp in AccessToken.all().ancestor(user):
-	    tmp.delete()
-
-	user.delete()
-
-
-    def get(self):
-	no_cache(self)
-
-	cutoffdate = (date.today() - timedelta(days=30)).isoformat()
-	creatclause = "WHERE created < DATE('%s')" % cutoffdate
-
-	query = User.gql(creatclause)
-	count = 0
-	for user in query:
-	    self.purge_user(user)
-	    count += 1
-
-	memcache.flush_all()
-
-	renderpage(self, 'purge.htm', { 'count' : count })
-
 
 class CheckinLong2Handler(MyHandler):
     """
@@ -1616,7 +1526,6 @@ app = webapp2.WSGIApplication([
     ('/addvenue', AddVenueHandler),
     ('/about', AboutHandler),
     ('/geoloc', GeoLocHandler),
-    ('/purge', PurgeHandler),
     ('/checkin_long', CheckinLongHandler),
     ('/checkin_long2', CheckinLong2Handler),
     ('/specials', SpecialsHandler),
