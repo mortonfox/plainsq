@@ -9,14 +9,14 @@
 
 <pre>
 Version: 0.0.12
-Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a>)
-Source code: <a href="http://code.google.com/p/plainsq/">http://code.google.com/p/plainsq/</a>
+Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a> <a href="https://twitter.com/mortonfox">@mortonfox</a>)
+Source code: <a href="https://github.com/mortonfox/plainsq">https://github.com/mortonfox/plainsq</a>
 Created: January 28, 2011
-Last updated: May 3, 2013
+Last updated: May 8, 2013
 </pre>
 """
 
-USER_AGENT = 'plainsq:0.0.12 20130503'
+USER_AGENT = 'plainsq:0.0.12 20130508'
 
 import itertools
 import json
