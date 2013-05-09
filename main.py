@@ -343,11 +343,15 @@ class OAuthHandler(MyHandler):
     def get(self):
 	no_cache(self)
 
-	auth_code = self.request.get('code')
-	client = newclient()
-	client.requestSession(auth_code)
+	if self.request.get('access_denied', None) is None:
+	    auth_code = self.request.get('code')
+	    client = newclient()
+	    client.requestSession(auth_code)
 
-	self.session['access_token'] = client.getAccessToken()
+	    self.session['access_token'] = client.getAccessToken()
+
+	    # If access was denied, then we just go back to the login page.
+
 	self.redirect('/')
 
 class LogoutHandler(MyHandler):
