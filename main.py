@@ -1,22 +1,24 @@
 #!/usr/bin/env python
 
 """
-<p>PlainSquare is a lightweight Foursquare client for mobile web browsers. It is intended as a full-featured substitute for Foursquare Mobile. PlainSquare supports both geolocation (using device GPS or cellular / wi-fi positioning) and manual coordinate entry for phones without GPS.
+<p>PlainSquare is a lightweight Foursquare client for mobile web browsers. It is intended as a full-featured substitute for Foursquare Mobile. PlainSquare supports both geolocation (using device GPS or cellular / wi-fi positioning) and manual coordinate entry for phones without GPS.</p>
 
-<p>PlainSquare speeds up check-ins by making this operation single-click if you do not need to shout or change your broadcast options. PlainSquare is also designed to send you through as few screens as possible to do most common Foursquare tasks.
+<p>PlainSquare speeds up check-ins by making this operation single-click if you do not need to shout or change your broadcast options. PlainSquare is also designed to send you through as few screens as possible to do most common Foursquare tasks.</p>
 
-<p>PlainSquare uses OAuth version 2 to log in to Foursquare to avoid having to store user passwords. PlainSquare supports version 2 of the Foursquare API. It is written in Python and designed for hosting on Google App Engine. 
+<p>PlainSquare uses OAuth version 2 to log in to Foursquare to avoid having to store user passwords. PlainSquare supports version 2 of the Foursquare API. It is written in Python and designed for hosting on Google App Engine.</p>
 
 <pre>
 Version: 0.0.12
 Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a> <a href="https://twitter.com/mortonfox">@mortonfox</a>)
 Source code: <a href="https://github.com/mortonfox/plainsq">https://github.com/mortonfox/plainsq</a>
 Created: January 28, 2011
-Last updated: May 8, 2013
+Last updated: May 10, 2013
 </pre>
+
+<p><a href="/privacy">Privacy Policy</a></p>
 """
 
-USER_AGENT = 'plainsq:0.0.12 20130508'
+USER_AGENT = 'plainsq:0.0.12 20130510'
 
 import itertools
 import json
@@ -1126,6 +1128,14 @@ class AddVenueHandler(MyHandler):
 
 	do_checkin(self, client, venue['id'], True)
 
+class PrivacyHandler(MyHandler):
+    """
+    Handler for Privacy Policy page.
+    """
+    def get(self):
+	# This page should be cached. So omit the no_cache() call.
+	renderpage(self, 'privacy.htm', {  })
+
 class AboutHandler(MyHandler):
     """
     Handler for About command.
@@ -1529,6 +1539,7 @@ app = webapp2.WSGIApplication([
     ('/timetest', TimeTestHandler),
     ('/addvenue', AddVenueHandler),
     ('/about', AboutHandler),
+    ('/privacy', PrivacyHandler),
     ('/geoloc', GeoLocHandler),
     ('/checkin_long', CheckinLongHandler),
     ('/checkin_long2', CheckinLong2Handler),
