@@ -218,6 +218,11 @@ def call4sq(self, client, method, path, params = {}):
 	errormsg = meta.get('errorDetail', 'Unknown error')
 	errorpage(self, 
 		'Error %d from Foursquare API call to %s:<br>%s' % (e.code, e.geturl(), errormsg))
+
+	# If the user has disconnected this app, simulate a Logout.
+	if e.code == 401:
+	    self.redirect('/logout')
+
 	return
 
     except Exception:
