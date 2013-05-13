@@ -1515,6 +1515,14 @@ class UnknownHandler(MyHandler):
 config = {}
 config['webapp2_extras.sessions'] = {
     'secret_key': 'sekrit-key',
+    # Make the session cookie last one year.
+    'cookie_args': {
+        'max_age':     365 * 24 * 60 * 60,
+        'domain':      None,
+        'path':        '/',
+        'secure':      None,
+        'httponly':    False,
+    },
 }
 
 # logging.getLogger().setLevel(logging.DEBUG)
