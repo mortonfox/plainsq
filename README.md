@@ -12,10 +12,19 @@ PlainSquare uses OAuth version 2 to log in to Foursquare to avoid having to stor
 
 Before you can run PlainSquare, you have to apply for API keys at https://developer.foursquare.com/ Once you have a client ID and client secret, install those into `apikeys.yml`.
 
-The easiest way to set it up is to run the Google App Engine Launcher and invoke the File / Add Existing Application menu item. Point it at the source code root folder and you are good to go.
+The easiest way to set it up is to run the Google App Engine Launcher and invoke the File / Add Existing Application menu item. Point it at the source code root folder. Then you can run it or deploy it to App Engine.
 
 
 ## Demo
 
 See it run at: http://plainsq.appspot.com/
+
+
+## Screenshots
+
+The following screenshots show the mobile (touch-friendly) skin. On a desktop browser, the PlainSquare interface uses ordinary links instead of buttons.
+
+This is the main menu:
+
+![Main Menu](https://raw.github.com/mortonfox/plainsq/master/_assets/screenshots/plainsq%20-%20main.png)
 
