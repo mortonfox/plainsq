@@ -26,7 +26,7 @@
 	<a class="button" href="/venue?vid={{ venue.id|urlencode }}">{{ venue.name|e }}</a>
     {% endif %}
 
-    {% if checkin %}
+    {% if checkin and checkin.venue %}
 	<a class="button" href="/comments?chkid={{ checkin.id|urlencode }}">{{ checkin.venue.name|e }}</a>
     {% endif %}
 
