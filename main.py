@@ -12,13 +12,13 @@ Version: 0.0.12
 Author: Po Shan Cheah (<a href="mailto:morton@mortonfox.com">morton@mortonfox.com</a> <a href="https://twitter.com/mortonfox">@mortonfox</a>)
 Source code: <a href="https://github.com/mortonfox/plainsq">https://github.com/mortonfox/plainsq</a>
 Created: January 28, 2011
-Last updated: June 12, 2013
+Last updated: September 30, 2013
 </pre>
 
 <p><a href="/privacy">Privacy Policy</a></p>
 """
 
-USER_AGENT = 'plainsq:0.0.12 20130612'
+USER_AGENT = 'plainsq:0.0.12 20130930'
 
 import itertools
 import json
@@ -183,7 +183,7 @@ def call4sq(self, client, method, path, params = {}):
     try:
 	# Supply a default version.
 	if 'v' not in params:
-	    params['v'] = '20130214'
+	    params['v'] = '20130930'
 
 	if method == 'post':
 	    result = client.post(path, params)
